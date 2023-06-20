@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+enable -f ./ate.so ate
+
+ate "$@"

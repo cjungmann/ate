@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+enable -f ./ate.so ate
+
+declare -a test_array=(
+    bob smith stockbroker
+    katy jones CEO
+    gertrude johansen sauna\ salesperson
+    tommy ride used\ car\ salesman
+    jacob smaby general\ contractor
+)
+
+ate -a test_array head action
