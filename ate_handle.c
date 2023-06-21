@@ -1,6 +1,24 @@
 #include "ate_handle.h"
+#include "ate_utilities.h"
 
 static const char AHEAD_ID[] = "ATE_HANDLE";
+
+/**
+ * @brief Identify AHEAD SHELL_VAR
+ * @param "var"   SHELL_VAR to be identified
+ * @param True if `var` is a AHEAD, False if not
+ *
+ * Since attribute `att_special` is not specific, identifying an AHEAD
+ * is a two-step process, confirm `att_special` attribute, then cast
+ * and confirm the identifying char*.
+ */
+bool ahead_p(const SHELL_VAR *var)
+{
+   if (specialvar_p(var))
+      return (ahead_cell(var))->typeid == AHEAD_ID;
+
+   return False;
+}
 
 
 /**
@@ -149,5 +167,36 @@ bool ate_create_indexed_handle(AHEAD **handle, SHELL_VAR *array, int row_size)
          }
       }
    }
+   return False;
+}
+
+
+int ate_create_handle(SHELL_VAR **retval,
+                      const char *name,
+                      SHELL_VAR *array,
+                      int row_size)
+{
+   // To signal variable should be unbound if we fail
+   SHELL_VAR *newvar = NULL;
+
+   SHELL_VAR *svar = find_variable(name);
+   if (!svar)
+      svar = newvar = bind_variable(name, "", att_special);
+
+   if (svar)
+   {
+      AHEAD *head = NULL;
+      if (ate_create_indexed_handle(&head, array, row_size))
+      {
+         ate_dispose_variable_value(svar);
+         svar->value = (char*)head;
+         *retval = svar;
+         return True;
+      }
+   }
+
+   if (newvar)
+      dispose_variable(newvar);
+
    return False;
 }

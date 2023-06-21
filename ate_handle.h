@@ -23,6 +23,13 @@ typedef struct ate_head {
    ARRAY_ELEMENT *rows[];  ///< beginning of array of pointers
 } AHEAD;
 
+/**
+ * @brief Echo SHELL_VAR identification and cast conventions for AHEAD
+ * @{
+ */
+bool ahead_p(const SHELL_VAR *var);
+#define ahead_cell(var) (AHEAD*)((var)->value)
+/** @} */
 
 /**
  * @brief Informational AHEAD methods
@@ -37,8 +44,18 @@ int ate_get_element_count(const AHEAD *head);
  * @{
  */
 bool ate_initialize_head(AHEAD *head, SHELL_VAR *array, int row_size);
-bool ate_initialize_row_pointers(AHEAD *target, SHELL_VAR *source, int row_size, int row_count);
-bool ate_create_indexed_handle(AHEAD **handle, SHELL_VAR *array, int row_size);
+bool ate_initialize_row_pointers(AHEAD *target,
+                                 SHELL_VAR *source,
+                                 int row_size,
+                                 int row_count);
+bool ate_create_indexed_handle(AHEAD **handle,
+                               SHELL_VAR *array,
+                               int row_size);
+
+int ate_create_handle(SHELL_VAR **retval,
+                      const char *name,
+                      SHELL_VAR *array,
+                      int row_size);
 /** @} */
 
 

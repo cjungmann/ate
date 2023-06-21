@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 #include "word_list_stack.h"
-#include "ate_handle.h"
+#include "ate_action.h"
 
 static int ate(WORD_LIST *list)
 {
@@ -83,31 +83,24 @@ static int ate(WORD_LIST *list)
       goto exit_for_error;
    }
 
-   // Display results of collected command line arguments:
-   printf("Variable name_handle is set to '%s'\n", name_handle);
-   printf("Variable name_action is set to '%s'\n", name_action);
-   printf("Variable name_result_value is set to '%s'\n", name_result_value);
-   printf("Variable name_result_array is set to '%s'\n", name_result_array);
-   WORD_LIST *wptr = extras;
-   int extra_counter = 0;
-   while (wptr)
-   {
-      printf("Extra argument #%d: '%s'.\n", ++extra_counter, wptr->word->word);
-      wptr = wptr->next;
-   }
+   retval = delegate_action(name_handle,
+                            name_action,
+                            name_result_value,
+                            name_result_array,
+                            extras);
 
-   if (name_result_array)
-   {
-      SHELL_VAR *var = find_variable(name_result_array);
-      if (array_p(var))
-      {
-         AHEAD *head = NULL;
-         if (ate_create_indexed_handle(&head, var, 3))
-         {
-            xfree(head);
-         }
-      }
-   }
+   // // Display results of collected command line arguments:
+   // printf("Variable name_handle is set to '%s'\n", name_handle);
+   // printf("Variable name_action is set to '%s'\n", name_action);
+   // printf("Variable name_result_value is set to '%s'\n", name_result_value);
+   // printf("Variable name_result_array is set to '%s'\n", name_result_array);
+   // WORD_LIST *wptr = extras;
+   // int extra_counter = 0;
+   // while (wptr)
+   // {
+   //    printf("Extra argument #%d: '%s'.\n", ++extra_counter, wptr->word->word);
+   //    wptr = wptr->next;
+   // }
 
   exit_for_error:
    return retval;
