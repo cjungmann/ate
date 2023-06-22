@@ -2,6 +2,8 @@
 
 enable -f ./ate.so ate
 
+declare OIFS="$IFS"
+
 declare -a test_array=(
     bob smith stockbroker
     katy jones CEO
@@ -10,4 +12,30 @@ declare -a test_array=(
     jacob smaby general\ contractor
 )
 
-ate -a test_array head action
+if ate declare handle test_array 3; then
+    echo "The handle was created."
+    if ate get_row_count handle; then
+        echo "There are $ATE_VALUE rows"
+        if ate get_row handle 3 newrow; then
+            echo "Got a row, its contents are:"
+            IFS=$'\n'
+            echo "${newrow[*]}"
+            IFS="$OIFS"
+
+            echo "About to change the profession to 'hobo'"
+            newrow[2]="hobo"
+            if ate put_row handle 3 newrow; then
+                echo "It seems to have succeeded."
+            else
+                echo "It seems to have FAILED."
+            fi
+        else
+            echo "Failed to get the row."
+        fi
+    fi
+else
+    echo "Failed to declare the handle"
+fi
+
+IFS=$'\n'
+echo "${test_array[*]}"
