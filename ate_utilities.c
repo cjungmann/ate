@@ -2,10 +2,6 @@
 
 #include <stdio.h>
 
-// Not in public include files, but is defined in bash source
-// file dispose_cmd.c
-void dispose_command(COMMAND *command);
-
 /**
  * @brief Get string value at specified index of the WORD_LIST.
  * @param "result"  [out]  where value will be stored, if found
@@ -19,7 +15,7 @@ bool get_string_from_list(const char **result, WORD_LIST *list, int index)
    int counter = 0;
    while (list)
    {
-      if (counter == index)
+      if (counter++ == index)
       {
          *result = list->word->word;
          return True;
@@ -52,6 +48,35 @@ bool get_int_from_list(int *result, WORD_LIST *list, int index)
 }
 
 /**
+ * @brief Get new or existing SHELL_VAR* with name at the specified
+ *        index of the WORD_LIST.
+ * @param "result"  [out]  where value will be stored, if found
+ * @param "list"    [in]   list to search
+ * @param "index"   [in]   0-based index whose value to return
+ *
+ * @return True if found, False if index beyond bounds of WORD_LIST.
+ */
+bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index)
+{
+   SHELL_VAR *var;
+   const char *name;
+   if (get_string_from_list(&name, list, index))
+   {
+      var = find_variable(name);
+      if (!var)
+         var = bind_variable(name, "", 0);
+
+      if (var)
+      {
+         *result = var;
+         return True;
+      }
+   }
+
+   return False;
+}
+
+/**
  * @brief Dispose of item referenced by SHELL_VAR::value.
  * @param "var"   variable whose contents are to be disposed of.
  *
@@ -73,6 +98,29 @@ void ate_dispose_variable_value(SHELL_VAR *var)
       FREE(value_cell(var));
 
    var->value = NULL;
+}
+
+/**
+ * @brief Find and dipose value of existing variable, or make new one
+ *
+ * First search for an existing variable of the specified @p name,
+ * create one if not found, then clean out whichever variable and set
+ * the attributes.
+ *
+ * @param "var"  [out]   Pointer to which the SHELL_VAR will be returned
+ * @param "name" [in]    Name to search or to use when creating a variable
+ * @return Prepared variable
+ */
+SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes)
+{
+   SHELL_VAR *svar = find_variable(name);
+   if (!svar)
+      svar = bind_variable(name, "", 0);
+
+   ate_dispose_variable_value(svar);
+   svar->attributes = attributes;
+
+   return svar;
 }
 
 /**
