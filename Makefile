@@ -34,13 +34,11 @@ $(TARGET) : $(MODULES)
 
 For shared library targets:
 install:
-	install -D --mode=644 $(HEADERS) $(PREFIX)/include
 	install -D --mode=775 $(TARGET) $(PREFIX)/lib
 	ldconfig $(PREFIX)/lib
 
 # Remove the ones you don't need:
 uninstall:
-	rm -f $(PREFIX)/bin/$(TARGET)
 	rm -f $(PREFIX)/lib/$(TARGET)
 	rm -f $(PREFIX)/include/$(HEADERS)
 
