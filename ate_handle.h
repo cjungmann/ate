@@ -58,6 +58,9 @@ int ate_create_handle(SHELL_VAR **retval,
                       int row_size);
 /** @} */
 
+ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *head, int index);
+ARRAY_ELEMENT* ate_get_array_head(AHEAD *head);
+
 
 
 

@@ -190,13 +190,49 @@ int ate_create_handle(SHELL_VAR **retval,
       {
          ate_dispose_variable_value(svar);
          svar->value = (char*)head;
+         svar->attributes |= att_special;
          *retval = svar;
          return True;
       }
    }
 
+   // We failed...
    if (newvar)
       dispose_variable(newvar);
 
    return False;
+}
+
+/**
+ * @brief Returns an ARRAY_ELEMENT indicated by index
+ * @param "handle"  an initialized AHEAD handle pointer
+ * @param "index"  row number requested
+ * @return The indicated ARRAY_ELEMENT*, null if out-of-range
+ *
+ * Assumed by be called by code that has previously acquired
+ * the @ref AHEAD pointer from a SHELL_VAR.
+ */
+ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *handle, int index)
+{
+   if (index < handle->row_count)
+      return handle->rows[index];
+   else
+      return (ARRAY_ELEMENT*)NULL;
+}
+
+/**
+ * @brief Returns an ARRAY_ELEMENT indicated by index
+ * @param "handle" an initialized AHEAD handle pointer
+ * @param "index"  row number requested
+ * @return The indicated ARRAY_ELEMENT*, null if out-of-range
+ *
+ * Assumed by be called by code that has previously acquired
+ * the @ref AHEAD pointer from a SHELL_VAR.
+ */
+ARRAY_ELEMENT* ate_get_array_head(AHEAD *handle)
+{
+   if (handle->array)
+      return (array_cell(handle->array))->head;
+   else
+      return (ARRAY_ELEMENT*)NULL;
 }
