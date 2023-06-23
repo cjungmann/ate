@@ -65,6 +65,13 @@ int ate_action_declare(const char *name_handle,
 }
 
 
+/**
+ * @brief Returns number of indexed rows.
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    variable name override, default `ATE_VALUE`
+ * @param "name_array"    ignored
+ * @param "extra"         ignored
+ */
 int ate_action_get_row_count(const char *name_handle,
                              const char *name_value,
                              const char *name_array,
@@ -88,6 +95,13 @@ int ate_action_get_row_count(const char *name_handle,
    return retval;
 }
 
+/**
+ * @brief Returns an array containing contents of referenced row.
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    array name override, default `ATE_ARRAY`
+ * @param "extra"         extra[0] is requested row index (0-based)
+ */
 int ate_action_get_row(const char *name_handle,
                        const char *name_value,
                        const char *name_array,
@@ -148,6 +162,17 @@ int ate_action_get_row(const char *name_handle,
    return retval;
 }
 
+/**
+ * @brief Updates a table row with the contents of an array
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         extra[0] is requested row index (0-based)
+ *                        extra[1] is the name of the source array
+ *
+ * This function is meant for updating a row that was returned by
+ * the `get_row` action.
+ */
 int ate_action_put_row(const char *name_handle,
                        const char *name_value,
                        const char *name_array,
@@ -214,52 +239,57 @@ int ate_action_put_row(const char *name_handle,
    return retval;
 }
 
-
-ATE_AGENT agent_pool[] = {
-   { "declare",        ate_action_declare,       "Create a new ate object" }
-   , {"get_row_count", ate_action_get_row_count, "Get count of indexed rows" }
-   , {"get_row",       ate_action_get_row,       "Get row by index number" }
-   , {"put_row",       ate_action_put_row,       "Put row by index number" }
-};
-
-const int agent_count = sizeof(agent_pool) / sizeof(ATE_AGENT);
-
-/** Used to test for array limit in @ref delegate_action. */
-const ATE_AGENT *agent_limit = agent_pool + agent_count;
-
 /**
- * @brief Assembles resources, finds appropriate agent, then executes
- *        the action.
+ * @brief Updates a table row with the contents of an array
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         list of elements
  *
- * @param "name_action"   string with which to search the agent pool
- * @param "name_handle"   name of SHELL_VAR containint the AHEAD
- * @param "name_value"    name to override default SHELL_VAR return
- *                        variable
- * @param "name_array"    name to override default ARRAY SHELL_VAR to
- *                        return multiple values (or a row)
- * @param "extra"         unaccounted-for command line arguments to
- *                        interpreted as appropriate for the specific
- *                        action
+ * This function can be used for bulk insert of data.  Each extra
+ * positional argument will be added to a buffer array until the
+ * buffer contains a full row's data.  When the row buffer is full,
+ * a new row will be appended to the hosted array.
  *
- * @return EXECUTION_SUCCESS (0) or an error value according to the
- *         values found in `include/bash/shell.h`.
+ * An incomplete buffer will not be appended to the hosted array.
  */
-int delegate_action(const char *name_action,
-                    const char *name_handle,
-                    const char *name_value,
-                    const char *name_array,
-                    WORD_LIST *extra)
+int ate_action_append_data(const char *name_handle,
+                           const char *name_value,
+                           const char *name_array,
+                           WORD_LIST *extra)
 {
-   ATE_AGENT *agent = agent_pool;
-   while (agent < agent_limit)
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval == EXECUTION_SUCCESS)
    {
-      if (strcmp(name_action, agent->name)==0)
-         return (*agent->action)(name_handle, name_value, name_array, extra);
+      ARRAY *array = array_cell(handle->array);
+      int next_index = array->max_index + 1;
 
-      ++agent;
+      int row_size = handle->row_size;
+      char **row_buffer = (char**)alloca(row_size * sizeof(char*));
+      char **row_ptr = row_buffer;
+      char **row_end = row_buffer + row_size;
+
+      WORD_LIST *ptr = extra;
+      while (ptr)
+      {
+         *row_ptr = ptr->word->word;
+         ++row_ptr;
+         if (row_ptr >= row_end)
+         {
+            char **copy_ptr = row_buffer;
+            while (copy_ptr < row_end)
+            {
+               array_insert(array, next_index++, *copy_ptr);
+               ++copy_ptr;
+            }
+            row_ptr = row_buffer;
+         }
+         ptr = ptr->next;
+      }
    }
 
-   fprintf(stderr, "Action '%s' not found.\n", name_action);
-
-   return EX_NOTFOUND;
+   return retval;
 }
+
+
