@@ -1,4 +1,6 @@
 TARGET = ate.so
+BUILTIN = $(basename $(TARGET))
+ENABLER = $(addprefix enable_,$(BUILTIN))
 
 PREFIX ?= /usr/local
 
@@ -29,21 +31,24 @@ all: $(TARGET)
 $(TARGET) : $(MODULES)
 	$(CC) $(LFLAGS) -o $@ $(MODULES) $(LDFLAGS)
 
+$(ENABLER):
+	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
+	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
+
 %o : %c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-For shared library targets:
-install:
+install: $(ENABLER)
+	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
 	install -D --mode=775 $(TARGET) $(PREFIX)/lib
-	ldconfig $(PREFIX)/lib
 
-# Remove the ones you don't need:
 uninstall:
+	rm -f $(PREFIX)/bin/$(ENABLER)
 	rm -f $(PREFIX)/lib/$(TARGET)
-	rm -f $(PREFIX)/include/$(HEADERS)
 
 clean:
 	rm -f $(TARGET)
+	rm -f $(ENABLER)
 	rm -f $(MODULES)
 
 help:
