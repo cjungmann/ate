@@ -1,7 +1,9 @@
 #ifndef ATE_ERRORS_H
 #define ATE_ERRORS_H
 
+int ate_error_missing_arguments(void);
 int ate_error_not_found(const char *what);
+int ate_error_action_not_found(const char *action_name);
 int ate_error_var_not_found(const char *name);
 int ate_error_wrong_type_var(SHELL_VAR *var, const char *type);
 int ate_error_missing_usage(const char *what);

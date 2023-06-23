@@ -7,9 +7,21 @@
 
 #include <stdio.h>
 
+int ate_error_missing_arguments(void)
+{
+   fprintf(stderr, "Action and handle names are required arguments.\n");
+   return EX_USAGE;
+}
+
 int ate_error_not_found(const char *what)
 {
    fprintf(stderr, "Failed to find %s.\n", what);
+   return EX_NOTFOUND;
+}
+
+int ate_error_action_not_found(const char *action_name)
+{
+   fprintf(stderr, "Failed to find action '%s'.\n", action_name);
    return EX_NOTFOUND;
 }
 
