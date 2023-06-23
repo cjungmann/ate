@@ -1,4 +1,5 @@
 #include "ate_utilities.h"
+#include "ate_errors.h"
 
 #include <stdio.h>
 
@@ -144,17 +145,10 @@ int get_handle_from_name(AHEAD **head, const char *name_handle)
          return EXECUTION_SUCCESS;
       }
       else
-      {
-         fprintf(stderr,
-                 "Variable '%s' is not an appropriate handle.\n",
-                 name_handle);
-
-         return EX_BADUSAGE;
-      }
+         return ate_error_wrong_type_var(svar, "ate handle");
    }
 
-   fprintf(stderr, "Failed to find handle '%s'\n", name_handle);
-   return EX_NOTFOUND;
+   return ate_error_var_not_found(name_handle);
 }
 
 /**
@@ -203,17 +197,9 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
          return EXECUTION_SUCCESS;
       }
       else
-      {
-         fprintf(stderr,
-                 "Variable '%s' is not a %s variable.\n",
-                 name,
-                 get_type_name_from_attribute(attributes));
-         return EX_BADUSAGE;
-      }
+         return ate_error_wrong_type_var(var, get_type_name_from_attribute(attributes));
    }
-   else
-   {
-      fprintf(stderr, "Failed to find variable '%s'.\n", name);
-      return EX_NOTFOUND;
-   }
+
+   return ate_error_var_not_found(name);
 }
+
