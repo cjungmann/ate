@@ -14,6 +14,7 @@
 
 #include "word_list_stack.h"
 #include "ate_action.h"
+#include "ate_errors.h"
 
 static int ate(WORD_LIST *list)
 {
@@ -77,9 +78,8 @@ static int ate(WORD_LIST *list)
 
    if (name_handle == NULL || name_action == NULL)
    {
-      fprintf(stderr, "Handle and action values are required.\n");
+      retval = ate_error_missing_arguments();
       builtin_usage();
-      retval = EX_USAGE;
       goto exit_for_error;
    }
 
