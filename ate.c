@@ -94,15 +94,34 @@ static int ate(WORD_LIST *list)
 }
 
 static char *desc_ate[] = {
-   "ate is Array Table Extension",
+   "Use the 'ate' command to create and manipulate a table-like",
+   "view of a Bash array.",
    "",
-   "Options:",
+   "Use one of several 'action_name' values to interact with the",
+   "table (see 'ate show_actions`).",
+   "",
+   "All 'ate' actions except 'declare' and 'show_actions' require",
+   "an initialized ate handle.  The 'declare' action creates an",
+   "ate handle (see 'man(1) ate').",
+   "",
+   "When ate returns information, the results are written to shell",
+   "variables that are accessible in Bash.  Single value results",
+   "like 'row_size' or 'row_count' are written to Bash variable",
+   "ATE_VALUE by default.  Table row results are written to Bash",
+   "variable ATE_ARRAY.",
+   "",
+   "The result variables can be changed using '-v' and '-a' options:",
+   "",
    "  -a  array   Use _array_ as the name of array to be used for",
    "              returning multi-value results when appropriate",
    "              for the action type.",
    "  -v value    Use _value_ as the name of the shell variable to",
    "              be used for return single value results when",
    "              appropriate for the action type.",
+   "",
+   "Some ate actions take additional arguments that follow the",
+   "'action_name', 'handle_name' arguments and any options.  Look",
+   "at man(1) ate or 'ate show_actions' for more details.",
    (char*)NULL     // end of array marker
 };
 
@@ -111,7 +130,7 @@ struct builtin ate_struct = {
    .function  = ate,
    .flags     = BUILTIN_ENABLED,
    .long_doc  = desc_ate,
-   .short_doc = "ate name_action [name_handle] [-a array_name] [-v value_name] [value ...]",
+   .short_doc = "ate action_name [handle_name] [-a array_name] [-v value_name] [value ...]",
    .handle    = 0
 };
 
