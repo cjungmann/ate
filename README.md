@@ -58,8 +58,20 @@ echo "$ATE_VALUE"
 
 ## DOWNLOAD AND BUILD
 
-Download or clone the code, then run `make`.  A successful build will
-generate `ate.so`.
+Download or clone the code, then run `make` and `make install`:
+
+~~~sh
+make
+sudo make install
+~~~
+
+Use the builtin in a script by including the following line:
+
+~~~sh
+#!/usr/bin/env bash
+
+enable $( enable_ate )
+~~~
 
 
 ## ALTERNATE NAMES
