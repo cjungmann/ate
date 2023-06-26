@@ -14,7 +14,22 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
-
+/**
+ * @brief Display help screen
+ * @param "name_handle"   ignored
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         ignored"
+ * @return EXECUTION_SUCCESS
+ */
+int ate_action_show_actions(const char *name_handle,
+                            const char *name_value,
+                            const char *name_array,
+                            WORD_LIST *extra)
+{
+   delegate_show_action_usage();
+   return EXECUTION_SUCCESS;
+}
 
 /**
  * @brief Create a new ate handle.
@@ -23,7 +38,8 @@
  * @param "name_array"    ignored
  * @param "extra"         should include one or two values:
  *                        - name of the variable to be put under `ate`
- *                          control
+ *                          control.  If the array variable is not
+ *                          found, it will be created.
  *                        - optional row size value (integer).  The
  *                          row size value must be at least one, and must
  *                          divide evenly into the number of elements in
@@ -293,3 +309,118 @@ int ate_action_append_data(const char *name_handle,
 }
 
 
+int ate_action_walk_rows(const char *name_handle, const char *name_value,
+                         const char *name_array, WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval)
+      goto early_exit;
+
+   // No need to continue if there are no rows
+   if (handle->row_count == 0)
+      goto early_exit;
+
+   const char *func_name = NULL;
+   if (!get_string_from_list(&func_name, extra, 0))
+   {
+      retval = ate_error_missing_usage("callback function");
+      goto early_exit;
+   }
+
+   int row_count = handle->row_count;
+   int row_size = handle->row_size;
+
+   const char *int_str = NULL;
+   char *int_end = NULL;
+
+   int starting_index = 0;
+   if (get_string_from_list(&int_str, extra, 1))
+   {
+      starting_index = strtol(int_str, &int_end, 10);
+      if (starting_index==0 && int_end == int_str)
+      {
+         retval = ate_error_arg_not_number(int_str);
+         goto early_exit;
+      }
+
+      if (starting_index >= row_count)
+      {
+         retval = ate_error_record_out_of_range(starting_index, row_count);
+         goto early_exit;
+      }
+   }
+
+   int row_limit = row_count;
+   if (get_string_from_list(&int_str, extra, 2))
+   {
+      row_limit = strtol(int_str, &int_end, 10);
+      if (row_limit==0 && int_end == int_str)
+      {
+         retval = ate_error_arg_not_number(int_str);
+         goto early_exit;
+      }
+      // Force reasonable limit
+      row_limit += starting_index;
+      if (row_limit > row_count)
+         row_limit = row_count;
+   }
+
+   SHELL_VAR *func_var = find_function(func_name);
+   if (!func_var)
+   {
+      retval = ate_error_function_not_found(func_name);
+      goto early_exit;
+   }
+
+   SHELL_VAR *array_var = ate_get_prepared_variable(name_array, att_array);;
+   ARRAY *array = NULL;
+   if (array_var)
+   {
+      array = array_cell(array_var);
+      if (NULL == array)
+      {
+         array = array_create();
+         if (NULL != array)
+            array_var->value = (char*)array;
+      }
+   }
+
+   if (NULL == array)
+   {
+      retval = ate_error_var_not_found(name_array);
+      goto early_exit;
+   }
+
+   ARRAY_ELEMENT *current_ael;
+
+   // Uniquely process the callback exitcode,
+   // 0 to continue,
+   // 1 to stop
+   int callback_result;
+
+   for (int i = starting_index; i < row_limit; ++i)
+   {
+      array_flush(array);
+      if (NULL == (current_ael = ate_get_indexed_row(handle, i)))
+      {
+         retval = ate_error_corrupt_table();
+         goto early_exit;
+      }
+
+      for (int ei=0; ei < row_size && current_ael; ++ei)
+      {
+         array_insert(array, ei, current_ael->value);
+         current_ael = current_ael->next;
+      }
+
+      // CALL CALLBACK HERE
+      callback_result = invoke_shell_function(func_var, itos(i), name_array, NULL);
+
+      if (callback_result != 0)
+         break;
+   }
+
+  early_exit:
+   return retval;
+}
