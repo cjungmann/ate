@@ -1,7 +1,14 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
+#include "word_list_stack.h"
+
+// Copied from bash source header execute_cmd.h:
+extern int execute_command PARAMS((COMMAND *));
 
 #include <stdio.h>
+#include <stdarg.h>
+
+
 
 /**
  * @brief Get string value at specified index of the WORD_LIST.
@@ -203,3 +210,28 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
    return ate_error_var_not_found(name);
 }
 
+int invoke_shell_function(SHELL_VAR *function, ...)
+{
+   WORD_LIST *list = NULL, *tail = NULL;
+
+   WL_APPEND(tail, function->name);
+   list = tail;
+
+   va_list args_list;
+   va_start(args_list, function);
+   const char *arg;
+   while ((arg = va_arg(args_list, const char*)))
+      WL_APPEND(tail, arg);
+
+   va_end(args_list);
+
+   int cmd_flags = CMD_INHIBIT_EXPANSION | CMD_STDPATH;
+
+   COMMAND *command;
+   command = make_bare_simple_command();
+   command->value.Simple->words = list;
+   command->value.Simple->redirects = (REDIRECT*)NULL;
+   command->flags = command->value.Simple->flags = cmd_flags;
+
+   return execute_command(command);
+}

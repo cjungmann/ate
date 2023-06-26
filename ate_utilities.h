@@ -25,7 +25,7 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval,
                                    const char *name,
                                    int attributes);
 
-
+int invoke_shell_function(SHELL_VAR *function, ...);
 
 
 #endif
