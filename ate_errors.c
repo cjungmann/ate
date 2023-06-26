@@ -7,9 +7,21 @@
 
 #include <stdio.h>
 
-int ate_error_missing_arguments(void)
+int ate_error_missing_action(void)
 {
-   fprintf(stderr, "Action and handle names are required arguments.\n");
+   fprintf(stderr, "Missing action name.\n");
+   return EX_USAGE;
+}
+
+int ate_error_missing_arguments(const char *action_name)
+{
+   fprintf(stderr, "Missing arguments for action '%s'.\n", action_name);
+   return EX_USAGE;
+}
+
+int ate_error_arg_not_number(const char *arg_value)
+{
+   fprintf(stderr, "Argument value '%s' passed instead of number.\n", arg_value);
    return EX_USAGE;
 }
 
@@ -25,9 +37,15 @@ int ate_error_action_not_found(const char *action_name)
    return EX_NOTFOUND;
 }
 
-int ate_error_var_not_found(const char *name)
+int ate_error_function_not_found(const char *func_name)
 {
-   fprintf(stderr, "Failed to find variable '%s'.\n", name);
+   fprintf(stderr, "Failed to find funtion '%s'.\n", func_name);
+   return EX_NOTFOUND;
+}
+
+int ate_error_var_not_found(const char *var_name)
+{
+   fprintf(stderr, "Failed to find variable '%s'.\n", var_name);
    return EX_NOTFOUND;
 }
 
