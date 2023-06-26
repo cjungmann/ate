@@ -62,10 +62,10 @@ static int ate(WORD_LIST *list)
          }
       }
       // Positional options
-      else if (name_handle == NULL)
-         name_handle = cur_arg;
       else if (name_action == NULL)
          name_action = cur_arg;
+      else if (name_handle == NULL)
+         name_handle = cur_arg;
       else
       {
          WL_APPEND(etail, cur_arg);
@@ -76,31 +76,18 @@ static int ate(WORD_LIST *list)
       ptr = ptr->next;
    }
 
-   if (name_handle == NULL || name_action == NULL)
+   if (name_action == NULL)
    {
-      retval = ate_error_missing_arguments();
+      retval = ate_error_missing_action();
       builtin_usage();
       goto exit_for_error;
    }
 
-   retval = delegate_action(name_handle,
-                            name_action,
+   retval = delegate_action(name_action,
+                            name_handle,
                             name_result_value,
                             name_result_array,
                             extras);
-
-   // // Display results of collected command line arguments:
-   // printf("Variable name_handle is set to '%s'\n", name_handle);
-   // printf("Variable name_action is set to '%s'\n", name_action);
-   // printf("Variable name_result_value is set to '%s'\n", name_result_value);
-   // printf("Variable name_result_array is set to '%s'\n", name_result_array);
-   // WORD_LIST *wptr = extras;
-   // int extra_counter = 0;
-   // while (wptr)
-   // {
-   //    printf("Extra argument #%d: '%s'.\n", ++extra_counter, wptr->word->word);
-   //    wptr = wptr->next;
-   // }
 
   exit_for_error:
    return retval;
@@ -124,6 +111,8 @@ struct builtin ate_struct = {
    .function  = ate,
    .flags     = BUILTIN_ENABLED,
    .long_doc  = desc_ate,
-   .short_doc = "ate [-a array_name] [-v value_name] handle_name action_name [...]",
+   .short_doc = "ate name_action [name_handle] [-a array_name] [-v value_name] [value ...]",
    .handle    = 0
 };
+
+
