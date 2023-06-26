@@ -308,6 +308,37 @@ int ate_action_append_data(const char *name_handle,
    return retval;
 }
 
+int ate_action_update_index (const char *name_handle, const char *name_value,
+                             const char *name_array, WORD_LIST *extra)
+{
+   int retval = EXECUTION_FAILURE;
+
+   SHELL_VAR *shandle = find_variable(name_handle);
+   if (shandle == NULL)
+   {
+      retval = ate_error_var_not_found(name_handle);
+      goto early_exit;
+   }
+
+   if (!ahead_p(shandle))
+   {
+      retval = ate_error_wrong_type_var(shandle, "ate handle");
+      goto early_exit;
+   }
+
+   AHEAD *handle = ahead_cell(shandle);
+   AHEAD *new_handle = NULL;
+   if (ate_create_indexed_handle(&new_handle, handle->array, handle->row_size))
+   {
+      shandle->value = (char*)new_handle;
+      free(handle);
+      retval = EXECUTION_SUCCESS;
+   }
+
+  early_exit:
+   return retval;
+}
+
 
 int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra)

@@ -12,28 +12,37 @@
 
 ATE_AGENT agent_pool[] = {
    { "show_actions", ate_action_show_actions, "Show available actions",
-     "ate show_actions"
+     "ate show_actions",
+      "no result"
    }
    , { "declare", ate_action_declare, "Create a new ate handle",
-     "ate declare name_handle name_array [row_size]"
+      "ate declare name_handle name_array [row_size]",
+      "no result"
    }
    , { "get_row_count", ate_action_get_row_count, "Get count of indexed rows",
-      "ate get_row_count name_handle [-v name_result ]"
+      "ate get_row_count name_handle",
+      "single value result (ATE_VALUE or override with -v)."
    }
    , { "get_row", ate_action_get_row, "Get row by index number",
-      "ate get_row name_handle row_number [-a name_row_array]"
+      "ate get_row name_handle row_number",
+      "array value result (ATE_ARRAY or override with -a)."
    }
    , { "put_row", ate_action_put_row, "Put row by index number",
-      "ate put_row name_handle row_number name_row_array"
+      "ate put_row name_handle row_number name_row_array",
+      "single value result (ATE_VALUE or override with -v)."
    }
    , { "append_data",   ate_action_append_data,   "Add data to end of table",
-      "ate append_data name_handle [value ...]"
+      "ate append_data name_handle [value ...]",
+      "no result"
+   }
+   , { "update_index",  ate_action_update_index, "Update row index after additions.",
+      "ate update_index name_handle",
+      "no result"
    }
    , { "walk_rows", ate_action_walk_rows, "invoke callback function with each row in table.",
-      "ate walk_rows name_handle name_callback [start_row] [row_count]"
+      "ate walk_rows name_handle name_callback [start_row] [row_count]",
+      "no result"
    }
-   // , {"seek_row"       ate_seek_row"             "Seek row with callback" }
-   // , {"seek_row_field" ate_seek_row_field"       "Seek row by field" }
 };
 
 const int agent_count = sizeof(agent_pool) / sizeof(ATE_AGENT);
@@ -51,7 +60,11 @@ void delegate_show_action_usage(void)
    {
       if (agent > (const ATE_AGENT*)agent_pool)
          printf("\n");
-      printf("%s\n  %s\n", agent->description, agent->usage);
+      printf("%s:\n  %s\n  %s\n",
+             agent->description,
+             agent->usage,
+             agent->return_info
+             );
 
       ++agent;
    }
