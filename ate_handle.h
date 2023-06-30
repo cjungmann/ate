@@ -12,7 +12,7 @@
 #include <builtins/common.h>      // for no_options()
 
 typedef unsigned int bool;
-#define True (-1)
+#define True (1)
 #define False (0)
 
 typedef struct ate_head {
