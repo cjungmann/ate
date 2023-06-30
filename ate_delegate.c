@@ -16,11 +16,19 @@ ATE_AGENT agent_pool[] = {
       "no result"
    }
    , { "declare", ate_action_declare, "Create a new ate handle",
-      "ate declare name_handle name_array [row_size]",
+      "ate declare name_handle [name_array] [row_size]",
       "no result"
    }
    , { "get_row_count", ate_action_get_row_count, "Get count of indexed rows",
       "ate get_row_count name_handle",
+      "single value result (ATE_VALUE or override with -v)."
+   }
+   , { "get_row_size", ate_action_get_row_size, "Get number of fields in a row",
+      "ate get_row_size name_handle",
+      "single value result (ATE_VALUE or override with -v)."
+   }
+   , { "get_array_name", ate_action_get_array_name, "Get name of hosted array",
+      "ate get_array_name handle_name",
       "single value result (ATE_VALUE or override with -v)."
    }
    , { "get_row", ate_action_get_row, "Get row by index number",
