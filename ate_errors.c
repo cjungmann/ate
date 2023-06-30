@@ -13,6 +13,18 @@ int ate_error_missing_action(void)
    return EX_USAGE;
 }
 
+int ate_error_handle_already_exists(const char *handle_name)
+{
+   fprintf(stderr, "Variable '%s' already exists.\n", handle_name);
+   return EX_USAGE;
+}
+
+int ate_error_failed_to_make_handle(const char *reason)
+{
+   fprintf(stderr, "Failed to create new ate handle: %s.\n", reason);
+   return EX_MISCERROR;
+}
+
 int ate_error_missing_arguments(const char *action_name)
 {
    fprintf(stderr, "Missing arguments for action '%s'.\n", action_name);

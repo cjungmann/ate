@@ -2,6 +2,8 @@
 #define ATE_ERRORS_H
 
 int ate_error_missing_action(void);
+int ate_error_handle_already_exists(const char *handle_name);
+int ate_error_failed_to_make_handle(const char *reason);
 int ate_error_missing_arguments(const char *action_name);
 int ate_error_arg_not_number(const char *arg_value);
 int ate_error_not_found(const char *what);
