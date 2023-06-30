@@ -441,65 +441,6 @@ int ate_action_put_row(const char *name_handle,
       target_arel = target_arel->next;
    }
 
-
-   // AHEAD *handle;
-   // int retval = get_handle_from_name(&handle, name_handle);
-   // if (retval == EXECUTION_SUCCESS)
-   // {
-   //    int requested_index;
-
-   //    if (get_int_from_list(&requested_index, extra, 0))
-   //    {
-   //       ARRAY_ELEMENT *arel_target = ate_get_indexed_row(handle, requested_index);
-   //       if (arel_target)
-   //       {
-   //          const char *array_name = NULL;
-   //          if (get_string_from_list(&array_name, extra, 1))
-   //          {
-   //             SHELL_VAR *avar;
-   //             if ((avar = find_variable(array_name)))
-   //             {
-   //                if (array_p(avar))
-   //                {
-   //                   ARRAY_ELEMENT *arel_target_head = ate_get_array_head(handle);
-   //                   ARRAY_ELEMENT *arel_target_ptr = arel_target;
-   //                   int count = 0;
-
-   //                   ARRAY *arr = array_cell(avar);
-   //                   ARRAY_ELEMENT *arel_source_head = arr->head;
-   //                   ARRAY_ELEMENT *arel_source_ptr = arel_source_head->next;
-   //                   while (count < handle->row_size)
-   //                   {
-   //                      if (arel_source_ptr != arel_source_head &&
-   //                          arel_target_ptr != arel_target_head)
-   //                      {
-   //                         free(arel_target_ptr->value);
-   //                         arel_target_ptr->value = savestring(arel_source_ptr->value);
-
-   //                         arel_target_ptr = arel_target_ptr->next;
-   //                         arel_source_ptr = arel_source_ptr->next;
-   //                      }
-   //                      else
-   //                         break;
-   //                      ++count;
-   //                   }
-   //                }
-   //                else
-   //                   retval = ate_error_wrong_type_var(avar, "array");
-   //             }
-   //             else
-   //                retval = ate_error_var_not_found(array_name);
-   //          }
-   //          else
-   //             retval = ate_error_missing_usage("array name");
-   //       }
-   //       else
-   //          retval = ate_error_record_out_of_range(requested_index, handle->row_count);
-   //    }
-   //    else
-   //       retval = ate_error_missing_usage("row index in putt_row");
-   // }
-
   early_exit:
    return retval;
 }
