@@ -9,6 +9,31 @@ extern int execute_command PARAMS((COMMAND *));
 #include <stdarg.h>
 
 
+bool make_unique_name(char *buffer, int bufflen, const char *stem)
+{
+   int len = strlen(stem);
+   if (bufflen < len + 3)
+      return 0;
+
+   int numlen = bufflen - len - 1;
+
+   char **vars = all_variables_matching_prefix(stem);
+   char **ptr = vars;
+   int cur_val,  max_val = 0;
+   while (*ptr)
+   {
+      const char *str = *ptr;
+      cur_val = atoi(&str[len]);
+      if (cur_val > max_val)
+         max_val = cur_val;
+
+      ++ptr;
+   }
+
+   snprintf(buffer, bufflen, "%s%0*d", stem, numlen, max_val+1);
+   return 1;
+}
+
 
 /**
  * @brief Get string value at specified index of the WORD_LIST.
@@ -84,6 +109,19 @@ bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index)
    return False;
 }
 
+int set_var_from_int(SHELL_VAR *result, int value)
+{
+   char *intstr = itos(value);
+   if (intstr && intstr[0])
+   {
+      ate_dispose_variable_value(result);
+      result->value = intstr;
+      return EXECUTION_SUCCESS;
+   }
+
+   return EX_BADUSAGE;
+}
+
 /**
  * @brief Dispose of item referenced by SHELL_VAR::value.
  * @param "var"   variable whose contents are to be disposed of.
@@ -129,6 +167,23 @@ SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes)
    svar->attributes = attributes;
 
    return svar;
+}
+
+bool prepare_clean_array_var(SHELL_VAR **var, const char *name)
+{
+   SHELL_VAR *tvar;
+   tvar = find_variable(name);
+   if (tvar)
+      dispose_variable(tvar);
+
+   tvar = make_new_array_variable((char*)name);
+   if (tvar)
+   {
+      *var = tvar;
+      return True;
+   }
+
+   return False;
 }
 
 /**
