@@ -1,0 +1,278 @@
+.TH ate 2023-06-26 "Loadable Bash Builtin Manual"
+.SH NAME
+.B ate
+\- Array Table Extension: use a Bash array as a table
+.SH SYNOPSIS
+.PP
+.B ate
+.I action_name handle_name
+.RB [ "-a " "\fIarray_name\fP" ]
+.RB [ "-v " "\fIvalue_name\fP" ]
+.RI [ "extra ..." ]
+.SH DESCRIPTION
+.PP
+Standard Bash arrays are one-dimensional and sequential (slow) access.
+.B ate
+manages an index to virtual row heads for a two-dimensional aspect
+with fast random access.
+.PP
+Implemented as a builtin, it uses Bash primitive variables, it can
+call Bash script functions, and it runs in the same process as the
+shell script for improved performance.
+.SH ATE ACTIONS
+.SS SHOW_ACTIONS
+.PP
+.B ate show_actions
+.RS 4
+List all available actions with usage and a short description.
+.RE
+.SS DECLARE
+.PP
+.B ate declare
+.I "handle_name" "array_name" "row_size"
+.RS 4
+Create and initialize an
+.B ate
+handle.
+.TP
+.I handle_name
+The
+.I handle_name
+will be used to create a new Bash
+.B ate
+handle variable.
+.TP
+.I array_name
+Name of the hosted array.
+The array will be created if it doesn't already exist.
+An array with a generated name will be created if this argument
+is omitted.
+.TP
+.I row_size
+The number of array elements in a table row.
+The
+.I row_size
+will be set to 1 if
+.I row_size
+is not specified.
+.RE
+.SS APPEND_DATA
+.PP
+.B ate append_data
+.I handle_name
+.RI "[ " "value ..." " ]"
+.RS 4
+.TP
+.I handle_name
+The name of an initialized handle variable
+.TP
+.RI "[ " "value ..." " ]"
+The values to be appended to the hosted array.
+The number of new values must be evenly-divisible by the
+table's row size, extra values will be discarded.
+The table index must be updated after adding or removing
+array elements.
+.RE
+.SS UPDATE_INDEX
+.PP
+.B ate update_index
+.I handle_name
+.PP
+Generates an index into the elements of the hosted array,
+one index for each row head.
+The
+.BR get_row " and " put_row
+actions rely on the index being up-to-date.
+.SS GET_ROW_COUNT
+.PP
+.B ate get_row_count
+.I handle_name
+.BI "-v " value_name
+.RS 4
+.TP
+.BI "-v " value_name
+Use
+.I value_name
+instead of
+.B ATE_VALUE
+as variable in which to return the value.
+.PP
+Returns the number of indexed rows in the table.
+.RE
+.SS GET_ROW_SIZE
+.PP
+.B ate get_row_size
+.I handle_name
+.BI "-v " value_name
+.RS 4
+.TP
+.BI "-v " value_name
+Use
+.I value_name
+instead of
+.B ATE_VALUE
+as variable in which to return the value.
+.PP
+Returns the number of fields in a row.
+.RE
+.SS GET_ARRAY_NAME
+.PP
+.B ate get_array_name
+.I handle_name
+.BI "-v " value_name
+.RS 4
+.TP
+.BI "-v " value_name
+Use
+.I value_name
+instead of
+.B ATE_VALUE
+as variable in which to return the value.
+.PP
+Returns the name of the hosted array.
+It will be a generated name if no array name was specified
+when the handle was declared.
+.RE
+.SS GET_ROW
+.PP
+.B ate get_row
+.I handle_name
+.RB [ "-a " \fIarray_name\fP " ]"
+.RS 4
+.TP
+.BI "-a " array_name
+Use
+.I array_name
+instead of
+.B ATE_ARRAY
+as variable in which to return the row
+.RE
+.SS PUT_ROW
+.PP
+.B ate put_row
+.I handle_name array_name row_index
+.RS 4
+.TP
+.I array_name
+the name of the array with the values that should replace
+the values of the row indicated by
+.IR row_index .
+.TP
+.I row_index
+is the 0-based row number to which the contents of
+.I array_name
+will be copied.
+The
+.I row_index
+value must from 0 to
+.I row_count
+- 1.
+.PP
+Exactly
+.B row_size
+elements will be copied.
+Extra source elements will be ignored, and blank values will be
+save to the elements of the target array for any missing source
+elements.
+.PP
+Typically, one retrieves a row with the
+.B get_row
+action, makes changes to the returned row, then calls
+.B put_row
+to update the record.
+.PP
+This action will not add new rows, use the
+.B append_data
+action to add rows to the table.
+.RE
+.SS WALK_ROWS
+.B ate walk_rows
+.I handle_name callback_name
+.RI [ starting_row "] [" row_count ]
+.RS 4
+.TP
+.I callback_name
+to a function that
+.B ate
+will call with each indexed table row.
+.TP
+.I starting_row
+If specified, this is the (0-based) row number of the first
+row to be sent to the callback function.
+.TP
+.I row_count
+If specified (following the
+.IR starting_row ),
+this is the number of rows to send to the callback function.
+.PP
+Unless directed otherwise by the optional arguments
+.IR starting_row " and " row_count ,
+.B walk_rows
+will start at row 0 and proceed to the last row in the table,
+calling the callback function for each row.
+.PP
+The callback function will be given two arguments, the
+row number and the name of the array containing the row values.
+.PP
+If the callback function returns 0, the next row will be sent.
+If the callback function return non-0 (for now), the row walk
+will be terminated.
+.PP
+Example:
+.IP
+.EX
+display_row()
+{
+   local -i row_num=\(dq$1\(dq
+   local -n row_array=\(dq$2\(dq
+
+   printf "%2d) %s\n" "$row_num" "${row_array[*]}"
+   return 0
+}
+
+ ate walk_rows handle display_row
+.EE
+.RE
+.SH EXAMPLE
+.PP
+.EX
+declare -a rowdata=(
+   Mom     45
+   Dad     48
+   Sister  21
+   Brother 18
+)
+# Create the handle
+if ate declare handle 2; then
+
+   # Add data to the handle
+   ate append_data handle \(dq${rowdata[@]}\(dq
+
+   # Read a row from the handle
+   ate get_row handle 1
+   echo "${ATE_ARRAY[0]} is ${ATE_ARRAY[1]} years old"
+
+   # Read another row, saving to a non-default variable
+   ate get_row handle -a recarr 2
+   echo "${recarr[0]} is ${recarr[1]} years old"
+
+   # Update the record and write back to the table
+   echo "It's ${recarr[0]}'s birthday, update their age."
+   (( ++recarr[1] ))
+   ate put_row handle 2 recarr
+fi
+.EE
+
+
+.SH WARNINGS
+.TP
+.B Hosted Array
+Do not attempt to manipulate the ate-hosted array without the
+.B ate
+handle.
+Directly adding or removing elements from the hosted array will
+cause the index to be out-of-date.
+Additionally, if added or removed elements result in an uneven
+number of elements (not evenly-divisible into the row_size),
+some data will not be accessible from
+.BR ate.
