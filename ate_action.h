@@ -21,6 +21,12 @@ int ate_action_declare(const char *name_handle, const char *name_value,
 int ate_action_get_row_count(const char *name_handle, const char *name_value,
                              const char *name_array, WORD_LIST *extra);
 
+int ate_action_get_row_size(const char *name_handle, const char *name_value,
+                            const char *name_array, WORD_LIST *extra);
+
+int ate_action_get_array_name(const char *name_handle, const char *name_value,
+                              const char *name_array, WORD_LIST *extra);
+
 int ate_action_get_row(const char *name_handle, const char *name_value,
                        const char *name_array, WORD_LIST *extra);
 
