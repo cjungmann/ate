@@ -98,11 +98,11 @@ static char *desc_ate[] = {
    "view of a Bash array.",
    "",
    "Use one of several 'action_name' values to interact with the",
-   "table (see 'ate show_actions`).",
+   "table (see 'ate list_actions` or `ate show_action`).",
    "",
-   "All 'ate' actions except 'declare' and 'show_actions' require",
-   "an initialized ate handle.  The 'declare' action creates an",
-   "ate handle (see 'man(1) ate').",
+   "All 'ate' actions except 'declare', 'list_actions, and",
+   "'show_action' require an initialized ate handle.  The",
+   "'declare' action creates an ate handle (see 'man ate(1)').",
    "",
    "When ate returns information, the results are written to shell",
    "variables that are accessible in Bash.  Single value results",
@@ -121,7 +121,7 @@ static char *desc_ate[] = {
    "",
    "Some ate actions take additional arguments that follow the",
    "'action_name', 'handle_name' arguments and any options.  Look",
-   "at man(1) ate or 'ate show_actions' for more details.",
+   "at man ate(1) or 'ate show_action' for more details.",
    (char*)NULL     // end of array marker
 };
 
