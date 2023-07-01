@@ -41,10 +41,12 @@ $(ENABLER):
 install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
 	install -D --mode=775 $(TARGET) $(PREFIX)/lib
+	gzip -c ate.1 > $(PREFIX)/share/man/man1/ate.1.gz
 
 uninstall:
 	rm -f $(PREFIX)/bin/$(ENABLER)
 	rm -f $(PREFIX)/lib/$(TARGET)
+	rm -f $(PREFIX)/share/man/man1/ate.1.gz
 
 clean:
 	rm -f $(TARGET)
