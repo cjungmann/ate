@@ -101,11 +101,8 @@ I'm not really happy with the name *ate*, but I'm moving on for now.
 I've also considered `bat` for **Bash Array Table**, but decided
 against competing with another possily popular app, [bat][bat].
 
-Using `ate` for now, but alternative names (in case `ate` seems
-inappropriate) might be `bia` for **Bash Indexed Array** or `iat`
-for **Indexed Array Table**.
-
-
+Other possibilities if I want to change the name might be `bia` for
+**Bash Indexed Array** or `iat` for **Indexed Array Table**.
 
 
 
