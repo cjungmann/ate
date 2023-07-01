@@ -8,10 +8,31 @@ This builtin module enhances Bash arrays in two major ways:
 It allows for direct random access to elements, and it provides an
 interface through which the array will present as a table.
 
+## BUILD AND INSTALL
+
+Clone project, build and install:
+
+~~~sh
+clone https://www.github.com/cjungmann/ate.git
+cd ate
+make
+sudo make install
+~~~
+
 ## USAGE
 
-This a preliminary explanation as the interface is still being
-developed.
+**ate** is a Bash builtin, and must be enabled for it to be used.
+
+Part of the installation is a script, `enable_ate` that makes it
+easier to aid enable **ate**.  Put the following line in a script
+that will use **ate**:
+
+~~~sh
+enable $( enable_ate )
+~~~
+
+This `enable` command can be used in a shell, a script, or in the
+`.bashrc` file to enable **ate** globally.
 
 ### Basic Syntax
 
