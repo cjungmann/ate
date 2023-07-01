@@ -47,6 +47,11 @@ ATE_AGENT agent_pool[] = {
       "ate update_index name_handle",
       "no result"
    }
+   , { "get_field_sizes",  ate_action_get_field_sizes,
+      "Get the size of the longest element of each table field.",
+      "ate get_field_sizes name_handle",
+      "array value result (ATE_ARRAY or override with -a)."
+   }
    , { "walk_rows", ate_action_walk_rows, "invoke callback function with each row in table.",
       "ate walk_rows name_handle name_callback [start_row] [row_count]",
       "no result"
