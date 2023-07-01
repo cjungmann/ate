@@ -16,12 +16,26 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
+
+
+/**
+ * @brief TEMPLATE
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         ignored
+ *
+ * @return EXECUTION_SUCCESS or an error code upon failure
+ *        (refer to `include/bash/shell.h`).
+ */
+
+
 /**
  * @brief Display help screen
  * @param "name_handle"   ignored
  * @param "name_value"    ignored
  * @param "name_array"    ignored
- * @param "extra"         ignored"
+ * @param "extra"         ignored
  * @return EXECUTION_SUCCESS
  */
 int ate_action_show_actions(const char *name_handle,
@@ -150,6 +164,15 @@ int ate_action_declare(const char *name_handle,
    }
 
    // We have all the parts, construct the SHELL_VAR host:
+
+   // Check for and announce otherwise silent error during ate_create_handle
+   int el_count = array_num_elements(array_cell(hosted_array));
+   if ( el_count % row_size)
+   {
+      retval = ate_error_invalid_row_size(row_size);
+      goto early_exit;
+   }
+
    SHELL_VAR *hvar = NULL;
    if (ate_create_handle(&hvar, name_handle, hosted_array, row_size))
       retval = EXECUTION_SUCCESS;
@@ -354,6 +377,9 @@ int ate_action_get_row(const char *name_handle,
  *
  * This function is meant for updating a row that was returned by
  * the `get_row` action.
+ *
+ * @return EXECUTION_SUCCESS or an error code upon failure
+ *        (refer to `include/bash/shell.h`).
  */
 int ate_action_put_row(const char *name_handle,
                        const char *name_value,
@@ -446,11 +472,14 @@ int ate_action_put_row(const char *name_handle,
 }
 
 /**
- * @brief Updates a table row with the contents of an array
+ * @brief Adds table rows from a list of arguments
  * @param "name_handle"   name of the reference handle
  * @param "name_value"    ignored
  * @param "name_array"    ignored
- * @param "extra"         list of elements
+ * @param "extra"         list of arguments
+ *
+ * @return EXECUTION_SUCCESS or an error code upon failure
+ *        (refer to `include/bash/shell.h`).
  *
  * This function can be used for bulk insert of data.  Each extra
  * positional argument will be added to a buffer array until the
@@ -498,6 +527,20 @@ int ate_action_append_data(const char *name_handle,
    return retval;
 }
 
+/**
+ * @brief Generate a new index of table row heads
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         ignored
+ *
+ * Generate a new index of table row heads which, if successful
+ * will replace the existing table row heads index.  The heap memory
+ * hosting the existing table row heads will be 'free'd.
+ *
+ * @return EXECUTION_SUCCESS or an error code upon failure
+ *        (refer to `include/bash/shell.h`).
+ */
 int ate_action_update_index (const char *name_handle, const char *name_value,
                              const char *name_array, WORD_LIST *extra)
 {
@@ -529,7 +572,77 @@ int ate_action_update_index (const char *name_handle, const char *name_value,
    return retval;
 }
 
+int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
+                               const char *name_array, WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval)
+      goto early_exit;
 
+   int row_size = handle->row_size;
+   int *col_sizes = (int*)alloca(row_size * sizeof(int));
+   memset(col_sizes, 0, row_size * sizeof(int));
+
+   ARRAY_ELEMENT *head = array_head(array_cell(handle->array));
+   if (!head)
+   {
+      retval = ate_error_var_not_found("array_head");
+      goto early_exit;
+   }
+
+   ARRAY_ELEMENT *ptr = head->next;
+   int *size_ptr;
+   int counter = 0;
+   int curlen;
+   while (ptr != head)
+   {
+      size_ptr = &col_sizes[counter % row_size];
+      curlen = strlen(ptr->value);
+      if (curlen > *size_ptr)
+         *size_ptr = curlen;
+
+      ptr = ptr->next;
+      ++counter;
+   }
+
+   char numbuffer[32];
+   SHELL_VAR *retarr = NULL;
+   if (prepare_clean_array_var(&retarr, name_array))
+   {
+      ARRAY *array = array_cell(retarr);
+      for (int i=0; i<row_size; ++i)
+      {
+         snprintf(numbuffer, sizeof(numbuffer), "%d", col_sizes[i]);
+         if (array_insert(array, i, numbuffer))
+         {
+            retval = ate_error_unexpected();
+            break;
+         }
+      }
+   }
+   else
+      retval = ate_error_unexpected();
+
+
+  early_exit:
+   return retval;
+}
+
+/**
+ * @brief Initiates a series of invocations of a callback function
+ * @param "name_handle"   name of the reference handle
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         the extra arguments should start with the
+ *                        name of the callback function, possibly
+ *                        followed by an optional starting index,
+ *                        possibly again followed by the number of
+ *                        rows to send.
+ *
+ * @return EXECUTION_SUCCESS or an error code upon failure
+ *        (refer to `include/bash/shell.h`).
+ */
 int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra)
 {
