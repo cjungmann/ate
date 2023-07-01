@@ -103,3 +103,9 @@ int ate_error_record_out_of_range(int requested, int limit)
 
    return EX_NOTFOUND;
 }
+
+int ate_error_unexpected(void)
+{
+   fprintf(stderr, "Unexpected error.\n");
+   return EXECUTION_FAILURE;
+}
