@@ -29,21 +29,38 @@
  *        (refer to `include/bash/shell.h`).
  */
 
+/**
+ * @brief Show list of available actions
+ * @param "name_handle"   ignored
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         ignored
+ *
+ * @return EXECUTION_SUCCESS
+ */
+int ate_action_list_actions(const char *name_handle,
+                            const char *name_value,
+                            const char *name_array,
+                            WORD_LIST *extra)
+{
+   delegate_list_actions();
+   return EXECUTION_SUCCESS;
+}
 
 /**
  * @brief Display help screen
- * @param "name_handle"   ignored
+ * @param "name_handle"   reinterpreted as a requested action name
  * @param "name_value"    ignored
  * @param "name_array"    ignored
  * @param "extra"         ignored
  * @return EXECUTION_SUCCESS
  */
-int ate_action_show_actions(const char *name_handle,
-                            const char *name_value,
-                            const char *name_array,
-                            WORD_LIST *extra)
+int ate_action_show_action(const char *name_handle,
+                           const char *name_value,
+                           const char *name_array,
+                           WORD_LIST *extra)
 {
-   delegate_show_action_usage();
+   delegate_show_action_usage(name_handle);
    return EXECUTION_SUCCESS;
 }
 

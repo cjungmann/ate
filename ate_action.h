@@ -12,8 +12,11 @@ typedef int (*ATE_ACTION)(const char *name_handle,
                           WORD_LIST *extra);
 
 
-int ate_action_show_actions(const char *name_handle, const char *name_value,
+int ate_action_list_actions(const char *name_handle, const char *name_value,
                             const char *name_array, WORD_LIST *extra);
+
+int ate_action_show_action(const char *name_handle, const char *name_value,
+                           const char *name_array, WORD_LIST *extra);
 
 int ate_action_declare(const char *name_handle, const char *name_value,
                        const char *name_array, WORD_LIST *extra);
@@ -55,13 +58,13 @@ typedef struct action_agent {
    ATE_ACTION action;
    const char *description;
    const char *usage;
-   const char *return_info;
 } ATE_AGENT;
 
 /** @brief Found in ate_delegate.c
  * @{
  */
-void delegate_show_action_usage(void);
+void delegate_list_actions(void);
+void delegate_show_action_usage(const char *action_name);
 
 int delegate_action(const char *name_action,
                     const char *name_handle,
