@@ -331,23 +331,23 @@ declare -a rowdata=(
    Brother 18
 )
 # Create the handle
-if ate declare handle 2; then
+if ate \fBdeclare\fP handle 2; then
 
    # Add data to the handle
-   ate append_data handle \(dq${rowdata[@]}\(dq
+   ate \fBappend_data\fP handle \(dq${rowdata[@]}\(dq
 
    # Read a row from the handle
-   ate get_row handle 1
+   ate \fBget_row\fP handle 1
    echo "${ATE_ARRAY[0]} is ${ATE_ARRAY[1]} years old"
 
    # Read another row, saving to a non-default variable
-   ate get_row handle -a recarr 2
+   ate \fBget_row\fP handle -a recarr 2
    echo "${recarr[0]} is ${recarr[1]} years old"
 
    # Update the record and write back to the table
    echo "It's ${recarr[0]}'s birthday, update their age."
    (( ++recarr[1] ))
-   ate put_row handle 2 recarr
+   ate \fBput_row\fP handle 2 recarr
 fi
 .EE
 
