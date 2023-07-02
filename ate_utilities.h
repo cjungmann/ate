@@ -31,6 +31,11 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval,
                                    const char *name,
                                    int attributes);
 
+int clone_range_to_array(SHELL_VAR **new_array,
+                         ARRAY *source_array,
+                         int el_count,
+                         const char *name);
+
 int invoke_shell_function(SHELL_VAR *function, ...);
 
 
