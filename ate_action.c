@@ -691,10 +691,11 @@ int action_sort_qsort_callback(const void *left, const void *right, void *arg)
 
 /**
  * @brief Make a sorted index
- * @param "name_handle"   ignored
+ * @param "name_handle"   initialized ate handle
  * @param "name_value"    ignored
  * @param "name_array"    ignored
- * @param "extra"         ignored
+ * @param "extra"         extra[0] should be sort function name
+ *                        extra[1] should be the handle name to use
  *
  * @return EXECUTION_SUCCESS
  */
