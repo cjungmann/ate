@@ -46,6 +46,9 @@ ATE_AGENT agent_pool[] = {
       "Get the size of the longest element of each table field.",
       "ate get_field_sizes name_handle [-a result_array]"
    }
+   , { "sort", ate_action_sort, "quick-sort rows",
+      "ate sort name_handle name_callback"
+   }
    , { "walk_rows", ate_action_walk_rows, "invoke callback function with each row in table",
       "ate walk_rows name_handle name_callback [start_row] [row_count]"
    }
