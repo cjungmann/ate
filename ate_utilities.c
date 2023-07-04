@@ -265,7 +265,10 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
    return ate_error_var_not_found(name);
 }
 
-int clone_range_to_array(SHELL_VAR **new_array, ARRAY *source_array, int el_count, const char *name)
+int clone_range_to_array(SHELL_VAR **new_array,
+                         ARRAY_ELEMENT *starting_element,
+                         int el_count,
+                         const char *name)
 {
    int retval = EXECUTION_SUCCESS;
 
@@ -285,14 +288,12 @@ int clone_range_to_array(SHELL_VAR **new_array, ARRAY *source_array, int el_coun
    }
 
    int index = 0;
-   ARRAY_ELEMENT *source_head = array_head(source_array);
-   ARRAY_ELEMENT *source_ptr = source_head->next;
+   ARRAY_ELEMENT *source_ptr = starting_element;
    for (;
-        index < el_count && source_ptr != source_head;
-        ++index, source_ptr = source_ptr->next)
-   {
+        index < el_count && source_ptr->ind != -1;
+        ++index, source_ptr = source_ptr->next
+        )
       array_insert(target_array, index, savestring(source_ptr->value));
-   }
 
    if (index < el_count)
       retval = ate_error_corrupt_table();

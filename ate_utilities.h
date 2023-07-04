@@ -32,7 +32,7 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval,
                                    int attributes);
 
 int clone_range_to_array(SHELL_VAR **new_array,
-                         ARRAY *source_array,
+                         ARRAY_ELEMENT *starting_element,
                          int el_count,
                          const char *name);
 
