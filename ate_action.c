@@ -762,12 +762,19 @@ int ate_action_sort(const char *name_handle,
               action_sort_qsort_callback,
               (void*)&pkg);
 
+      // Discard variables only needed during qsort_r
       unbind_variable(name_return);
       unbind_variable(name_right);
       unbind_variable(name_left);
       unbind_variable(name_return);
 
-      
+      if (ate_install_head_in_handle(NULL, name_new_handle, head))
+         retval = EXECUTION_SUCCESS;
+      else
+      {
+         xfree(head);
+         retval = ate_error_failed_to_make_handle("installation of sorted head failed");
+      }
    }
 
   early_exit:
