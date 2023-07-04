@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+enable -f ../ate.so ate
+
+declare -a sources=(
+    car      motor
+    train    rails
+    bicycle  spokes
+    bus      seats
+    airplane wings
+    sailboat sail
+)
+
+declare format_str
+
+make_format_string()
+{
+    local -n mfs_string="$1"
+    local -n mfs_widths="$2"
+
+    local -a fs_parts=()
+    local delim=""
+    local -i width
+    for width in "${mfs_widths[@]}"; do
+        fs_parts+=( "$delim" "%-${width}s" )
+        delim=" "
+    done
+
+    local IFS=''
+    mfs_string="${fs_parts[*]}\n"
+}
+
+line_print()
+{
+    local -i row_num="$1"
+    local -n lp_row="$2"
+
+    printf "$format_str" "${lp_row[@]}"
+}
+
+sort_func()
+{
+    local -n sf_return="$1"
+    local -n sf_left="$2"
+    local -n sf_right="$3"
+
+    local left_val="${sf_left[$sort_col]}"
+    local right_val="${sf_right[$sort_col]}"
+
+    if [[ "$left_val" < "$right_val" ]]; then
+        sf_return=-1
+    elif [[ "$left_val" > "$right_val" ]]; then
+        sf_return=1
+    else
+        sf_return=0
+    fi
+
+    return 0
+}
+
+report_dimensions()
+{
+    local -n rd_handle="$1"
+    ate get_row_count rd_handle
+    echo "There are $ATE_VALUE rows"
+    ate get_row_size rd_handle
+    echo "There are $ATE_VALUE fields per row"
+}
+
+if ate declare handle sources 2; then
+
+    # report_dimensions "handle"
+    # echo
+
+    echo "Sorting on each column"
+    declare -i sort_col
+    sort_col=0
+    ate sort handle sort_func col1_handle
+    sort_col=1
+    ate sort handle sort_func col2_handle
+
+    echo
+    echo "Making a format string"
+    if ate get_field_sizes handle col_widths; then
+        echo "col_widths are ${col_widths[*]}"
+        make_format_string format_str col_widths
+        echo
+    else
+        format_str="%s %s\n"
+    fi
+
+    echo "Display table in original order"
+    ate walk_rows handle line_print
+
+    echo
+    echo "Display table with ascending column 1 values"
+    ate walk_rows col1_handle line_print
+
+    echo
+    echo "Display table with ascending column 2 values"
+    ate walk_rows col2_handle line_print
+else
+    echo "Failed to create table"
+    exit 1
+fi
+
+
+
+
