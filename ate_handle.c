@@ -171,6 +171,20 @@ bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
    return False;
 }
 
+/**
+ * @brief Manage reuse or creation of new SHELL_VAR for a handle
+ *
+ * Create or reuse a SHELL_VAR as a handle containing a AHEAD
+ * instance.  For actions that create a handle without using it,
+ * passing NULL to the @p handle argument will allow the calling
+ * function to omit allocating an unnecessary pointer variable.
+ *
+ * @param "handle"  [out]  where new handle is returned.  Pass a NULL
+ *                         value if the handle is not needed for use.
+ * @param "name"    [in]   name for the new SHELL_VAR
+ * @param "head"    [in]   an initialized AHEAD memory block
+ * @return False if failed to secure an appropriate SHELL_VAR
+ */
 bool ate_install_head_in_handle(SHELL_VAR **handle,
                                const char *name,
                                AHEAD *head)
@@ -185,7 +199,11 @@ bool ate_install_head_in_handle(SHELL_VAR **handle,
       ate_dispose_variable_value(svar);
       svar->value = (char*)head;
       svar->attributes |= att_special;
-      *handle = svar;
+
+      // only return new svar if we have somewhere to save it:
+      if (handle)
+         *handle = svar;
+
       return True;
    }
 
@@ -195,6 +213,14 @@ bool ate_install_head_in_handle(SHELL_VAR **handle,
    return False;
 }
 
+/**
+ * @brief Create and return a new SHELL_VAR handle for an array
+ *
+ * @param "retval"   [out] address for access to the new handle SHELL_VAR
+ * @param "name"     [in]  name to use for new SHELL_VAR
+ * @param "array"    [in]  array to use as table's source
+ * @param "row_size" [in]  number of elements for each table row
+ */
 bool ate_create_handle(SHELL_VAR **retval,
                        const char *name,
                        SHELL_VAR *array,
