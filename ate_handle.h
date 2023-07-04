@@ -48,14 +48,19 @@ bool ate_initialize_row_pointers(AHEAD *target,
                                  SHELL_VAR *source,
                                  int row_size,
                                  int row_count);
-bool ate_create_indexed_handle(AHEAD **handle,
-                               SHELL_VAR *array,
-                               int row_size);
 
-int ate_create_handle(SHELL_VAR **retval,
-                      const char *name,
-                      SHELL_VAR *array,
-                      int row_size);
+bool ate_create_indexed_head(AHEAD **head,
+                             SHELL_VAR *array,
+                             int row_size);
+
+bool ate_install_head_in_handle(SHELL_VAR **handle,
+                               const char *name,
+                               AHEAD *head);
+
+bool ate_create_handle(SHELL_VAR **retval,
+                       const char *name,
+                       SHELL_VAR *array,
+                       int row_size);
 /** @} */
 
 ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *head, int index);

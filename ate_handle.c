@@ -130,7 +130,7 @@ bool ate_initialize_row_pointers(AHEAD *target, SHELL_VAR *source, int row_size,
  *        suitable for saving to a SHELL_VAR::value member and will require no
  *        deallocation processes beyond simply freeing the memory.
  *
- * @param "handle"   [out] pointer-to-pointer through which the new AHEAD memory
+ * @param "head"     [out] pointer-to-pointer through which the new AHEAD memory
  *                         block will be returned.
  * @param "array"    [in]  variable declared as an array with `-a`
  * @param "row_size" [in]  number of elements per row to use when calculating
@@ -138,7 +138,7 @@ bool ate_initialize_row_pointers(AHEAD *target, SHELL_VAR *source, int row_size,
  *
  * @return True if succeeded, False if failed.
  */
-bool ate_create_indexed_handle(AHEAD **handle, SHELL_VAR *array, int row_size)
+bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
 {
    if (array && array_p(array))
    {
@@ -149,56 +149,65 @@ bool ate_create_indexed_handle(AHEAD **handle, SHELL_VAR *array, int row_size)
          // of pointers to ARRAY_ELEMENT for indexed access
          int row_count = el_count / row_size;
          size_t mem_required = ate_calculate_head_size(row_count);
-         AHEAD *head = (AHEAD*)xmalloc(mem_required);
+         AHEAD *temp_head = (AHEAD*)xmalloc(mem_required);
 
-         if (head)
+         if (temp_head)
          {
-            if (ate_initialize_head(head, array, row_size))
+            if (ate_initialize_head(temp_head, array, row_size))
             {
-               if (ate_initialize_row_pointers(head, array, row_size, row_count))
+               if (ate_initialize_row_pointers(temp_head, array, row_size, row_count))
                {
-                  head->row_count = row_count;
-                  *handle = head;
+                  temp_head->row_count = row_count;
+                  *head = temp_head;
                   return True;
                }
             }
 
-            xfree(head);
+            // Discard memory if still running this function
+            xfree(temp_head);
          }
       }
    }
    return False;
 }
 
-
-int ate_create_handle(SHELL_VAR **retval,
-                      const char *name,
-                      SHELL_VAR *array,
-                      int row_size)
+bool ate_install_head_in_handle(SHELL_VAR **handle,
+                               const char *name,
+                               AHEAD *head)
 {
-   // To signal variable should be unbound if we fail
    SHELL_VAR *newvar = NULL;
-
    SHELL_VAR *svar = find_variable(name);
-   if (!svar)
+   if (svar == NULL)
       svar = newvar = bind_variable(name, "", att_special);
 
    if (svar)
    {
-      AHEAD *head = NULL;
-      if (ate_create_indexed_handle(&head, array, row_size))
-      {
-         ate_dispose_variable_value(svar);
-         svar->value = (char*)head;
-         svar->attributes |= att_special;
-         *retval = svar;
-         return True;
-      }
+      ate_dispose_variable_value(svar);
+      svar->value = (char*)head;
+      svar->attributes |= att_special;
+      *handle = svar;
+      return True;
    }
 
-   // We failed...
    if (newvar)
       dispose_variable(newvar);
+
+   return False;
+}
+
+bool ate_create_handle(SHELL_VAR **retval,
+                       const char *name,
+                       SHELL_VAR *array,
+                       int row_size)
+{
+   AHEAD *head = NULL;
+   if (ate_create_indexed_head(&head, array, row_size))
+   {
+      if (ate_install_head_in_handle(retval, name, head))
+         return True;
+
+      xfree(head);
+   }
 
    return False;
 }
