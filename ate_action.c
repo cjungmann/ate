@@ -576,12 +576,12 @@ int ate_action_update_index (const char *name_handle, const char *name_value,
       goto early_exit;
    }
 
-   AHEAD *handle = ahead_cell(shandle);
-   AHEAD *new_handle = NULL;
-   if (ate_create_indexed_handle(&new_handle, handle->array, handle->row_size))
+   AHEAD *old_head = ahead_cell(shandle);
+   AHEAD *new_head = NULL;
+   if (ate_create_indexed_head(&new_head, old_head->array, old_head->row_size))
    {
-      shandle->value = (char*)new_handle;
-      free(handle);
+      shandle->value = (char*)new_head;
+      free(old_head);
       retval = EXECUTION_SUCCESS;
    }
 
@@ -645,6 +645,135 @@ int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
   early_exit:
    return retval;
 }
+
+struct qsort_package {
+   ARRAY *source_array;
+   int row_size;
+   SHELL_VAR *callback_func;
+   SHELL_VAR *return_var;
+   const char *name_left;
+   const char *name_right;
+};
+
+int action_sort_qsort_callback(const void *left, const void *right, void *arg)
+{
+   int exitval;
+   struct qsort_package *pkg = (struct qsort_package*)arg;
+
+   SHELL_VAR *sv_left = NULL;
+   exitval = clone_range_to_array(&sv_left,
+                                  *(ARRAY_ELEMENT**)left,
+                                  pkg->row_size,
+                                  pkg->name_left);
+
+   assert(exitval==EXECUTION_SUCCESS);
+
+
+   SHELL_VAR *sv_right = NULL;
+   exitval = clone_range_to_array(&sv_right,
+                                  *(ARRAY_ELEMENT**)right,
+                                  pkg->row_size,
+                                  pkg->name_right);
+   assert(exitval==EXECUTION_SUCCESS);
+
+   if (invoke_shell_function(pkg->callback_func,
+                             pkg->return_var->name,
+                             pkg->name_left,
+                             pkg->name_right,
+                             NULL))
+   {
+      printf("Returned a failure (sob).\n");
+      return 0;
+   }
+   else
+      return atoi(pkg->return_var->value);;
+}
+
+/**
+ * @brief Make a sorted index
+ * @param "name_handle"   ignored
+ * @param "name_value"    ignored
+ * @param "name_array"    ignored
+ * @param "extra"         ignored
+ *
+ * @return EXECUTION_SUCCESS
+ */
+int ate_action_sort(const char *name_handle,
+                    const char *name_value,
+                    const char *name_array,
+                    WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval)
+      goto early_exit;
+
+   const char *callback_name = NULL;
+   SHELL_VAR *callback_func = NULL;
+   if (get_string_from_list(&callback_name, extra, 0))
+   {
+      callback_func = find_function(callback_name);
+      if (callback_func == NULL)
+      {
+         retval = ate_error_function_not_found(callback_name);
+         goto early_exit;
+      }
+   }
+
+   // A name for a new handle variable is required
+   const char *name_new_handle = NULL;
+   if (!get_string_from_list(&name_new_handle, extra, 1))
+   {
+      retval = ate_error_missing_arguments("sort");
+      goto early_exit;
+   }
+
+   AHEAD *head = NULL;
+   if (ate_create_indexed_head(&head, handle->array, handle->row_size))
+   {
+      static const char name_stem[] = "ATE_QSORT_VAR_";
+      int buffer_len = strlen(name_stem) + 5;   // '9999\0'
+      char *name_return = (char*)alloca(buffer_len);
+      char *name_left = (char*)alloca(buffer_len);
+      char *name_right = (char*)alloca(buffer_len);
+
+      __attribute((unused)) SHELL_VAR *sv_return, *sv_left, *sv_right;
+
+      // Bind names to variables or the name won't be reserved
+      make_unique_name(name_return, buffer_len, name_stem);
+      sv_return = bind_variable(name_return, "", 0);
+      make_unique_name(name_left, buffer_len, name_stem);
+      sv_left = make_new_array_variable(name_left);
+      make_unique_name(name_right, buffer_len, name_stem);
+      sv_right = make_new_array_variable(name_right);
+
+      struct qsort_package pkg = {
+         array_cell(head->array),
+         head->row_size,
+         callback_func,
+         bind_variable(name_return, "", 0),
+         name_left,
+         name_right
+      };
+
+      qsort_r(&head->rows,
+              head->row_count,
+              sizeof(ARRAY_ELEMENT*),
+              action_sort_qsort_callback,
+              (void*)&pkg);
+
+      unbind_variable(name_return);
+      unbind_variable(name_right);
+      unbind_variable(name_left);
+      unbind_variable(name_return);
+
+      
+   }
+
+  early_exit:
+   return retval;
+}
+
 
 /**
  * @brief Initiates a series of invocations of a callback function
