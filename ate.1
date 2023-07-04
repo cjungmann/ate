@@ -2,21 +2,21 @@
 .de arg_handle
 .   TP
 .   I handle_name
-The name of an initialized
+the name of an initialized
 .   B ate
 handle
 ..
 .de arg_return_value
 .   TP
 .   BI "-v " value_name
-The name of the variable in which the result will be returned.
+the name of the variable in which the result will be returned.
 Without this option, the result will be returned in
 .   BR ATE_VALUE .
 ..
 .de arg_return_array
 .   TP
 .   BI "-a " array_name
-The name of the array variable in which the result will be
+the name of the array variable in which the result will be
 returned.
 Without this option, the result will be returned in
 .   BR ATE_ARRAY .
@@ -66,6 +66,28 @@ script, the syntax to enable a loadable builtin is:
 .EX
 enable -f /path/to/ate.so ate
 .EE
+.SH RETURN VARIABLES
+.PP
+When an action returns information, the value is, by default, saved to
+either
+.BR ATE_VALUE " and " ATE_ARRAY
+according to the return type.
+This is done to avoid incurring the subprocess performance
+penalty.
+.PP
+Alternate return variables can be specified with the
+.BR -v " and " -a
+options, which specify new names for the single and array return
+variables.
+.PP
+In general, use the default return variable names if the value will
+be used only once immediately after requesting the value.
+Override the return variables if the return value will still be needed
+after another action might overwrite the return value.
+.PP
+The
+.B EXAMPLES
+section below shows a variety of return variable manipulations.
 .SH ATE ACTIONS
 .SS LIST_ACTIONS
 .PP
@@ -117,6 +139,10 @@ will be set to 1 if
 .I row_size
 is not specified.
 .RE
+.PP
+Refer to
+.B DECLARE EXAMPLE
+below.
 .SS APPEND_DATA
 .PP
 Use this action to add rows to the table.
@@ -141,6 +167,10 @@ when finished appending data to access the new rows.
 .RI "[ " "value ..." " ]"
 The values to be appended to the hosted array.
 .RE
+.PP
+Refer to
+.B DECLARE EXAMPLE
+below.
 .SS UPDATE_INDEX
 .PP
 Generates an index into the elements of the hosted array,
@@ -153,8 +183,11 @@ actions rely on the index being up-to-date.
 .I handle_name
 .RS 4
 .arg_handle
-The name of an initialized handle variable
 .RE
+.PP
+Refer to
+.B DECLARE EXAMPLE
+below.
 .SS GET_ROW_COUNT
 .PP
 Get the number of indexed rows in the table.
@@ -166,6 +199,10 @@ Get the number of indexed rows in the table.
 .arg_handle
 .arg_return_value
 .RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+below.
 .SS GET_ROW_SIZE
 .PP
 Returns the number of fields in a row.
@@ -180,6 +217,10 @@ action when the handle is initialized.
 .arg_handle
 .arg_return_value
 .RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+below.
 .SS GET_ARRAY_NAME
 .PP
 This action returns the name of the array on which the table is
@@ -195,6 +236,30 @@ action, this action is how one learns the name of the hosted array.
 .arg_handle
 .arg_return_value
 .RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+below.
+.SS GET_FIELD_SIZES
+.PP
+Returns an array whose elements contain the length of the longest
+string for each field in the table.
+Use these numbers to inform formatting of the table on a printout.
+.PP
+.B
+ate get_field_sizes
+.I handle_name
+.RB "[ " "-a \fIarrayname\fP" " ]"
+.RS 4
+.arg_handle
+.arg_return_array
+.RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+for basic usage, and look at the
+.B FORMATTED TABLE EXAMPLE
+for a more advanced usage.
 .SS GET_ROW
 .PP
 Read the contents of a virtual row into an array
@@ -208,10 +273,14 @@ Read the contents of a virtual row into an array
 .TP
 .I row_index
 is the row number that should be retrieved.  The index value is
-zero-based, that is a row index of 0 \(sq0\(sq returns the first
+zero-based, that is a row index of 0 \(aq0\(aq returns the first
 record.
 .arg_return_array
 .RE
+.PP
+Refer to
+.B GET_ROW EXMPLE
+below.
 .SS PUT_ROW
 .PP
 Updates a table row with the contents of a source array.
@@ -259,20 +328,10 @@ required name of the array with the values that should replace
 the values of the row indicated by
 .IR row_index .
 .RE
-.SS GET_FIELD_SIZES
 .PP
-Returns an array whose elements contain the length of the longest
-string for each field in the table.
-Use these numbers to inform formatting of the table on a printout.
-.PP
-.B
-ate get_field_sizes
-.I handle_name
-.RB "[ " "-a \fIarrayname\fP" " ]"
-.RS 4
-.arg_handle
-.arg_return_array
-.RE
+Refer to
+.B PUT_ROW EXMPLE
+below.
 .SS WALK_ROWS
 .PP
 Invokes a callback function with the row index and contents of the
@@ -305,52 +364,216 @@ row to be sent to the callback function.
 If specified (following the
 .IR starting_row ),
 this is the number of rows to send to the callback function.
+.RE
 .PP
-Example:
+Refer to
+.BR "WALK_ROWS EXAMPLE " and " FORMATTED TABLE EXAMPLE"
+below.
+.SS SORT
 .PP
+Create a duplicate table handle with the rows sorted based
+on the order imposed by a callback function.
+This action exposes the C-library
+.B qsort
+function for use in a Bash script.
+.PP
+.B ate sort
+.I handle_name sort_function sorted_handle_name
+.RS 4
+.arg_handle
+.TP
+.I sort_function
+the name of a script callback function that will report the
+relative order of two given rows
+.TP
+.I sorted_handle_name
+the requested name for the new sorted handle
+.RE
+.PP
+The
+.I sort_function
+will get three SHELL_VAR names, the first of the variable in
+which the comparison result will be returned, the second is the
+left-hand row, and the third argument is the name of the right-hand
+row.
+.PP
+The three arguments should be assigned to
+.B name_ref
+variables.
+.PP
+Refer to
+.B SORT EXAMPLE
+below.
+.SH EXAMPLES
+.PP
+A picture is worth a thousand words, likewise, an example may be more
+useful than pages of documentation.
+.SS DECLARE EXAMPLE
+.PP
+An
+.B ate
+handle begins with an array.
+There are two methods:
+.IP
+.EX
+declare -a pets=(
+   dog bark
+   cat meow
+   goat bleat
+   duck quack
+   cow moo
+
+// Method 1, use existing array
+ate \fBdeclare\fP pet_handle 2 pets
+
+// Method 2, using anonymous array, filled in second step
+ate \fBdeclare\fP pet_handle 2
+ate \fBappend_data\fP pet_handle \(dq${pets[@]}\(dq
+
+# Must manually update index after \fBappend_data\fP
+ate \fBupdate_index\fP pet_handle
+.EE
+.SS GET INFO EXAMPLES
+.PP
+There are some informational actions, as shown:
+.IP
+.EX
+ate \fBget_array_name\fP pet_handle
+echo \(dqArray name is $ATE_VALUE\(dq
+
+ate \fBget_row_count\fP pet_handle -v row_count
+echo \(dqRow count is $row_count\(dq
+
+ate \fBget_row_size\fP pet_handle -v row_size
+echo \(dqRow size is $row_size\(dq
+
+ate \fBget_field_sizes\fP pet_handle -a col_sizes
+echo \(dqField sizes are ${col_sizes[*]}\(dq
+.EE
+.SS GET_ROW EXAMPLE
+.PP
+Access a table row by 0-based index.
+Since the return value is an array, use
+.B -a
+to specify a result variable name.
+.IP
+.EX
+ate \fBget_row\fP pet_handle 0
+echo \(dqfirst row is ${ATE_ARRAY[*]}\(dq
+ate \fBget_row\fP pet_handle 1 -a pet_row
+echo \(dqsecond row is ${pet_row[*]}\(dq
+.EE
+.SS PUT_ROW EXAMPLE
+.PP
+The script must take care to keep the row and its row number
+in sync.
+.IP
+.EX
+declare -i dog_row=0
+ate \fBget_row\fP pet_handle \(dq$dog_row\(dq -a pet_row
+
+# change second column and update table
+pet_row[1]="bow-wow"
+ate \fBput_row\fP pet_handle \(dq$dog_row\(dq pet_row
+.EE
+.SS WALK_ROWS EXAMPLE
+.PP
+The
+.B walk_rows
+action invokes a callback function for each row:
+.IP
 .EX
 display_row()
 {
    local -i row_num=\(dq$1\(dq
-   local -n row_array=\(dq$2\(dq
+   # try to avoid name collisions with nameref variables:
+   local -n ur_row=\(dq$2\(dq
 
-   printf "%2d) %s\n" "$row_num" "${row_array[*]}"
+   printf \(dq%s makes a %s\(rsn\(dq \(dq${ur_row[*]}\(dq
+
+   # Return 0 to continue, non-zero to terminate row walk:
    return 0
 }
 
-ate walk_rows handle display_row
+ate \fBwalk_rows\fP pet_handle display_row
 .EE
-.RE
-.SH EXAMPLE
+.SS SORT EXAMPLE
 .PP
+Like
+.BR walk_rows ", the " sort " action"
+employes a callback function for flexible ordering:
+.IP
 .EX
-declare -a rowdata=(
-   Mom     45
-   Dad     48
-   Sister  21
-   Brother 18
-)
-# Create the handle
-if ate \fBdeclare\fP handle 2; then
+compare_names()
+{
+   local -n cr_result=\(dq$1\(dq
+   local -n cr_left=\(dq$2\(dq
+   local -n cr_right=\(dq$3\(dq
 
-   # Add data to the handle
-   ate \fBappend_data\fP handle \(dq${rowdata[@]}\(dq
+   # isolate thd column on which we're sorting
+   local name_left=\(dq${cr_left[0]}\(dq
+   local name_right=\(dq${cr_right[0]}\(dq
 
-   # Read a row from the handle
-   ate \fBget_row\fP handle 1
-   echo "${ATE_ARRAY[0]} is ${ATE_ARRAY[1]} years old"
+   if [[ \(dq$left\(dq < \(dq$right\(dq ]]; then
+      cr_result=-1
+   elif [[ \(dq$right\(dq < \(dq$left\(dq ]]; then
+      cr_result=1
+   else
+      cr_result=0
+   fi
 
-   # Read another row, saving to a non-default variable
-   ate \fBget_row\fP handle -a recarr 2
-   echo "${recarr[0]} is ${recarr[1]} years old"
+   return 0
+}
 
-   # Update the record and write back to the table
-   echo "It's ${recarr[0]}'s birthday, update their age."
-   (( ++recarr[1] ))
-   ate \fBput_row\fP handle 2 recarr
-fi
+# Create (and use) sorted handle:
+ate \fBsort\fP pet_handle compare_names pets_by_name
+ate \fBwalk_rows\fP pets_by_name display_row
 .EE
+.SS FORMATTED TABLE EXAMPLE
+.PP
+Tables with aligned columns are easier to read.
+Use
+.B ate
+actions
+.BR get_field_sizes " and " walk_rows
+to produce an aligned-column table display by constructing
+a custom
+.B printf
+format string based on the maximum string lengths of each field.
+.IP
+.EX
+make_format_string()
+{
+   local -n mfs_string=\(dq$1\(dq
+   local -n mfs_colsizes=\(dq$2\(dq
 
+   local -a fs_parts=()
+   local delim=\(dq\(dq
+   local -i width
+   for width in \(dq${mfs_widths[@]}\(dq; do
+       fs_parts+=( \(dq$delim\(dq \(dq%-${width}s\(dq )
+       delim=\(dq \(dq
+   done
+
+   local IFS=$\(aq\(aq
+   mfs_string=\(dq${fs_parts[*]}\(rsn\(dq
+}
+
+ate \fBget_field_sizes\fP pet_handle
+declare format_str
+
+# Passing name, not value of ATE_ARRAY variable,
+# don't add the \(aq$\(aq prefix:
+make_format_string \(dqformat_str\(dq \(dqATE_ARRAY\(dq
+
+# Use the format string to display rows:
+display_with_format_string()
+{
+   local -n fwfs_row=\(dq$2\(dq
+   printf \(dq$format_str\(dq \(dq${fwfs_row[@]}\(dq
+}
+ate \fBwalk_rows\fP pet_handle display_with_format_string
+.EE
 
 .SH WARNINGS
 .TP
