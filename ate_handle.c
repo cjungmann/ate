@@ -6,7 +6,7 @@ static const char AHEAD_ID[] = "ATE_HANDLE";
 /**
  * @brief Identify AHEAD SHELL_VAR
  * @param "var"   SHELL_VAR to be identified
- * @param True if `var` is a AHEAD, False if not
+ * @return True if `var` is a AHEAD, False if not
  *
  * Since attribute `att_special` is not specific, identifying an AHEAD
  * is a two-step process, confirm `att_special` attribute, then cast
@@ -256,10 +256,9 @@ ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *handle, int index)
 }
 
 /**
- * @brief Returns an ARRAY_ELEMENT indicated by index
+ * @brief Returns the ARRAY's head ARRAY_ELEMENT
  * @param "handle" an initialized AHEAD handle pointer
- * @param "index"  row number requested
- * @return The indicated ARRAY_ELEMENT*, null if out-of-range
+ * @return the indicated ARRAY_ELEMENT*, null @p handle is NULL
  *
  * Assumed by be called by code that has previously acquired
  * the @ref AHEAD pointer from a SHELL_VAR.
