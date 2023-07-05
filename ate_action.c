@@ -739,7 +739,6 @@ int ate_action_sort(const char *name_handle,
       sv_right = make_new_array_variable(name_right);
 
       struct qsort_package pkg = {
-         array_cell(head->array),
          head->row_size,
          callback_func,
          bind_variable(name_return, "", 0),
