@@ -6,6 +6,11 @@
 
 #include "ate_handle.h"
 
+/**
+ * @brief Minimum viable action function, with allowance for
+ *        additional action-specific parameters made by the
+ *        @p extra parameter.
+ */
 typedef int (*ATE_ACTION)(const char *name_handle,
                           const char *name_value,
                           const char *name_array,
@@ -51,16 +56,32 @@ int ate_action_sort(const char *name_handle, const char *name_value,
 int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra);
 
+/**
+ * @brief Used by @ref ate_action_sort to deliver context information
+ *        to the `qsort_r` callback function.
+ *
+ * For efficiency, some resources are allocated before calling
+ * `qsort_r` and passed along to the comparison function to save
+ * repeated existence test and allocation of reusable shell variables.
+ */
+struct qsort_package {
+   int row_size;              ///< number of elements to put in comparison arrays
+   SHELL_VAR *callback_func;  ///< script callback function to make the comparison
+   SHELL_VAR *return_var;     ///< pre-allocated return value shell variable
+   const char *name_left;     ///< pre-allocated left comparison shell variable
+   const char *name_right;    ///< pre-allocated right comparison shell variable
+};
 
-
-
-
-
+/**
+ * @brief Used to map action strings to the action functions for
+ *        @ref delegate_action and as a source of help display content
+ *        for @ref delegate_list_actions and @ref delegate_show_action_usage.
+ */
 typedef struct action_agent {
-   const char *name;
-   ATE_ACTION action;
-   const char *description;
-   const char *usage;
+   const char *name;          ///< string used to invoke an action
+   ATE_ACTION action;         ///< pointer to function handling the action
+   const char *description;   ///< describes action's objective
+   const char *usage;         ///< usage string
 } ATE_AGENT;
 
 /** @brief Found in ate_delegate.c
