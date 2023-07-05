@@ -18,7 +18,7 @@
 
 
 
-/**
+/*****
  * @brief TEMPLATE
  * @param "name_handle"   name of the reference handle
  * @param "name_value"    ignored
@@ -69,10 +69,9 @@ int ate_action_show_action(const char *name_handle,
  * @param "name_handle"   name of handle to create
  * @param "name_value"    ignored
  * @param "name_array"    ignored
- * @param "extra"         may include one or two options:
+ * @param "extra"         may include zero, one. or two options:
  *                        - the first number argument will be taken as
  *                          the row_size value.
- *                        - optional row size value (integer).  The
  *                        - the first non-number argument will be taken
  *                          as the desired array name.  If the array
  *                          already exists, it will be confirmed as an
@@ -313,7 +312,7 @@ int ate_action_get_array_name(const char *name_handle,
  * This function fills a small array with the contents of the
  * virtual row indicated by the row index.  Changes to the contents
  * of the result array will not be written back to the source table
- * unless it is submitted back with @ref act_action_put_row.
+ * unless it is submitted back with @ref ate_action_put_row.
  *
  * @return EXECUTION_SUCCESS or an error code upon failure
  *        (refer to `include/bash/shell.h`).
@@ -645,15 +644,6 @@ int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
   early_exit:
    return retval;
 }
-
-struct qsort_package {
-   ARRAY *source_array;
-   int row_size;
-   SHELL_VAR *callback_func;
-   SHELL_VAR *return_var;
-   const char *name_left;
-   const char *name_right;
-};
 
 int action_sort_qsort_callback(const void *left, const void *right, void *arg)
 {
