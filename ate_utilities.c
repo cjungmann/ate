@@ -147,14 +147,14 @@ void ate_dispose_variable_value(SHELL_VAR *var)
 }
 
 /**
- * @brief Find and dipose value of existing variable, or make new one
+ * @brief Make or reuse a SHELL_VAR of the specified name.
  *
  * First search for an existing variable of the specified @p name,
  * create one if not found, then clean out whichever variable and set
  * the attributes.
  *
- * @param "var"  [out]   Pointer to which the SHELL_VAR will be returned
- * @param "name" [in]    Name to search or to use when creating a variable
+ * @param "name"       [in]  name of requested SHELL_VAR
+ * @param "attributes" [in]  attributes to be set on the SHELL_VAR
  * @return Prepared variable
  */
 SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes)
@@ -191,8 +191,8 @@ bool prepare_clean_array_var(SHELL_VAR **var, const char *name)
  *
  * This function will print error messages to stderr.
  *
- * @param "head" [out]  where value will be returned, if valid
- * @param "name" [in]   name of AHEAD handle being sought
+ * @param "head"        [out]  where value will be returned, if successful
+ * @param "name_handle" [in]   name of AHEAD handle being sought
  * @return EXECUTION_SUCCESS if found and validated, appropriate
  *         error value if not.
  */
@@ -265,6 +265,30 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
    return ate_error_var_not_found(name);
 }
 
+/**
+ * @brief Names a condition test for clarity in @ref clone_range_to_array.
+ * @param "el"   Element to test if it's the array head
+ * @return non-zero if the element is a head element, otherwise 0.
+ */
+inline bool array_element_is_head(ARRAY_ELEMENT *el) { el->ind == -1; }
+
+/**
+ * @brief Returns an array with a copy of a series of elements
+ *        from a source array.
+ *
+ * Used by @ref ate_action_sort and @ref ate_action_get_row
+ *
+ * @param "new_array"        [out]  Where the new or reused array
+ *                                  variable will be returned
+ * @param "starting_element" [in]   the first of a series of array
+ *                                  elements that will be copied to
+ *                                  the target array
+ * @param "el_count"         [in]   number of elements to copy
+ * @param "name"             [in]   name of variable to create or
+ *                                  reuse
+ *
+ * @return EXECUTION_SUCCESS or error code
+ */
 int clone_range_to_array(SHELL_VAR **new_array,
                          ARRAY_ELEMENT *starting_element,
                          int el_count,
@@ -290,7 +314,7 @@ int clone_range_to_array(SHELL_VAR **new_array,
    int index = 0;
    ARRAY_ELEMENT *source_ptr = starting_element;
    for (;
-        index < el_count && source_ptr->ind != -1;
+        index < el_count && ! array_element_is_head(source_ptr);
         ++index, source_ptr = source_ptr->next
         )
       array_insert(target_array, index, savestring(source_ptr->value));
