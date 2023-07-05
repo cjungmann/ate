@@ -1,3 +1,9 @@
+/**
+ * @file ate_handle.c
+ * @brief Code here manages tasks around allocating memory, identifying
+ *        by type, creating virtual row indicies.
+ */
+
 #include "ate_handle.h"
 #include "ate_utilities.h"
 

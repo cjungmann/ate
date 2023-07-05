@@ -1,3 +1,9 @@
+/**
+ * @file ate_delegate.c
+ * @brief Code here manages negotions for actions and printing help
+ *        pages by use of the ATE_AGENT array of actions.
+ */
+
 #include <builtins.h>
 #ifndef EXECUTION_FAILURE
 #include <shell.h>

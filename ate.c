@@ -1,4 +1,8 @@
-// -*- mode:c -*-
+/**
+ * @file ate.c
+ * @brief Effective `main` function `ate` to be exposed as a
+ *        loadable Bash builtin
+ */
 
 #include <builtins.h>
 
@@ -16,6 +20,13 @@
 #include "ate_action.h"
 #include "ate_errors.h"
 
+/**
+ * @brief effective `main` function, initial entry of an instance
+ *        of `ate`.
+ *
+ * @param "list"   list of command line arguments
+ * @return EXECUTION_SUCCESS or an error message.
+ */
 static int ate(WORD_LIST *list)
 {
    int retval = EXECUTION_SUCCESS;

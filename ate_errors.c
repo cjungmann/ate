@@ -1,3 +1,9 @@
+/**
+ * @file ate_errors.c
+ * Single location for printing error messages.  Prepares development
+ * to disable messages in a single place.
+ */
+
 #include <builtins.h>
 #ifndef EXECUTION_FAILURE
 #include <shell.h>

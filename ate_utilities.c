@@ -1,3 +1,9 @@
+/**
+ * @file ate_utilities.c
+ * @brief A collection of utilities not directly involved with specific
+ *        actions.
+ */
+
 #include "ate_utilities.h"
 #include "ate_errors.h"
 #include "word_list_stack.h"
@@ -8,7 +14,14 @@ extern int execute_command PARAMS((COMMAND *));
 #include <stdio.h>
 #include <stdarg.h>
 
-
+/**
+ * @brief Use name stem to find an unused SHELL_VAR name.
+ * @param "buffer"   [in,out]  memory to which the name will be written
+ * @param "bufflen"  [in]      size of the @p buffer
+ * @param "stem"     [in]      stem to use for new name
+ *
+ * @return True if successful finding a unique name
+ */
 bool make_unique_name(char *buffer, int bufflen, const char *stem)
 {
    int len = strlen(stem);
@@ -109,6 +122,12 @@ bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index)
    return False;
 }
 
+/**
+ * @brief Replace SHELL_VAR value with string representing an integer value.
+ * @param "result"   [in,out]  variable whose value is to be changed
+ * @param "value"    [in]      number to use for new value
+ * @return EXECUTION_SUCCESS if successful
+ */
 int set_var_from_int(SHELL_VAR *result, int value)
 {
    char *intstr = itos(value);
@@ -169,6 +188,12 @@ SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes)
    return svar;
 }
 
+/**
+ * @brief Create or reuse a SHELL_VAR as an ARRAY.
+ * @param "var"  [out]  where the new/reused SHELL_VAR is returned
+ * @param "name" [in]   name of requested variable
+ * @return True if successful
+ */
 bool prepare_clean_array_var(SHELL_VAR **var, const char *name)
 {
    SHELL_VAR *tvar;

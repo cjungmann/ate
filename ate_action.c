@@ -1,3 +1,8 @@
+/**
+ * @file ate_action.c
+ * @brief Functions callable through the `ate` interface.
+ */
+
 #include <builtins.h>
 
 // Prevent multiple inclusion of shell.h:
