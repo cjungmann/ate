@@ -11,10 +11,25 @@
 #include <builtins/bashgetopt.h>  // for internal_getopt(), etc
 #include <builtins/common.h>      // for no_options()
 
-typedef unsigned int bool;
-#define True (1)
-#define False (0)
 
+typedef enum {
+   False = 0,
+   True
+} bool;
+// typedef unsigned int bool;
+// #define True (1)
+// #define False (0)
+
+
+/**
+ * @brief working details of a table extension to a Bash ARRAY
+ *
+ * The information in this struct is used to perform the table
+ * extension actions of this builtin module.
+ *
+ * An **ate** handle SHELL_VAR will have a pointer to a memory
+ * block using this signature.
+ */
 typedef struct ate_head {
    const char *typeid;     ///< pointer to string array for confirming att_special type
    SHELL_VAR *array;       ///< array to which @p row elements will point
@@ -24,7 +39,9 @@ typedef struct ate_head {
 } AHEAD;
 
 /**
- * @brief Echo SHELL_VAR identification and cast conventions for AHEAD
+ * @defgroup Bash_Conventions Implementation of Bash Conventions
+ * @brief Use Bash builtins model for type-confirming and extracting
+ *        @ref AHEAD information from a SHELL_VAR
  * @{
  */
 bool ahead_p(const SHELL_VAR *var);
@@ -32,7 +49,9 @@ bool ahead_p(const SHELL_VAR *var);
 /** @} */
 
 /**
- * @brief Informational AHEAD methods
+ * @defgroup AHEAD_info AHEAD Measuring
+ * @brief Functions used to determine memory size requirements
+ *        when preparing a new AHEAD instance.
  * @{
  */
 size_t ate_calculate_head_size(int row_count);
@@ -40,6 +59,7 @@ int ate_get_element_count(const AHEAD *head);
 /** @} */
 
 /**
+ * @defgroup AHEAD_management Creating and managing AHEADs
  * @brief AHEAD memory-block allocation and construction
  * @{
  */
