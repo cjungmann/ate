@@ -422,6 +422,7 @@ declare -a pets=(
    goat bleat
    duck quack
    cow moo
+)
 
 // Method 1, use existing array
 ate \fBdeclare\fP pet_handle 2 pets
@@ -453,13 +454,12 @@ echo \(dqField sizes are ${col_sizes[*]}\(dq
 .SS GET_ROW EXAMPLE
 .PP
 Access a table row by 0-based index.
-Since the return value is an array, use
-.B -a
-to specify a result variable name.
 .IP
 .EX
 ate \fBget_row\fP pet_handle 0
 echo \(dqfirst row is ${ATE_ARRAY[*]}\(dq
+
+# Use -a option to override array result name
 ate \fBget_row\fP pet_handle 1 -a pet_row
 echo \(dqsecond row is ${pet_row[*]}\(dq
 .EE
