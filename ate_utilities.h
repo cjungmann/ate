@@ -12,6 +12,15 @@
 
 #include "ate_handle.h"
 
+/**
+ * @defgroup ATE_UTILITIES Miscellaneous Functions
+ *
+ * These functions handle needs that are not specific to any
+ * specific action.  Some exists simply to name a code objective to
+ * clarify an intention.  Others are here because they are used
+ * in multiple places.
+ */
+
 bool make_unique_name(char *buffer, int bufflen, const char *stem);
 
 bool get_string_from_list(const char **result, WORD_LIST *list, int index);
@@ -38,5 +47,6 @@ int clone_range_to_array(SHELL_VAR **new_array,
 
 int invoke_shell_function(SHELL_VAR *function, ...);
 
+/** @} */
 
 #endif
