@@ -4,6 +4,25 @@
  *        loadable Bash builtin
  */
 
+/**
+ * @mainpage
+ *
+ * Developers' Documentation for the **ate** Loadable Bash Builtin
+ *
+ * This doxygen-generated documentation is intended to discuss code
+ * design and objectives for developers who might want to make changes
+ * to the **ate** builtin.
+ *
+ * Documentation about the use of **ate** is contained in a **man**
+ * page (**ate(1)**).  The **man** page is for Bash script developers
+ * who want to use this utility.
+ *
+ * I have made functions' documentation available under the
+ * **Modules** main menu item by enclosing the function prototyes in
+ * @@defgroup structures.  It is a workaround against Doxygen's lame
+ * lack of direct access to function documentation.
+ */
+
 #include <builtins.h>
 
 // Prevent multiple inclusion of shell.h:
