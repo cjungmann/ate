@@ -7,6 +7,25 @@
 #include "ate_handle.h"
 
 /**
+ * @defgroup ATE_Actions Collection of table action functions.
+ *
+ * All of these functions conform to the @ref ATE_ACTION typedef,
+ * and this type-equivalence makes it possible for them to be part
+ * of an array of action information elements that includes a
+ * function pointer that can be used to invoke a specific action.
+ *
+ * With 3 exceptions, all actions require the name of an existing
+ * SHELL_VAR hosting an initialized @ref AHEAD structure.  The
+ * exceptions are two help-related actions, @ref ate_action_list_actions
+ * and @ref ate_action_show_action, and the initializer action,
+ * @ref ate_action_declare.
+ *
+ * The **man** page has complete information about the usage of
+ * these actions with example code fragments.
+ * @{
+ */
+
+/**
  * @brief Minimum viable action function, with allowance for
  *        additional action-specific parameters made by the
  *        @p extra parameter.
@@ -56,6 +75,13 @@ int ate_action_sort(const char *name_handle, const char *name_value,
 int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra);
 
+/** @} */
+
+/**
+ * @defgroup Action_Delegation Internal Action Delegation
+ * @{
+ */
+
 /**
  * @brief Used by @ref ate_action_sort to deliver context information
  *        to the `qsort_r` callback function.
@@ -84,9 +110,7 @@ typedef struct action_agent {
    const char *usage;         ///< usage string
 } ATE_AGENT;
 
-/** @brief Found in ate_delegate.c
- * @{
- */
+/* The following functions are found in ate_delegate.c */
 void delegate_list_actions(void);
 void delegate_show_action_usage(const char *action_name);
 

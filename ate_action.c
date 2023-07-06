@@ -54,6 +54,12 @@ int ate_action_list_actions(const char *name_handle,
 
 /**
  * @brief Display help screen
+ *
+ * This function repurposes the @p name_handle parameter to indicate
+ * for which specific action the command should display a more
+ * detailed help screen.  If @p name_handle is blank, the detailed
+ * help screen for each action will be displayed.
+ * 
  * @param "name_handle"   reinterpreted as a requested action name
  * @param "name_value"    ignored
  * @param "name_array"    ignored
