@@ -1,6 +1,15 @@
 #ifndef ATE_ERRORS_H
 #define ATE_ERRORS_H
 
+/**
+ * @defgroup Error_Functions Centralized Error Reporting
+ *
+ * All error reporting should go through these functions.  This
+ * makes it possible for a future version to make error-reporting
+ * optional.
+ * @{
+ */
+
 int ate_error_missing_action(void);
 int ate_error_handle_already_exists(const char *handle_name);
 int ate_error_failed_to_make_handle(const char *reason);
@@ -17,5 +26,7 @@ int ate_error_corrupt_table(void);
 int ate_error_invalid_row_size(int requested);
 int ate_error_record_out_of_range(int requested, int limit);
 int ate_error_unexpected(void);
+
+/** @} */
 
 #endif
