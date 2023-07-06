@@ -11,15 +11,22 @@
 #include <builtins/bashgetopt.h>  // for internal_getopt(), etc
 #include <builtins/common.h>      // for no_options()
 
+/**
+ * @defgroup HANDLE_Resources AHEAD and ATE Handle Resources
+ *
+ * These functions and structs manage the creation of and access to
+ * an AHEAD instance.
+ * @{
+ */
 
+/**
+ * @brief To distinguish an error status *int* return value from a
+ *        true/false *int* return value.
+ */
 typedef enum {
    False = 0,
    True
 } bool;
-// typedef unsigned int bool;
-// #define True (1)
-// #define False (0)
-
 
 /**
  * @brief working details of a table extension to a Bash ARRAY
@@ -86,7 +93,7 @@ bool ate_create_handle(SHELL_VAR **retval,
 ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *head, int index);
 ARRAY_ELEMENT* ate_get_array_head(AHEAD *head);
 
-
+/** @} */
 
 
 
