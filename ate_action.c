@@ -445,30 +445,41 @@ int ate_action_put_row(const char *name_handle,
    // Get source array variable, terminate for problem.
    SHELL_VAR *source_array_var = NULL;
    const char *array_name = NULL;
-   if (get_string_from_list(&array_name, extra, 1))
-   {
-      source_array_var = find_variable(array_name);
-      if (source_array_var)
-      {
-         if (!array_p(source_array_var))
-         {
-            retval = ate_error_wrong_type_var(source_array_var, "array");
-            goto early_exit;
-         }
-      }
-      else
-      {
-         retval = ate_error_var_not_found(array_name);
-         goto early_exit;
-      }
-   }
-   else
+   // Find array name
+   if (!get_string_from_list(&array_name, extra, 1))
    {
       retval = ate_error_missing_usage("source array name");
       goto early_exit;
    }
 
+   // find array_name SHELL_VAR
+   source_array_var = find_variable(array_name);
+   if (source_array_var == NULL)
+   {
+      retval = ate_error_var_not_found(array_name);
+      goto early_exit;
+   }
+
+   // Confirm SHELL_VAR is an array
+   if (!array_p(source_array_var))
+   {
+      retval = ate_error_wrong_type_var(source_array_var, "array");
+      goto early_exit;
+   }
+
    ARRAY *source_array = array_cell(source_array_var);
+
+   // Confirm match row_sizes
+   if (source_array->num_elements != fields_to_copy)
+   {
+      retval = ate_error_mismatched_row_size(source_array_var, fields_to_copy);
+      goto early_exit;
+   }
+
+   //
+   // We've validated the data, begin the update:
+   //
+
    ARRAY_ELEMENT *source_head = array_head(source_array);
    ARRAY_ELEMENT *source_arel = source_head->next;
 
