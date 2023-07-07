@@ -12,6 +12,7 @@
 #include <builtins/common.h>      // for no_options()
 
 #include <stdio.h>
+#include <assert.h>
 
 int ate_error_missing_action(void)
 {
@@ -98,6 +99,30 @@ int ate_error_invalid_row_size(int requested)
 {
    fprintf(stderr, "Invalid row size of %d.\n", requested);
    return EX_USAGE;
+}
+
+// Not sure about this test for pointer, but it seems sound:
+#define argument_is_pointer(x) ((long)(x) > 0xfff)
+
+/**
+ * @brief Warn about put_row error likely indicating bad source row
+ * @param "row"    [in] A SHELL_VAR contains the name and array for
+ *                      the message.
+ * @param "needed" [in] number of elements in a row
+ * @return EX_BADASSIGN
+ */
+int ate_error_mismatched_row_size(SHELL_VAR *row, int needed)
+{
+   // 'ate' code error if *row is not a pointer:
+   assert(argument_is_pointer(row));
+
+   fprintf(stderr,
+           "Mismatched row size, row '%s' has %d elements, should have %d\n",
+           row->name,
+           (array_cell(row))->num_elements,
+           needed);
+
+   return EX_BADASSIGN;
 }
 
 int ate_error_record_out_of_range(int requested, int limit)

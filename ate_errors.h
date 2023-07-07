@@ -24,6 +24,7 @@ int ate_error_missing_usage(const char *what);
 int ate_error_failed_to_create(const char *what);
 int ate_error_corrupt_table(void);
 int ate_error_invalid_row_size(int requested);
+int ate_error_mismatched_row_size(SHELL_VAR* row, int needed);
 int ate_error_record_out_of_range(int requested, int limit);
 int ate_error_unexpected(void);
 
