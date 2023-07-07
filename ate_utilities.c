@@ -291,11 +291,11 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
 }
 
 /**
- * @brief Names a condition test for clarity in @ref clone_range_to_array.
+ * @brief associate a name with an ARRAY_ELEMENT test if it's the ARRAY head element
+ * Implemented as MACRO to ensure inline execution
  * @param "el"   Element to test if it's the array head
- * @return non-zero if the element is a head element, otherwise 0.
  */
-inline bool array_element_is_head(ARRAY_ELEMENT *el) { return el->ind == -1; }
+#define array_element_is_head(el) ((el)->ind == -1)
 
 /**
  * @brief Returns an array with a copy of a series of elements
