@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+enable -f ../ate.so ate
+
+declare -a pets=(
+    dog    bark
+    cat    meow
+    goat   bleat
+    goose  quack
+    cow    moo
+)
+
+# Create a table from an existing table, classic style success test
+ate declare pet_handle 2 pets
+if [ "$?" -ne 0 ]; then
+    echo "Failed to initialize the handle."
+    exit 1
+fi
+
+###############################################
+#  Demonstration of getting and putting rows  #
+###############################################
+
+# Simple get_row invocation, use default array, ATE_ARRAY
+if ate get_row pet_handle 0; then
+    # Change verb 'bark' to sound 'woof'
+    ATE_ARRAY[1]="woof"
+
+    # Update table with changed row, inline style success test
+    # Don't use the '$' in front of ATE_ARRAY or you'll be
+    # passing the value of ATE_ARRAY (the first element).
+    if ! ate put_row pet_handle 0 ATE_ARRAY; then
+        echo "Failed to update the dog row"
+        exit 1
+    fi
+fi
+
+# get_row into named array to preserve array value
+if ate get_row pet_handle 3 -a bird_row; then
+    # A goose doesn't quack, change the animal
+    bird_row[0]="duck"
+
+    if ! ate put_row pet_handle 3 bird_row; then
+        echo "Failed to update the bird row"
+        exit 1
+    fi
+else
+    echo "Failed to get the bird row ($?)"
+fi
+
+###########################################
+#  Demonstration of displaying the table  #
+###########################################
+
+declare gobal_format_string
+
+# Build a format string from the maximum column widths
+update_global_format_string()
+{
+    local handle_name="$1"
+
+    # Will use array value immediately, just use default ATE_VALUE
+    if ate get_field_sizes "$handle_name"; then
+        local -a parts=()
+
+        # only prepend space after first element
+        local delim=""
+
+        local -i width
+        for width in "${ATE_ARRAY[@]}"; do
+            parts+=( "$delim" "%-${width}s" )
+            delim=" "
+        done
+
+        local IFS=$''
+        global_format_string="${parts[*]}\n"
+
+        echo "Generated global format string: '$global_format_string'"
+
+        return 0
+    fi
+
+    echo "Aborting update_global_format_string due to error."
+    return 1
+}
+
+# Callback function for "walk_rows" action
+display_row()
+{
+    local -i row_number="$1"
+    local -n dr_row="$2"
+    printf "$global_format_string" "${dr_row[@]}"
+}
+
+if update_global_format_string "pet_handle"; then
+    ate walk_rows pet_handle display_row
+fi
+
+#############################
+#  Demonstration of Sorting #
+#############################
+
+sort_by_animal()
+{
+    local -n sba_result="$1"
+    local -n sba_left="$2"
+    local -n sba_right="$3"
+
+    local left_val="${sba_left[0]}"
+    local right_val="${sba_right[0]}"
+
+    if [[ "$left_val" < "$right_val" ]]; then
+        sba_result=-1
+    elif [[ "$left_val" > "$right_val" ]]; then
+        sba_result=1
+    else
+        sba_result=0
+    fi
+
+    return 0
+}
+
+echo
+echo "About to sort by animal name and display"
+ate sort pet_handle sort_by_animal sorted_handle
+ate walk_rows sorted_handle display_row
+
+echo
+echo "About to add some new animals"
+ate append_data pet_handle pig oink chicken cluck wolf howl owl hoot hummingbird hmmmmmmmm
+
+echo
+echo "After adding rows to a table, the index must be updated, too"
+ate update_index pet_handle
+echo
+echo "Recommend updating field widths after append_data for any longer elements."
+update_global_format_string "pet_handle"
+ate walk_rows pet_handle display_row
+echo
+echo "Sorted handles are now obsolete, regenerate if the sort is needed"
+ate sort pet_handle sort_by_animal sorted_handle
+ate walk_rows sorted_handle display_row
+echo
+echo "It's easier to add elements to an array first, then append."
+echo "You can format the data in the array to make sure the rows"
+echo "are properly constructed.  This becomes more important with"
+echo "wider tables (with more fields per row)."
+declare -a more_animals=(
+    snake hiss
+    coyote yip
+    horse whinny
+    )
+ate append_data pet_handle "${more_animals[@]}"
+ate update_index pet_handle
+ate sort pet_handle sort_by_animal sorted_handle
+update_global_format_string "pet_handle"
+ate walk_rows sorted_handle display_row
