@@ -19,6 +19,8 @@
  * specific action.  Some exists simply to name a code objective to
  * clarify an intention.  Others are here because they are used
  * in multiple places.
+ *
+ * @{
  */
 
 bool make_unique_name(char *buffer, int bufflen, const char *stem);
