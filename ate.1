@@ -66,28 +66,28 @@ script, the syntax to enable a loadable builtin is:
 .EX
 enable -f /path/to/ate.so ate
 .EE
-.SH RETURN VARIABLES
+.SH RESULT VARIABLES
 .PP
-When an action returns information, the value is, by default, saved to
-either
+When an action produces result information, the value is, by default,
+saved to either
 .BR ATE_VALUE " and " ATE_ARRAY
 according to the return type.
 This is done to avoid incurring the subprocess performance
 penalty.
 .PP
-Alternate return variables can be specified with the
+Alternate result variables can be specified with the
 .BR -v " and " -a
-options, which specify new names for the single and array return
+options, which specify new names for the single and array result
 variables.
 .PP
-In general, use the default return variable names if the value will
+In general, use the default result variable names if the value will
 be used only once immediately after requesting the value.
-Override the return variables if the return value will still be needed
-after another action might overwrite the return value.
+Override the result variables if the result value will still be needed
+after another action might overwrite the result value.
 .PP
 The
 .B EXAMPLES
-section below shows a variety of return variable manipulations.
+section below shows a variety of result variable manipulations.
 .SH ATE ACTIONS
 .SS LIST_ACTIONS
 .PP
