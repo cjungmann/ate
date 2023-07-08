@@ -225,9 +225,9 @@ below.
 .PP
 This action returns the name of the array on which the table is
 based.
-If an array name is not specified during the
+Use this action to learn the name of the hosted array when
 .B declare
-action, this action is how one learns the name of the hosted array.
+was called without an array name.
 .PP
 .B ate get_array_name
 .I handle_name
@@ -334,15 +334,16 @@ Refer to
 below.
 .SS WALK_ROWS
 .PP
-Invokes a callback function with the row index and contents of the
-rows in the table, optionally limited by arguments
-.IR starting_row " and " row_count .
+Repeatedly invokes a callback function with a row index value and
+the name of an array containing a row's contents.
+If the
+.IR starting_row " and " row_count
+parameters are used, they will determine which rows are processed.
+Otherwise, every table row will be sent to the callback function.
 .PP
-The callback function will be given two arguments, the
-row number and the name of the array containing the row values.
-.PP
-If the callback function returns 0, the next row will be sent.
-If the callback function return non-0 (for now), the row walk
+If the callback function returns 0 or nothing, the next row will be
+sent.
+If the callback function return non-0, the row walk
 will be terminated.
 .PP
 .B ate walk_rows
@@ -469,12 +470,11 @@ The script must take care to keep the row and its row number
 in sync.
 .IP
 .EX
-declare -i dog_row=0
-ate \fBget_row\fP pet_handle \(dq$dog_row\(dq -a pet_row
+ate \fBget_row\fP pet_handle 0 -a pet_row
 
 # change second column and update table
 pet_row[1]="bow-wow"
-ate \fBput_row\fP pet_handle \(dq$dog_row\(dq pet_row
+ate \fBput_row\fP pet_handle 0 pet_row
 .EE
 .SS WALK_ROWS EXAMPLE
 .PP
@@ -487,15 +487,30 @@ display_row()
 {
    local -i row_num=\(dq$1\(dq
    # try to avoid name collisions with nameref variables:
-   local -n ur_row=\(dq$2\(dq
+   local -n dr_row=\(dq$2\(dq
 
-   printf \(dq%s makes a %s\(rsn\(dq \(dq${ur_row[*]}\(dq
+   printf \(dq%s makes a %s\(rsn\(dq \(dq${dr_row[@]}\(dq
 
    # Return 0 to continue, non-zero to terminate row walk:
    return 0
 }
 
 ate \fBwalk_rows\fP pet_handle display_row
+.EE
+.PP
+A
+.B walk_rows
+procedure might also be used to update the rows of a table.
+.IP
+.EX
+capitalize_name()
+{
+   local -i row_num=\(dq$1\(dq
+   local -n ur_row=\(dq$2\(dq
+   ur_row[0]=\(dq${ur_row[0]^}\(dq
+}
+
+ate \fBwalk_rows\fP pet_handle capitalize_name
 .EE
 .SS SORT EXAMPLE
 .PP
@@ -510,10 +525,11 @@ compare_names()
    local -n cr_left=\(dq$2\(dq
    local -n cr_right=\(dq$3\(dq
 
-   # isolate thd column on which we're sorting
+   \fB# isolate thd column on which we're sorting\fP
    local name_left=\(dq${cr_left[0]}\(dq
    local name_right=\(dq${cr_right[0]}\(dq
 
+   \fB# Use [[ and ]] to compare the lexical order of strings.\fP
    if [[ \(dq$left\(dq < \(dq$right\(dq ]]; then
       cr_result=-1
    elif [[ \(dq$right\(dq < \(dq$left\(dq ]]; then
@@ -525,7 +541,7 @@ compare_names()
    return 0
 }
 
-# Create (and use) sorted handle:
+.B # Create (and use) sorted handle:
 ate \fBsort\fP pet_handle compare_names pets_by_name
 ate \fBwalk_rows\fP pets_by_name display_row
 .EE
@@ -542,37 +558,32 @@ a custom
 format string based on the maximum string lengths of each field.
 .IP
 .EX
-make_format_string()
+print_formatted_table()
 {
-   local -n mfs_string=\(dq$1\(dq
-   local -n mfs_colsizes=\(dq$2\(dq
+    local -n pft_handle=\(dq$1\(dq
 
-   local -a fs_parts=()
-   local delim=\(dq\(dq
-   local -i width
-   for width in \(dq${mfs_widths[@]}\(dq; do
-       fs_parts+=( \(dq$delim\(dq \(dq%-${width}s\(dq )
-       delim=\(dq \(dq
-   done
+    \fB# Make format string\fP
+    ate \fBget_field_sizes\fP pft_handle
+    local -a parts=()
+    local width
+    local delim=\(aq\(sq
+    for width in \(dq${ATE_ARRAY[@]}\(dq; do
+        parts+=( \(dq$delim\(dq \(dq%-${width}s\(dq )
+        delim=\(aq \(aq
+    done
+    \fB# Scrunch array to format string\fP
+    local IFS=\(aq\(aq
+    local fmt=\(dq${parts[*]}\(rsn\(dq
 
-   local IFS=$\(aq\(aq
-   mfs_string=\(dq${fs_parts[*]}\(rsn\(dq
+    \fB# Embedded callback print function\fP
+    print_row()
+    {
+        local -n pr_row=\(dq$2\(dq
+        printf \(dq$fmt\(dq \(dq${pr_row[@]}\(dq
+    }
+
+    ate \fBwalk_rows\fP pft_handle print_row
 }
-
-ate \fBget_field_sizes\fP pet_handle
-declare format_str
-
-# Passing name, not value of ATE_ARRAY variable,
-# don't add the \(aq$\(aq prefix:
-make_format_string \(dqformat_str\(dq \(dqATE_ARRAY\(dq
-
-# Use the format string to display rows:
-display_with_format_string()
-{
-   local -n fwfs_row=\(dq$2\(dq
-   printf \(dq$format_str\(dq \(dq${fwfs_row[@]}\(dq
-}
-ate \fBwalk_rows\fP pet_handle display_with_format_string
 .EE
 
 .SH WARNINGS
