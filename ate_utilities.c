@@ -352,6 +352,32 @@ int clone_range_to_array(SHELL_VAR **new_array,
    return retval;
 }
 
+int reindex_array_elements(AHEAD *head)
+{
+   ARRAY_ELEMENT **row = head->rows;
+   ARRAY_ELEMENT **end_index = row + head->row_count;
+   ARRAY_ELEMENT **el, **end_row;
+
+   int new_index=0;
+
+   while (row < end_index)
+   {
+      el = row;
+      end_row = row + head->row_size;
+      while (el < end_row)
+      {
+         (*el)->ind = new_index++;
+         ++el;
+      }
+
+      ++row;
+   }
+
+   (array_cell(head->array))->max_index = new_index;
+
+   return EXECUTION_SUCCESS;
+}
+
 int invoke_shell_function(SHELL_VAR *function, ...)
 {
    WORD_LIST *list = NULL, *tail = NULL;

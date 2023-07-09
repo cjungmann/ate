@@ -47,6 +47,8 @@ int clone_range_to_array(SHELL_VAR **new_array,
                          int el_count,
                          const char *name);
 
+int reindex_array_elements(AHEAD *head);
+
 int invoke_shell_function(SHELL_VAR *function, ...);
 
 /** @} */
