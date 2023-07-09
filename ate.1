@@ -162,7 +162,7 @@ the incomplete row will not be added to the table.
 After using this action, the row index will be out-of-date, meaning
 that the new rows are not immediately available.  Be sure to invoke
 action
-.B update_index
+.B index_rows
 when finished appending data to access the new rows.
 .PP
 .B ate append_data
@@ -178,7 +178,7 @@ The values to be appended to the hosted array.
 Refer to
 .B DECLARE EXAMPLE
 below.
-.SS UPDATE_INDEX
+.SS INDEX_ROWS
 .PP
 Generates an index into the elements of the hosted array,
 one index for each row head.
@@ -186,7 +186,7 @@ The
 .BR get_row " and " put_row
 actions rely on the index being up-to-date.
 .PP
-.B ate update_index
+.B ate index_rows
 .I handle_name
 .RS 4
 .arg_handle
@@ -440,7 +440,7 @@ ate \fBdeclare\fP pet_handle 2
 ate \fBappend_data\fP pet_handle \(dq${pets[@]}\(dq
 
 # Must manually update index after \fBappend_data\fP
-ate \fBupdate_index\fP pet_handle
+ate \fBindex_rows\fP pet_handle
 .EE
 .SS GET INFO EXAMPLES
 .PP

@@ -45,8 +45,8 @@ ATE_AGENT agent_pool[] = {
    , { "append_data",   ate_action_append_data,   "Add data to end of table",
       "ate append_data name_handle [value ...]",
    }
-   , { "update_index",  ate_action_update_index, "Update row index after additions",
-      "ate update_index name_handle"
+   , { "index_rows",  ate_action_index_rows, "Create new index to row heads",
+      "ate index_rows name_handle"
    }
    , { "get_field_sizes",  ate_action_get_field_sizes,
       "Get the size of the longest element of each table field.",

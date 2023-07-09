@@ -63,8 +63,8 @@ int ate_action_put_row(const char *name_handle, const char *name_value,
 int ate_action_append_data(const char *name_handle, const char *name_value,
                            const char *name_array, WORD_LIST *extra);
 
-int ate_action_update_index (const char *name_handle, const char *name_value,
-                             const char *name_array, WORD_LIST *extra);
+int ate_action_index_rows (const char *name_handle, const char *name_value,
+                           const char *name_array, WORD_LIST *extra);
 
 int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
                                const char *name_array, WORD_LIST *extra);
