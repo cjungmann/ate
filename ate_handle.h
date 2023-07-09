@@ -93,6 +93,8 @@ bool ate_create_handle(SHELL_VAR **retval,
 ARRAY_ELEMENT* ate_get_indexed_row(AHEAD *head, int index);
 ARRAY_ELEMENT* ate_get_array_head(AHEAD *head);
 
+int ate_check_head_integrity(AHEAD *head);
+
 /** @} */
 
 

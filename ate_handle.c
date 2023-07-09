@@ -276,3 +276,57 @@ ARRAY_ELEMENT* ate_get_array_head(AHEAD *handle)
    else
       return (ARRAY_ELEMENT*)NULL;
 }
+
+/**
+ * @brief Test several AHEAD characteristics to see if it's consistent
+ * @param "head"   Supposedly initialzed AHEAD struct
+ * @return EXECUTION_SUCCESS if everything is good,
+ *         non-zero if anything fails to check out
+ *
+ * This test is primarily for @ref reindex_array_elements.
+ * @ref reindex_array_elements does a very invasive reordering of
+ * elements, potentially causing ARRAY_ELEMENT orphans which
+ * would then be memory leaks.
+ *
+ * @ref reindex_array_elements will refuse to run if this test
+ * reveals any discrepencies.
+ */
+int ate_check_head_integrity(AHEAD *head)
+{
+   int retval = EXECUTION_SUCCESS;
+
+   // Ensure self-identifies as a AHEAD
+   if (head->typeid != AHEAD_ID)
+   {
+      retval = EX_NOTFOUND;
+      goto early_exit;
+   }
+
+   // Perhaps unnecessary test that an array is attached:
+   ARRAY *array = NULL;
+   if (head->array == NULL
+       || (array=array_cell(head->array)) == NULL)
+   {
+      retval = EX_NOTFOUND;
+      goto early_exit;
+   }
+
+   int element_count = array->num_elements;
+
+   // Two orphans tests:
+   // Test incomplete row orphans:
+   if (element_count % head->row_size)
+   {
+      retval = EX_BADASSIGN;
+      goto early_exit;
+   }
+   // Test that all elements are in a row
+   if (head->row_size * head->row_count != element_count)
+   {
+      retval = EX_NOINPUT;
+      goto early_exit;
+   }
+
+     early_exit:
+   return retval;
+}
