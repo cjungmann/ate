@@ -793,6 +793,49 @@ int ate_action_sort(const char *name_handle,
    return retval;
 }
 
+int ate_action_reindex_elements(const char *name_handle, const char *name_value,
+                               const char *name_array, WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval)
+      goto early_exit;
+
+   // Ensure array and indicies are appropriately configured
+   retval = ate_check_head_integrity(handle);
+   if (retval)
+      goto early_exit;
+
+   retval = reindex_array_elements(handle);
+
+  early_exit:
+   return retval;
+}
+
+int ate_action_resize_rows(const char *name_handle, const char *name_value,
+                           const char *name_array, WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle);
+   if (retval)
+      goto early_exit;
+
+   int new_row_size = 0;
+   if (! get_int_from_list(&new_row_size, extra, 0))
+   {
+      retval = ate_error_missing_usage("missing new row size value");
+      goto early_exit;
+   }
+
+   if (new_row_size > handle->row_size)
+      retval = table_extend_rows(handle, new_row_size - handle->row_size);
+   // else if (new_row_size < handle->row_size)
+   //    retval = table_contract_rows(handle, handle->row_size - new_row_size);
+
+  early_exit:
+   return retval;
+}
+
 
 /**
  * @brief Initiates a series of invocations of a callback function
