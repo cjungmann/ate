@@ -13,6 +13,7 @@ extern int execute_command PARAMS((COMMAND *));
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 
 /**
  * @brief Use name stem to find an unused SHELL_VAR name.
@@ -352,30 +353,192 @@ int clone_range_to_array(SHELL_VAR **new_array,
    return retval;
 }
 
+/**
+ * @brief Print array details including elements and their indicies.
+ *
+ * Since the code is taking *major liberties* with the organization
+ * of an array, it behooves me to prepare a test to show even
+ * otherwise hidden details about an array to confirm the integrity
+ * of the modified array.
+ *
+ * @param "array"  array to display
+ */
+void survey_array(ARRAY *array)
+{
+   // Test array
+   printf("\n\nTest the array:\n");
+   ARRAY_ELEMENT *ptr = array->head->next;
+   while (ptr != array->head)
+   {
+      printf("%2ld: '%s'\n", ptr->ind, ptr->value);
+      ptr = ptr->next;
+   }
+   printf("Array lastref is %ld (%s).\n", array->lastref->ind, array->lastref->value);
+   printf("Array max_index, num_elements are %ld, %d.\n", array->max_index, array->num_elements);
+   printf("How does it look?\n");
+}
+
+/**
+ * @brief Reorganize array elements to match order of indexed rows.
+ *
+ * This is a pretty presumptuous function, changing element pointers
+ * at the beginning and end of rows to make a new linked order.
+ *
+ * Calling functions are responsible for ensuring that the array
+ * is in an appropriate state to run this function.  That means
+ * there should be no orphan elements (not reachable through row
+ * indexes, within the scope of a row).
+ *
+ * @param "head"   Initialzed head with an installed array and
+ *                 indexed rows.
+ * @return EXECUTION_SUCCESS for all, until we find an error
+ *         condition for which we should test and abort.
+ */
 int reindex_array_elements(AHEAD *head)
 {
+   int retval = EXECUTION_SUCCESS;
+
+   ARRAY *array = array_cell(head->array);
    ARRAY_ELEMENT **row = head->rows;
    ARRAY_ELEMENT **end_index = row + head->row_count;
-   ARRAY_ELEMENT **el, **end_row;
 
    int new_index=0;
+   ARRAY_ELEMENT *end_of_last_row = NULL;
 
    while (row < end_index)
    {
-      el = row;
-      end_row = row + head->row_size;
-      while (el < end_row)
+      ARRAY_ELEMENT *ptr = *row;
+      if (!ptr)
       {
-         (*el)->ind = new_index++;
-         ++el;
+         fprintf(stderr, "Big mistake! lost the thread of the array.");
+         break;
+      }
+
+      // Adjust connections
+      if (end_of_last_row)
+      {
+         ptr->prev = end_of_last_row;
+         end_of_last_row->next = ptr;
+      }
+      else
+      {
+         ptr->prev = array->head;
+         array->head->next = ptr;
+      }
+
+      // Set sequential element indicies
+      while (ptr)
+      {
+         ptr->ind = new_index++;
+         if (0 == (new_index % head->row_size))
+         {
+            end_of_last_row = ptr;
+            break;
+         }
+         else
+            ptr = ptr->next;
       }
 
       ++row;
    }
 
-   (array_cell(head->array))->max_index = new_index;
+   // Complete the circle
+   end_of_last_row->next = array->head;
+   array->lastref = end_of_last_row;
 
-   return EXECUTION_SUCCESS;
+   array->max_index = end_of_last_row->ind;
+
+  // early_exit:
+   return retval;
+}
+
+ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size)
+{
+   int count=0;
+
+   // Precount because we want row[row_size-1].
+   // row[row_size] is (conceptually) the first element of the next row.
+   while (++count < row_size)
+      row = row->next;
+
+   return row;
+}
+
+int table_extend_rows(AHEAD *head, int new_columns)
+{
+   int retval = ate_check_head_integrity(head);
+   if (retval)
+      goto early_exit;
+
+   ARRAY *array = array_cell(head->array);
+
+   ARRAY_ELEMENT **row_start = head->rows;
+   ARRAY_ELEMENT **end_index = row_start + head->row_count;
+   ARRAY_ELEMENT *new_element;
+   int row_size = head->row_size;
+   int el_count;
+   int new_elements = 0;
+
+   ARRAY_ELEMENT *field, *after_row;
+
+   ARRAY_ELEMENT **row = row_start;
+   while (row < end_index)
+   {
+      field = get_end_of_row(*row, row_size);
+      after_row = field->next;
+
+      el_count = 0;
+      while (el_count < new_columns)
+      {
+         new_element = array_create_element(0, "--");
+
+         new_element->prev = field;
+         field->next = new_element;
+
+         field = new_element;
+
+         ++el_count;
+         ++new_elements;
+      }
+
+      assert(field->next == NULL);
+      field->next = after_row;
+      after_row->prev = field;
+
+      ++row;
+   }
+
+   // Assuming *after_row, which is what the ::next member of the
+   // last element of the last row should be pointing to, is the
+   // ::head member of the ARRAY:
+   assert(after_row == array->head);
+
+   // The last field added should be the last new element of the
+   // last row of the table, and thus that last element of the
+   // array.  It should be pointing to the array head
+   assert(field->next == array->head);
+
+   if (field)
+   {
+      array->lastref = field;
+
+      // This might be dangerous: I'm assuming that
+      // all the additions were OK, but we also don't
+      // want to leave an incorrect value, which is
+      // tested elsewhere.
+      array->num_elements += new_elements;
+   }
+
+   // Update first because reindex_array_elements uses
+   // head->row_size to process the elements.
+   head->row_size += new_columns;
+
+   // Call to assign appropriate indexes, or future
+   // additions will fail:
+   retval = reindex_array_elements(head);
+
+  early_exit:
+   return retval;
 }
 
 int invoke_shell_function(SHELL_VAR *function, ...)
