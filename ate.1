@@ -23,7 +23,7 @@ Without this option, the result will be returned in
 ..
 .SH NAME
 .B ate
-\- Array Table Extension: use a Bash array as a table
+\- Table extension for Bash arrays
 .SH SYNOPSIS
 .PP
 .B ate
@@ -31,6 +31,13 @@ Without this option, the result will be returned in
 .RB [ "-a " "\fIarray_name\fP" ]
 .RB [ "-v " "\fIvalue_name\fP" ]
 .RI [ "extra ..." ]
+.TP
+.B ate list_actions
+Show list of action names
+.TP
+.B ate show_action \fR[\fP\fIaction_name\fP\fR]\fP
+Show details about
+.IR action_name .
 .SH DESCRIPTION
 .PP
 Standard Bash arrays are one-dimensional and sequential (slow) access.
