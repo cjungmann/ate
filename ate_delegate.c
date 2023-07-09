@@ -48,12 +48,16 @@ ATE_AGENT agent_pool[] = {
    , { "index_rows",  ate_action_index_rows, "Create new index to row heads",
       "ate index_rows name_handle"
    }
+   , { "reindex_elements",  ate_action_reindex_elements,
+      "Change array element indexes to match row index",
+      "ate reindex_elements name_handle"
+   }
    , { "get_field_sizes",  ate_action_get_field_sizes,
       "Get the size of the longest element of each table field.",
       "ate get_field_sizes name_handle [-a result_array]"
    }
    , { "sort", ate_action_sort, "quick-sort rows",
-      "ate sort name_handle name_callback"
+      "ate sort name_handle name_callback name_new_handle"
    }
    , { "walk_rows", ate_action_walk_rows, "invoke callback function with each row in table",
       "ate walk_rows name_handle name_callback [start_row] [row_count]"
