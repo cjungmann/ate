@@ -452,6 +452,12 @@ int reindex_array_elements(AHEAD *head)
    return retval;
 }
 
+/**
+ * @brief Returns last array element of a virtual row
+ * @param "row"       head element of the row
+ * @param "row_size"  from AHEAD struct to know where is the end
+ * @return the last element of the specified row.
+ */
 ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size)
 {
    int count=0;
@@ -466,14 +472,14 @@ ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size)
 
 int table_extend_rows(AHEAD *head, int new_columns)
 {
-   int retval = ate_check_head_integrity(head);
-   if (retval)
-      goto early_exit;
+   int retval = EXECUTION_SUCCESS;
 
    ARRAY *array = array_cell(head->array);
 
+   // Row-looping variables
    ARRAY_ELEMENT **row_start = head->rows;
    ARRAY_ELEMENT **end_index = row_start + head->row_count;
+
    ARRAY_ELEMENT *new_element;
    int row_size = head->row_size;
    int el_count;
@@ -537,7 +543,81 @@ int table_extend_rows(AHEAD *head, int new_columns)
    // additions will fail:
    retval = reindex_array_elements(head);
 
-  early_exit:
+  // early_exit:
+   return retval;
+}
+
+int table_contract_rows(AHEAD *head, int columns_to_remove)
+{
+   int retval = EXECUTION_SUCCESS;
+
+   ARRAY *array = array_cell(head->array);
+
+   // Row-looping variables
+   ARRAY_ELEMENT **row_start = head->rows;
+   ARRAY_ELEMENT **end_index = row_start + head->row_count;
+
+   ARRAY_ELEMENT *prev_element;
+   int row_size = head->row_size;
+   int el_count;
+   int removed_elements = 0;
+
+   ARRAY_ELEMENT *field, *after_row;
+
+   ARRAY_ELEMENT **row = row_start;
+   while (row < end_index)
+   {
+      field = get_end_of_row(*row, row_size);
+      after_row = field->next;
+
+      el_count = 0;
+      while (el_count < columns_to_remove)
+      {
+         prev_element = field->prev;
+         array_dispose_element(field);
+         field = prev_element;
+
+         ++el_count;
+         ++removed_elements;
+      }
+
+      field->next = after_row;
+      after_row->prev = field;
+
+      ++row;
+   }
+
+   // Assuming *after_row, which is what the ::next member of the
+   // last element of the last row should be pointing to, is the
+   // ::head member of the ARRAY:
+   assert(after_row == array->head);
+
+   // The last field added should be the last new element of the
+   // last row of the table, and thus that last element of the
+   // array.  It should be pointing to the array head
+   assert(field->next == array->head);
+
+   // Update array members with new dimensions
+   if (field)
+   {
+      array->lastref = field;
+
+      // This might be dangerous: I'm assuming that
+      // all the deletions were OK, but we also don't
+      // want to leave an incorrect value, which is
+      // tested elsewhere.
+      array->num_elements -= removed_elements;
+   }
+
+   // Update first because reindex_array_elements uses
+   // head->row_size to process the elements.
+   head->row_size -= columns_to_remove;
+
+   // Call to assign appropriate indexes, or future
+   // additions will fail:
+   retval = reindex_array_elements(head);
+
+  // early_exit:
    return retval;
 }
 
