@@ -573,7 +573,7 @@ print_formatted_table()
     ate \fBget_field_sizes\fP pft_handle
     local -a parts=()
     local width
-    local delim=\(aq\(sq
+    local delim=\(aq\(aq
     for width in \(dq${ATE_ARRAY[@]}\(dq; do
         parts+=( \(dq$delim\(dq \(dq%-${width}s\(dq )
         delim=\(aq \(aq
