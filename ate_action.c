@@ -820,6 +820,10 @@ int ate_action_resize_rows(const char *name_handle, const char *name_value,
    if (retval)
       goto early_exit;
 
+   retval = ate_check_head_integrity(handle);
+   if (retval)
+      goto early_exit;
+
    int new_row_size = 0;
    if (! get_int_from_list(&new_row_size, extra, 0))
    {
@@ -829,8 +833,8 @@ int ate_action_resize_rows(const char *name_handle, const char *name_value,
 
    if (new_row_size > handle->row_size)
       retval = table_extend_rows(handle, new_row_size - handle->row_size);
-   // else if (new_row_size < handle->row_size)
-   //    retval = table_contract_rows(handle, handle->row_size - new_row_size);
+   else if (new_row_size < handle->row_size)
+      retval = table_contract_rows(handle, handle->row_size - new_row_size);
 
   early_exit:
    return retval;
