@@ -311,6 +311,12 @@ int ate_check_head_integrity(AHEAD *head)
       goto early_exit;
    }
 
+   if (head->row_count == 0)
+   {
+      retval = EX_BADASSIGN;
+      goto early_exit;
+   }
+
    int element_count = array->num_elements;
 
    // Two orphans tests:
