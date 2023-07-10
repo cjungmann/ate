@@ -50,7 +50,9 @@ int clone_range_to_array(SHELL_VAR **new_array,
 int reindex_array_elements(AHEAD *head);
 
 ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size);
+
 int table_extend_rows(AHEAD *head, int new_columns);
+int table_contract_rows(AHEAD *head, int columns_to_remove);
 
 int invoke_shell_function(SHELL_VAR *function, ...);
 
