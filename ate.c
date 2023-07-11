@@ -39,6 +39,8 @@
 #include "ate_action.h"
 #include "ate_errors.h"
 
+const char Error_Name[] = "ATE_ERROR";
+
 /**
  * @brief effective `main` function, initial entry of an instance
  *        of `ate`.
@@ -49,6 +51,8 @@
 static int ate(WORD_LIST *list)
 {
    int retval = EXECUTION_SUCCESS;
+
+   unbind_variable_noref(Error_Name);
 
    // String pointers that can be set with options
    const char *name_handle = NULL;
@@ -89,6 +93,13 @@ static int ate(WORD_LIST *list)
                else
                   pending_option = &name_result_value;
                break;
+
+            default:
+               fprintf(stderr, "Invalid option '-%c'\n", cur_arg[1]);
+               ate_register_error("invalid option '-%c'", cur_arg[1]);
+               retval = EX_USAGE;
+               builtin_usage();
+               goto exit_for_error;
          }
       }
       // Positional options
@@ -108,7 +119,8 @@ static int ate(WORD_LIST *list)
 
    if (name_action == NULL)
    {
-      retval = ate_error_missing_action();
+      ate_register_error("missing action name");
+      retval = EX_USAGE;
       builtin_usage();
       goto exit_for_error;
    }
