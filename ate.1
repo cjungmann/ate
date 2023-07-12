@@ -585,6 +585,7 @@ print_formatted_table()
     \fB# Embedded callback print function\fP
     print_row()
     {
+        # ignoring argument $1, the row index
         local -n pr_row=\(dq$2\(dq
         printf \(dq$fmt\(dq \(dq${pr_row[@]}\(dq
     }
