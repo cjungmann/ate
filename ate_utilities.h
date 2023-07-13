@@ -36,7 +36,7 @@ SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes);
 
 bool prepare_clean_array_var(SHELL_VAR **var, const char *name);
 
-int get_handle_from_name(AHEAD **head, const char *name_handle);
+int get_handle_from_name(AHEAD **head, const char *name_handle, const char *action_name);
 
 int get_shell_var_by_name_and_type(SHELL_VAR **retval,
                                    const char *name,
