@@ -106,11 +106,17 @@ int ate_action_declare(const char *name_handle,
                        const char *name_array,
                        WORD_LIST *extra)
 {
-   int retval = EXECUTION_FAILURE;
+   int retval = EX_USAGE;
+
+   if (name_handle == NULL)
+   {
+      ate_register_missing_argument("new handle name", "declare");
+      goto early_exit;
+   }
 
    if (find_variable(name_handle))
    {
-      retval = ate_error_handle_already_exists(name_handle);
+      ate_register_error("ate handle '%s' already exists", name_handle);
       goto early_exit;
    }
 
@@ -121,7 +127,7 @@ int ate_action_declare(const char *name_handle,
 
    const char *cur_word;
    char *end_word;
-   int cur_size = 0;
+   int temp_size = 0;
 
    // The first number found will be the row_size, and the
    // first non-number string will be the array name.
@@ -130,19 +136,19 @@ int ate_action_declare(const char *name_handle,
    {
       cur_word = ptr->word->word;
 
-      cur_size = strtol(cur_word, &end_word, 10);
+      temp_size = strtol(cur_word, &end_word, 10);
       if (end_word > cur_word)
       {
          // Consider number value only if row_size is not yet set
          if (row_size < 1)
          {
-            if (cur_size < 1)
+            if (temp_size < 1)
             {
-               retval = ate_error_invalid_row_size(cur_size);
+               ate_register_error("%d is an invalid row size", temp_size);
                goto early_exit;
             }
             else
-               row_size = cur_size;
+               row_size = temp_size;
          }
          else
             goto continue_next;
@@ -156,13 +162,16 @@ int ate_action_declare(const char *name_handle,
                hosted_array = var;
             else
             {
-               retval = ate_error_wrong_type_var(var, "array");
+               ate_register_variable_wrong_type(cur_word, "array");
                goto early_exit;
             }
          }
          // Create requested array by name
          else
-            hosted_array = make_new_array_variable((char*)cur_word);
+         {
+            ate_register_variable_not_found(cur_word);
+            goto early_exit;
+         }
       }
 
      continue_next:
@@ -185,7 +194,8 @@ int ate_action_declare(const char *name_handle,
 
       if (hosted_array == NULL)
       {
-         retval = ate_error_failed_to_make_handle("new array failure");
+         ate_register_error("failed to make a new handle");
+         retval = EXECUTION_FAILURE;
          goto early_exit;
       }
    }
@@ -196,7 +206,7 @@ int ate_action_declare(const char *name_handle,
    int el_count = array_num_elements(array_cell(hosted_array));
    if ( el_count % row_size)
    {
-      retval = ate_error_invalid_row_size(row_size);
+      ate_register_invalid_row_size(row_size, el_count);
       goto early_exit;
    }
 
@@ -230,7 +240,7 @@ int ate_action_get_row_count(const char *name_handle,
                              WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "row_count");
    if (retval == EXECUTION_SUCCESS)
    {
       SHELL_VAR *var = ate_get_prepared_variable(name_value, att_special);
@@ -259,7 +269,7 @@ int ate_action_get_row_size(const char *name_handle,
                               WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "get_row_size");
    if (retval == EXECUTION_SUCCESS)
    {
       SHELL_VAR *var = ate_get_prepared_variable(name_value, att_special);
@@ -288,7 +298,7 @@ int ate_action_get_array_name(const char *name_handle,
                               WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "get_array_name");
    if (retval)
       goto early_exit;
 
@@ -307,7 +317,10 @@ int ate_action_get_array_name(const char *name_handle,
       }
    }
    else
-      retval = ate_error_failed_to_create(name_value);
+   {
+      ate_register_failed_to_create(name_value);
+      retval = EXECUTION_FAILURE;
+   }
 
   early_exit:
    return retval;
@@ -334,7 +347,7 @@ int ate_action_get_row(const char *name_handle,
                        WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "get_row");
    if (retval)
       goto early_exit;
 
@@ -342,27 +355,31 @@ int ate_action_get_row(const char *name_handle,
    int requested_index;
    if (! get_int_from_list(&requested_index, extra, 0))
    {
-      retval = ate_error_missing_usage("row index in get_row");
+      ate_register_missing_argument("row_index", "get_row action");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    if (requested_index < 0 && requested_index >= handle->row_count)
    {
-      retval = ate_error_record_out_of_range(requested_index, handle->row_count);
+      ate_register_invalid_row_index(requested_index, handle->row_count);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    ARRAY_ELEMENT *arel = ate_get_indexed_row(handle, requested_index);
    if (arel == NULL)
    {
-      retval = ate_error_record_out_of_range(requested_index, handle->row_count);
+      ate_register_unexpected_error("getting qualified index row");
+      retval = EXECUTION_FAILURE;
       goto early_exit;
    }
 
    SHELL_VAR *return_array;
    if (!prepare_clean_array_var(&return_array, name_array))
    {
-      retval = ate_error_failed_to_create("a return array");
+      ate_register_failed_to_create(name_array);
+      retval = EXECUTION_FAILURE;
       goto early_exit;
    }
 
@@ -386,7 +403,8 @@ int ate_action_get_row(const char *name_handle,
    if (i < handle->row_size)
    {
       array_dispose(arr);
-      retval = ate_error_corrupt_table();
+      ate_register_corrupt_table();
+      retval = EX_USAGE;
    }
 
 
@@ -414,7 +432,7 @@ int ate_action_put_row(const char *name_handle,
                        WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "put_row");
    if (retval)
       goto early_exit;
 
@@ -425,20 +443,23 @@ int ate_action_put_row(const char *name_handle,
    int requested_index;
    if (! get_int_from_list(&requested_index, extra, 0))
    {
-      retval = ate_error_missing_usage("row index in get_row");
+      ate_register_missing_argument("row_index", "put_row action");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    if (requested_index < 0 && requested_index >= handle->row_count)
    {
-      retval = ate_error_record_out_of_range(requested_index, handle->row_count);
+      ate_register_invalid_row_index(requested_index, handle->row_count);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    ARRAY_ELEMENT *target_arel = ate_get_indexed_row(handle, requested_index);
    if (target_arel == NULL)
    {
-      retval = ate_error_record_out_of_range(requested_index, handle->row_count);
+      ate_register_unexpected_error("getting qualified index row");
+      retval = EXECUTION_FAILURE;
       goto early_exit;
    }
 
@@ -448,7 +469,8 @@ int ate_action_put_row(const char *name_handle,
    // Find array name
    if (!get_string_from_list(&array_name, extra, 1))
    {
-      retval = ate_error_missing_usage("source array name");
+      ate_register_missing_argument("source array name", "put_row action");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -456,14 +478,16 @@ int ate_action_put_row(const char *name_handle,
    source_array_var = find_variable(array_name);
    if (source_array_var == NULL)
    {
-      retval = ate_error_var_not_found(array_name);
+      ate_register_variable_not_found(array_name);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    // Confirm SHELL_VAR is an array
    if (!array_p(source_array_var))
    {
-      retval = ate_error_wrong_type_var(source_array_var, "array");
+      ate_register_variable_wrong_type(array_name, "array");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -472,7 +496,8 @@ int ate_action_put_row(const char *name_handle,
    // Confirm match row_sizes
    if (source_array->num_elements != fields_to_copy)
    {
-      retval = ate_error_mismatched_row_size(source_array_var, fields_to_copy);
+      ate_register_error("unexpected failure to copy full row");
+      retval = EXECUTION_FAILURE;
       goto early_exit;
    }
 
@@ -517,7 +542,7 @@ int ate_action_put_row(const char *name_handle,
  * @param "extra"         list of arguments
  *
  * @return EXECUTION_SUCCESS or an error code upon failure
- *        (refer to `include/bash/shell.h`).
+ *         (refer to `include/bash/shell.h`).
  *
  * This function can be used for bulk insert of data.  Each extra
  * positional argument will be added to a buffer array until the
@@ -532,7 +557,7 @@ int ate_action_append_data(const char *name_handle,
                            WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "append_data");
    if (retval == EXECUTION_SUCCESS)
    {
       ARRAY *array = array_cell(handle->array);
@@ -562,6 +587,7 @@ int ate_action_append_data(const char *name_handle,
       }
    }
 
+
    return retval;
 }
 
@@ -587,13 +613,15 @@ int ate_action_index_rows (const char *name_handle, const char *name_value,
    SHELL_VAR *shandle = find_variable(name_handle);
    if (shandle == NULL)
    {
-      retval = ate_error_var_not_found(name_handle);
+      ate_register_variable_not_found(name_handle);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
    if (!ahead_p(shandle))
    {
-      retval = ate_error_wrong_type_var(shandle, "ate handle");
+      ate_register_variable_wrong_type(name_handle, "ate handle");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -605,6 +633,11 @@ int ate_action_index_rows (const char *name_handle, const char *name_value,
       free(old_head);
       retval = EXECUTION_SUCCESS;
    }
+   else
+   {
+      ate_register_error("unexpected error calling ate_create_indexed_head");
+      retval = EXECUTION_FAILURE;
+   }
 
   early_exit:
    return retval;
@@ -614,7 +647,7 @@ int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
                                const char *name_array, WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "get_field_sizes");
    if (retval)
       goto early_exit;
 
@@ -625,7 +658,8 @@ int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
    ARRAY_ELEMENT *head = array_head(array_cell(handle->array));
    if (!head)
    {
-      retval = ate_error_var_not_found("array_head");
+      ate_register_variable_not_found("array_head");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -654,13 +688,17 @@ int ate_action_get_field_sizes(const char *name_handle, const char *name_value,
          snprintf(numbuffer, sizeof(numbuffer), "%d", col_sizes[i]);
          if (array_insert(array, i, numbuffer))
          {
-            retval = ate_error_unexpected();
+            ate_register_unexpected_error("adding array element");
+            retval = EXECUTION_FAILURE;
             break;
          }
       }
    }
    else
-      retval = ate_error_unexpected();
+   {
+      ate_register_failed_to_create(name_array);
+      retval = EXECUTION_FAILURE;
+   }
 
 
   early_exit:
@@ -717,7 +755,7 @@ int ate_action_sort(const char *name_handle,
                     WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "sort");
    if (retval)
       goto early_exit;
 
@@ -728,16 +766,24 @@ int ate_action_sort(const char *name_handle,
       callback_func = find_function(callback_name);
       if (callback_func == NULL)
       {
-         retval = ate_error_function_not_found(callback_name);
+         ate_register_function_not_found(callback_name);
+         retval = EX_USAGE;
          goto early_exit;
       }
+   }
+   else
+   {
+      ate_register_missing_argument("sorting callback function", "sort action");
+      retval = EX_USAGE;
+      goto early_exit;
    }
 
    // A name for a new handle variable is required
    const char *name_new_handle = NULL;
    if (!get_string_from_list(&name_new_handle, extra, 1))
    {
-      retval = ate_error_missing_arguments("sort");
+      ate_register_missing_argument("sorted handle name", "sort action");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -785,7 +831,8 @@ int ate_action_sort(const char *name_handle,
       else
       {
          xfree(head);
-         retval = ate_error_failed_to_make_handle("installation of sorted head failed");
+         ate_register_error("failed to create sorted handle '%s'", name_new_handle);
+         retval = EXECUTION_FAILURE;
       }
    }
 
@@ -797,7 +844,7 @@ int ate_action_reindex_elements(const char *name_handle, const char *name_value,
                                const char *name_array, WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "reindex_elements");
    if (retval)
       goto early_exit;
 
@@ -816,7 +863,7 @@ int ate_action_resize_rows(const char *name_handle, const char *name_value,
                            const char *name_array, WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "resize_rows");
    if (retval)
       goto early_exit;
 
@@ -827,7 +874,15 @@ int ate_action_resize_rows(const char *name_handle, const char *name_value,
    int new_row_size = 0;
    if (! get_int_from_list(&new_row_size, extra, 0))
    {
-      retval = ate_error_missing_usage("missing new row size value");
+      ate_register_missing_argument("row_size", "resize_rows");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
+
+   if (new_row_size==0)
+   {
+      ate_register_error("invalid row size of 0");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -859,7 +914,7 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra)
 {
    AHEAD *handle;
-   int retval = get_handle_from_name(&handle, name_handle);
+   int retval = get_handle_from_name(&handle, name_handle, "walk_rows");
    if (retval)
       goto early_exit;
 
@@ -870,7 +925,8 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
    const char *func_name = NULL;
    if (!get_string_from_list(&func_name, extra, 0))
    {
-      retval = ate_error_missing_usage("callback function");
+      ate_register_missing_argument("callback function name", "walk_rows action");
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -886,27 +942,32 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
       starting_index = strtol(int_str, &int_end, 10);
       if (starting_index==0 && int_end == int_str)
       {
-         retval = ate_error_arg_not_number(int_str);
+         ate_register_argument_wrong_type(int_str, "number");
+         retval = EX_USAGE;
          goto early_exit;
       }
 
       if (starting_index >= row_count)
       {
-         retval = ate_error_record_out_of_range(starting_index, row_count);
+         ate_register_invalid_row_index(starting_index, row_count);
+         retval = EX_USAGE;
          goto early_exit;
       }
    }
 
+   // 'row_limit' instead of 'last_row' because 'row_limit' is an invalid index
    int row_limit = row_count;
    if (get_string_from_list(&int_str, extra, 2))
    {
       row_limit = strtol(int_str, &int_end, 10);
       if (row_limit==0 && int_end == int_str)
       {
-         retval = ate_error_arg_not_number(int_str);
+         ate_register_argument_wrong_type(int_str, "number");
+         retval = EX_USAGE;
          goto early_exit;
       }
-      // Force reasonable limit
+
+      // adjust when 'row_limit' is too far
       row_limit += starting_index;
       if (row_limit > row_count)
          row_limit = row_count;
@@ -915,7 +976,8 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
    SHELL_VAR *func_var = find_function(func_name);
    if (!func_var)
    {
-      retval = ate_error_function_not_found(func_name);
+      ate_register_function_not_found(func_name);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -934,7 +996,8 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
 
    if (NULL == array)
    {
-      retval = ate_error_var_not_found(name_array);
+      ate_register_variable_not_found(name_array);
+      retval = EX_USAGE;
       goto early_exit;
    }
 
@@ -950,8 +1013,8 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
       array_flush(array);
       if (NULL == (current_ael = ate_get_indexed_row(handle, i)))
       {
-         retval = ate_error_corrupt_table();
-         goto early_exit;
+         ate_register_corrupt_table();
+         retval = EX_USAGE;
       }
 
       for (int ei=0; ei < row_size && current_ael; ++ei)
@@ -962,7 +1025,7 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
 
       // CALL CALLBACK HERE
       char *numstr = itos(i);
-      callback_result = invoke_shell_function(func_var, numstr, name_array, NULL);
+      callback_result = invoke_shell_function(func_var, numstr, name_array, name_handle, NULL);
       free(numstr);
 
       if (callback_result != 0)

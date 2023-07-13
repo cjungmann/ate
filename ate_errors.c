@@ -13,130 +13,97 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdarg.h>
 
-int ate_error_missing_action(void)
+// Declared in ate.c
+extern const char Error_Name[];
+#include "ate_utilities.h"
+
+void save_to_error_shell_var(const char *str)
 {
-   fprintf(stderr, "Missing action name.\n");
-   return EX_USAGE;
+   SHELL_VAR *var = find_variable(Error_Name);
+   if (var == NULL)
+      var = bind_variable(Error_Name, (char*)str, 0);
+   else
+   {
+      ate_dispose_variable_value(var);
+      var->value = savestring(str);
+      var->attributes = 0;
+   }
 }
 
-int ate_error_handle_already_exists(const char *handle_name)
+void ate_register_error(const char *format, ...)
 {
-   fprintf(stderr, "Variable '%s' already exists.\n", handle_name);
-   return EX_USAGE;
+   va_list args_list;
+
+   int len = 0;
+   char *buffer = NULL;
+
+   while(1)
+   {
+      va_start(args_list, format);
+      len = vsnprintf(buffer, len, format, args_list);
+      va_end(args_list);
+
+      if (buffer == NULL)
+         buffer = alloca(++len);
+      else
+      {
+         save_to_error_shell_var(buffer);
+         break;
+      }
+   }
 }
 
-int ate_error_failed_to_make_handle(const char *reason)
+
+void ate_register_variable_not_found(const char *name)
 {
-   fprintf(stderr, "Failed to create new ate handle: %s.\n", reason);
-   return EX_MISCERROR;
+   ate_register_error("variable '%s' is not found", name);
 }
 
-int ate_error_missing_arguments(const char *action_name)
+void ate_register_function_not_found(const char *name)
 {
-   fprintf(stderr, "Missing arguments for action '%s'.\n", action_name);
-   return EX_USAGE;
+   ate_register_error("function '%s' is not found", name);
 }
 
-int ate_error_arg_not_number(const char *arg_value)
+void ate_register_variable_wrong_type(const char *name, const char *desired_type)
 {
-   fprintf(stderr, "Argument value '%s' passed instead of number.\n", arg_value);
-   return EX_USAGE;
+   ate_register_error("variable '%s' should be type %s", name, desired_type);
 }
 
-int ate_error_not_found(const char *what)
+void ate_register_argument_wrong_type(const char *value, const char *desired_type)
 {
-   fprintf(stderr, "Failed to find %s.\n", what);
-   return EX_NOTFOUND;
+   ate_register_error("argument value '%s' should be type %s", value, desired_type);
 }
 
-int ate_error_action_not_found(const char *action_name)
+void ate_register_corrupt_table(void)
 {
-   fprintf(stderr, "Failed to find action '%s'.\n", action_name);
-   return EX_NOTFOUND;
+   ate_register_error("the ate handle is corrupted");
 }
 
-int ate_error_function_not_found(const char *func_name)
+void ate_register_invalid_row_index(int requested, int available)
 {
-   fprintf(stderr, "Failed to find funtion '%s'.\n", func_name);
-   return EX_NOTFOUND;
+   ate_register_error("index %d is invalid in list of %d rows", requested, available);
 }
 
-int ate_error_var_not_found(const char *var_name)
+void ate_register_invalid_row_size(int row_size, int el_count)
 {
-   fprintf(stderr, "Failed to find variable '%s'.\n", var_name);
-   return EX_NOTFOUND;
+   ate_register_error("invalid row size, %d, does not divide evenly into %d elements",
+                      row_size, el_count);
 }
 
-int ate_error_wrong_type_var(SHELL_VAR *var, const char *type)
+void ate_register_missing_argument(const char *name, const char *action)
 {
-   fprintf(stderr,
-           "Variable '%s' should be type %s.\n",
-           var->name,
-           type);
-   return EX_USAGE;
+   ate_register_error("missing '%s' argument in action '%s'", name, action);
 }
 
-int ate_error_missing_usage(const char *what)
+void ate_register_failed_to_create(const char *name)
 {
-   fprintf(stderr, "Missing %s.\n", what);
-   return EX_USAGE;
+   ate_register_error("failed to create variable '%s'", name);
 }
 
-int ate_error_failed_to_create(const char *what)
+void ate_register_unexpected_error(const char *doing)
 {
-   fprintf(stderr, "Failed to create %s\n", what);
-   return EXECUTION_FAILURE;
+   ate_register_error("encountered unexpected error while %s", doing);
 }
 
-int ate_error_corrupt_table(void)
-{
-   fprintf(stderr, "Corrupted array table.\n");
-   return EX_BADASSIGN;
-}
-
-int ate_error_invalid_row_size(int requested)
-{
-   fprintf(stderr, "Invalid row size of %d.\n", requested);
-   return EX_USAGE;
-}
-
-// Not sure about this test for pointer, but it seems sound:
-#define argument_is_pointer(x) ((long)(x) > 0xfff)
-
-/**
- * @brief Warn about put_row error likely indicating bad source row
- * @param "row"    [in] A SHELL_VAR contains the name and array for
- *                      the message.
- * @param "needed" [in] number of elements in a row
- * @return EX_BADASSIGN
- */
-int ate_error_mismatched_row_size(SHELL_VAR *row, int needed)
-{
-   // 'ate' code error if *row is not a pointer:
-   assert(argument_is_pointer(row));
-
-   fprintf(stderr,
-           "Mismatched row size, row '%s' has %d elements, should have %d\n",
-           row->name,
-           (array_cell(row))->num_elements,
-           needed);
-
-   return EX_BADASSIGN;
-}
-
-int ate_error_record_out_of_range(int requested, int limit)
-{
-   fprintf(stderr,
-           "Mistakenly requested row %d from %d records.\n",
-           requested,
-           limit);
-
-   return EX_NOTFOUND;
-}
-
-int ate_error_unexpected(void)
-{
-   fprintf(stderr, "Unexpected error.\n");
-   return EXECUTION_FAILURE;
-}

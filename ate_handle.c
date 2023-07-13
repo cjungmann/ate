@@ -6,6 +6,7 @@
 
 #include "ate_handle.h"
 #include "ate_utilities.h"
+#include "ate_errors.h"
 
 static const char AHEAD_ID[] = "ATE_HANDLE";
 
@@ -149,29 +150,38 @@ bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
    if (array && array_p(array))
    {
       int el_count = (array_cell(array))->num_elements;
-      if ((el_count % row_size)==0)
+
+      // Removed test and warning against an empty array;
+      // The AHEAD member is necessary for a table, even if
+      // populating the array is deferred.
+
+      if (el_count % row_size)
       {
-         // Get block memory to hold AHEAD and calculated number
-         // of pointers to ARRAY_ELEMENT for indexed access
-         int row_count = el_count / row_size;
-         size_t mem_required = ate_calculate_head_size(row_count);
-         AHEAD *temp_head = (AHEAD*)xmalloc(mem_required);
+         ate_register_error("attempted to divide %d total elements into rows of %d elements",
+                            el_count, row_size);
+         return False;
+      }
 
-         if (temp_head)
+      // Get block memory to hold AHEAD and calculated number
+      // of pointers to ARRAY_ELEMENT for indexed access
+      int row_count = el_count / row_size;
+      size_t mem_required = ate_calculate_head_size(row_count);
+      AHEAD *temp_head = (AHEAD*)xmalloc(mem_required);
+
+      if (temp_head)
+      {
+         if (ate_initialize_head(temp_head, array, row_size))
          {
-            if (ate_initialize_head(temp_head, array, row_size))
+            if (ate_initialize_row_pointers(temp_head, array, row_size, row_count))
             {
-               if (ate_initialize_row_pointers(temp_head, array, row_size, row_count))
-               {
-                  temp_head->row_count = row_count;
-                  *head = temp_head;
-                  return True;
-               }
+               temp_head->row_count = row_count;
+               *head = temp_head;
+               return True;
             }
-
-            // Discard memory if still running this function
-            xfree(temp_head);
          }
+
+         // Discard memory if still running this function
+         xfree(temp_head);
       }
    }
    return False;
@@ -298,6 +308,7 @@ int ate_check_head_integrity(AHEAD *head)
    // Ensure self-identifies as a AHEAD
    if (head->typeid != AHEAD_ID)
    {
+      ate_register_error("head does not self-identify as ate handle");
       retval = EX_NOTFOUND;
       goto early_exit;
    }
@@ -307,12 +318,14 @@ int ate_check_head_integrity(AHEAD *head)
    if (head->array == NULL
        || (array=array_cell(head->array)) == NULL)
    {
+      ate_register_error("head does not contain valid array");
       retval = EX_NOTFOUND;
       goto early_exit;
    }
 
    if (head->row_count == 0)
    {
+      ate_register_error("head contains no indexed rows");
       retval = EX_BADASSIGN;
       goto early_exit;
    }
@@ -323,12 +336,15 @@ int ate_check_head_integrity(AHEAD *head)
    // Test incomplete row orphans:
    if (element_count % head->row_size)
    {
+      ate_register_error("head incompatible row size (%d) for %d array elements",
+                         head->row_size, element_count);
       retval = EX_BADASSIGN;
       goto early_exit;
    }
    // Test that all elements are in a row
    if (head->row_size * head->row_count != element_count)
    {
+      ate_register_error("some head array elements not indexed");
       retval = EX_NOINPUT;
       goto early_exit;
    }

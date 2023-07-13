@@ -222,8 +222,14 @@ bool prepare_clean_array_var(SHELL_VAR **var, const char *name)
  * @return EXECUTION_SUCCESS if found and validated, appropriate
  *         error value if not.
  */
-int get_handle_from_name(AHEAD **head, const char *name_handle)
+int get_handle_from_name(AHEAD **head, const char *name_handle, const char *action_name)
 {
+   if (name_handle == NULL)
+   {
+      ate_register_missing_argument("ate handle name", action_name);
+      return EX_USAGE;
+   }
+
    SHELL_VAR *svar = find_variable(name_handle);
    if (svar)
    {
@@ -233,10 +239,14 @@ int get_handle_from_name(AHEAD **head, const char *name_handle)
          return EXECUTION_SUCCESS;
       }
       else
-         return ate_error_wrong_type_var(svar, "ate handle");
+      {
+         ate_register_error("variable '%s' is not an ate handle", name_handle);
+         return EX_USAGE;
+      }
    }
 
-   return ate_error_var_not_found(name_handle);
+   ate_register_error("ate handle variable '%s' was not found", name_handle);
+   return EX_USAGE;
 }
 
 /**
@@ -284,11 +294,13 @@ int get_shell_var_by_name_and_type(SHELL_VAR **retval, const char *name, int att
          *retval = var;
          return EXECUTION_SUCCESS;
       }
-      else
-         return ate_error_wrong_type_var(var, get_type_name_from_attribute(attributes));
+
+      ate_register_variable_wrong_type(name, get_type_name_from_attribute(attributes));
+      return EX_USAGE;
    }
 
-   return ate_error_var_not_found(name);
+   ate_register_variable_not_found(name);
+   return EX_USAGE;
 }
 
 /**
@@ -346,7 +358,10 @@ int clone_range_to_array(SHELL_VAR **new_array,
       array_insert(target_array, index, savestring(source_ptr->value));
 
    if (index < el_count)
-      retval = ate_error_corrupt_table();
+   {
+      ate_register_corrupt_table();
+      retval = EX_USAGE;
+   }
    else
       *new_array = var;
 
@@ -496,7 +511,7 @@ int table_extend_rows(AHEAD *head, int new_columns)
       el_count = 0;
       while (el_count < new_columns)
       {
-         new_element = array_create_element(0, "--");
+         new_element = array_create_element(0, "");
 
          new_element->prev = field;
          field->next = new_element;

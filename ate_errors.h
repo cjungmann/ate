@@ -10,23 +10,21 @@
  * @{
  */
 
-int ate_error_missing_action(void);
-int ate_error_handle_already_exists(const char *handle_name);
-int ate_error_failed_to_make_handle(const char *reason);
-int ate_error_missing_arguments(const char *action_name);
-int ate_error_arg_not_number(const char *arg_value);
-int ate_error_not_found(const char *what);
-int ate_error_action_not_found(const char *action_name);
-int ate_error_function_not_found(const char *func_name);
-int ate_error_var_not_found(const char *var_name);
-int ate_error_wrong_type_var(SHELL_VAR *var, const char *type);
-int ate_error_missing_usage(const char *what);
-int ate_error_failed_to_create(const char *what);
-int ate_error_corrupt_table(void);
-int ate_error_invalid_row_size(int requested);
-int ate_error_mismatched_row_size(SHELL_VAR* row, int needed);
-int ate_error_record_out_of_range(int requested, int limit);
-int ate_error_unexpected(void);
+void save_to_error_shell_var(const char *str);
+void ate_register_error(const char *format, ...);
+
+void ate_register_variable_not_found(const char *name);
+void ate_register_function_not_found(const char *name);
+void ate_register_variable_wrong_type(const char *name, const char *desired_type);
+void ate_register_argument_wrong_type(const char *name, const char *desired_type);
+void ate_register_corrupt_table(void);
+void ate_register_invalid_row_index(int requested, int available);
+void ate_register_invalid_row_size(int row_size, int el_count);
+void ate_register_missing_argument(const char *name, const char *action);
+void ate_register_failed_to_create(const char *name);
+void ate_register_unexpected_error(const char *doing);
+
+
 
 /** @} */
 

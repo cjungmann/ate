@@ -157,5 +157,6 @@ int delegate_action(const char *name_action,
       ++agent;
    }
 
-   return ate_error_action_not_found(name_action);
+   ate_register_error("'%s' is not a recognized action name", name_action);
+   return EX_USAGE;
 }
