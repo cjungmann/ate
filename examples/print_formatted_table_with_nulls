@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+print_formatted_table_with_nulls()
+{
+    local -n pft_handle="$1"
+    local null_label="$2"
+
+    local -i null_len="${#null_label}"
+
+    # Make format string
+    ate get_field_sizes pft_handle
+    local -a parts=()
+    local width
+    local delim=''
+    for width in "${ATE_ARRAY[@]}"; do
+
+        # ensure width to contain null label
+        if [ "$width" -lt "$null_len" ]; then
+            width="$null_len"
+        fi
+
+        parts+=( "$delim" "%-${width}s" )
+        delim=' '
+    done
+    # Scrunch array to format string
+    local IFS=''
+    local fmt="${parts[*]}\n"
+
+    replace_nulls()
+    {
+        local -n rn_row="$1"
+        local -i ndx=0
+        for el in "${rn_row[@]}"; do
+            if [ -z "$el" ]; then
+                rn_row[$ndx]="$null_label"
+            fi
+            (( ++ndx ))
+        done
+    }
+
+    # Embedded callback print function
+    print_row()
+    {
+        local -n pr_row="$1"
+        if [ "$null_len" -gt 0 ]; then
+            replace_nulls "$1"
+        fi
+        printf "$fmt" "${pr_row[@]}"
+    }
+
+    ate walk_rows pft_handle print_row
+}
+
