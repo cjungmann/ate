@@ -1,0 +1,363 @@
+#!/usr/bin/env bash
+
+enable -f ../ate.so ate
+
+declare -a five_el_array=( one two three four five )
+
+print_formatted_table_with_nulls()
+{
+    local -n pft_handle="$1"
+    local null_label="${2:-''}"
+
+    local -i null_len="${#null_label}"
+
+    # Make format string
+    ate get_field_sizes pft_handle
+    local -a parts=()
+    local width
+    local delim=''
+    for width in "${ATE_ARRAY[@]}"; do
+        if [ "$width" -lt "$null_len" ]; then
+            width="$null_len"
+        fi
+        parts+=( "$delim" "%-${width}s" )
+        delim=' '
+    done
+    # Scrunch array to format string
+    local IFS=''
+    local fmt="${parts[*]}\n"
+
+    replace_nulls()
+    {
+        local -n rn_row="$1"
+        local -i ndx=0
+        for el in "${rn_row[@]}"; do
+            if [ -z "$el" ]; then
+                rn_row[$ndx]="$null_label"
+            fi
+            (( ++ndx ))
+        done
+    }
+
+    # Embedded callback print function
+    print_row()
+    {
+        local -n pr_row="$1"
+        if [ "$null_len" -gt 0 ]; then
+            replace_nulls "$1"
+        fi
+        printf "$fmt" "${pr_row[@]}"
+    }
+
+    ate walk_rows pft_handle print_row
+}
+
+survey_handle()
+{
+    local -n sh_handle="$1"
+    ate get_row_size sh_handle -v row_size
+    ate get_row_count sh_handle -v row_count
+    ate get_array_name sh_handle -v array_name
+
+    printf "Handle '%s':\n  %d rows of %d columns in array '%s'\n" "$1" "$row_count" "$row_size" "$array_name"
+}
+
+capitalize_row()
+{
+    local -n cr_row="$1"
+    local -i row_index="$2"
+    local -n cr_handle="$3"
+
+    local val="${cr_row[0]}"
+    cr_row[0]="${val^}"
+
+    ate put_row cr_handle "$row_index" cr_row
+}
+
+corrupt_row()
+{
+    local -n cc_row="$1"
+    local -i row_index="$2"
+    local -n cc_handle="$3"
+
+    cc_row=()
+    ate put_row cc_handle "$row_index" cc_row
+    return 1
+}
+
+test_params()
+{
+    local msg="$1"
+    local action="$2"
+    local handle_name="$3"
+
+    echo "Test using ${msg}:"
+
+    shift
+    echo "   ate $*"
+    if ate "$@"; then
+        echo $'\e[31;1mOops, unexpected success.\e[m'
+
+        if [ "$action" = "declare" ]; then
+            survey_handle "$handle_name"
+            unset "$handle_name"
+        fi
+    else
+        if [ -z "$ATE_ERROR" ]; then
+            echo $'Failed, but \e[31;1mno error message\e[m.'
+        else
+            printf $'Failed with message: \e[32;1m%s\e[m\n' "$ATE_ERROR"
+        fi
+    fi
+    echo
+}
+
+handle_setup_base()
+{
+    local handle_name="$1"
+    local -i row_size="$2"
+    local action_name="$3"
+    if ate declare "$handle_name" "$row_size"; then
+        shift 3
+        if ate "$action_name" "$handle_name" "$@"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+make_table()
+{
+    local handle_name="$1"
+    local -n source="$2"
+
+    local -i row_size="${source[0]}"
+    local -a els=( "${source[@]:1}" )
+
+    local format=$'Action \e[32;1m%s\e[m for \e[32;1m%s\e[m failed: \e[31;1m%s\e[m.\n'
+
+    if ate declare "$handle_name" "$row_size"; then
+        if ate append_data "$handle_name" "${els[@]}"; then
+            if ate index_rows "$handle_name"; then
+                ate get_row_count "$handle_name"
+                return 0
+            else
+                printf "$format" "index_rows" "$handle_name" "$ATE_ERROR"
+                unset "$handle_name"
+            fi
+        else
+            printf "$format" "append_data" "$handle_name" "$ATE_ERROR"
+            unset "$handle_name"
+        fi
+    else
+        printf "$format" "declare" "$handle_name" "$ATE_ERROR"
+    fi
+
+    return 1
+}
+
+declare -a array_animals=(
+    2
+    dog     woof
+    cat     meow
+    chicken cluck
+    cow     moo
+)
+
+
+test_with_handle()
+{
+    local array_name="$1"
+    local msg="$1"
+    local handle_name="$4"
+
+    if make_table "$handle_name" "$array_name"; then
+        shift
+        test_params "$@"
+        unset "$handle_name"
+    fi
+}
+
+##
+# @brief Query the user for 'y' to continue, 's' to skip, or 'q' to quit
+##
+get_ysq()
+{
+    echo
+    local -i exitval=0
+    while true; do
+        read -n1 -s -p "Press 'y' to continue, 's' to skip section, or 'q' to quit."
+        echo $'\e[1A\e[1G;\e[2K'
+        case "$REPLY" in
+            y) exitval=0; break;;
+            s) exitval=1 break;;
+            q) exit 1 ;;
+            *) continue ;;
+        esac
+    done
+
+    echo
+    echo
+    return "$exitval"
+}
+
+clear_and_origin() { echo $'\e[2J\e[1;1H'; }
+
+
+test_non_handle_errors()
+{
+    clear_and_origin
+
+    cat <<EOF
+Error testing for actions that don't expect a handle
+
+In order to ensure bad-usage failures and the error message
+feedback is useful, the following examples use 'ate'
+inappropriately in order to generate errors.
+EOF
+    if ! get_ysq; then
+        return 0
+    fi
+
+    test_params "missing action name"
+    test_params "unknown action name"                 do_nothing   unknown_handle
+    test_params "missing handle name (when required)" declare
+    test_params "missing handle name (when required)" get_row_size
+    test_params "unknown handle name"                 get_row_size unknown_handle
+    test_params "non-handle as a handle"              get_row_size USER
+    test_params "inappropriate declaration params"    declare      new_handle    0
+    test_params "inappropriate declaration params"    declare      new_handle    \-1
+    test_params "declare with unknown array"          declare      new_handle    2   bogus
+}
+
+test_handle_errors()
+{
+    clear_and_origin
+
+    cat <<EOF
+Error testing for actions work on an initialized handle.
+
+In order to ensure bad-usage failures and the error message
+feedback is useful, the following examples use 'ate'
+inappropriately in order to generate errors.
+EOF
+
+    if ! get_ysq; then
+        return 0
+    fi
+    echo "Got here"
+
+    if ! make_table "good_handle" "array_animals"; then
+        printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
+        return 1
+    fi
+
+    test_params "bad row_size value" resize_rows good_handle 0
+    test_params "get_row bad row index" get_row good_handle -1 -a gotten_row
+    test_params "put_row missing array" put_row good_handle 0
+    test_params "put_row bad row index" put_row good_handle -1 gotten_row
+    test_params "put_row bad row index" put_row good_handle 10 gotten_row
+    test_params "put_row empty array" put_row good_handle 0 gotten_row
+}
+
+test_walk_rows()
+{
+    clear_and_origin
+    cat <<EOF
+Testing walk_rows procedures
+
+These are a bit more involved, and may have before and after views
+that benefit from starting with an empty screen.
+EOF
+
+    if ! get_ysq; then
+        return 0
+    fi
+
+    if ! make_table "good_handle" "array_animals"; then
+        printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
+        return 1
+    fi
+
+    echo "Starting condition of animals table:"
+    print_formatted_table_with_nulls good_handle
+    echo
+
+    echo "The following procedures purposfully cause error conditions"
+    echo "in order to confirm reasonable results and error messages."
+
+    test_params "walk_rows with missing callback function argument" walk_rows good_handle
+    test_params "walk_rows naming non-existent callback function" walk_rows good_handle bogus_callback
+    test_params "walk_rows with out-of-range start" walk_rows good_handle capitalize_row 10
+    test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row 10
+
+    echo
+    echo "Using 'walk_rows' to capitalize each animal name"
+    ate walk_rows good_handle capitalize_row
+    print_formatted_table_with_nulls good_handle
+
+    reverse_extra_column()
+    {
+        local -n rec_row="$1"
+        local -i index="$2"
+        local -n rec_handle="$3"
+
+        local sound="${rec_row[1]}"
+        local revsound=$( echo "$sound" | rev )
+        revsound="${revsound,,}"
+        revsound="${revsound^}"
+        rec_row[2]="$revsound"
+        ate put_row rec_handle "$index" rec_row
+
+        return 0
+    }
+
+    dnuos_sort()
+    {
+        local -n ds_return="$1"
+        local -n ds_row_left="$2"
+        local -n ds_row_right="$3"
+        local left="${ds_row_left[2]}"
+        local right="${ds_row_left[2]}"
+        if [[ "$left" < "$right" ]]; then
+            ds_return=-1
+        elif [[ "$left" > "$right" ]]; then
+            ds_return=1
+        else
+            ds_return=0
+        fi
+
+        return 0
+    }
+
+    echo
+    echo "Extend the table for extra data"
+    if ate resize_rows good_handle 3; then
+        print_formatted_table_with_nulls good_handle
+
+        echo
+        echo "Set a value for the new column"
+        ate walk_rows good_handle reverse_extra_column
+        print_formatted_table_with_nulls good_handle
+
+        echo
+        echo "Sort on third row"
+        ate sort good_handle dnuos_sort sorted_handle
+        print_formatted_table_with_nulls sorted_handle
+
+        echo
+        echo "Now let's check error messages"
+        test_params "resize_rows with illegal size value" resize_rows good_handle 0
+        test_params "sort without callback" sort good_handle
+        test_params "sort with false callback" sort good_handle bogus_callback
+        test_params "sort without results handle" sort good_handle dnuos_sort
+    fi
+
+}
+
+
+
+
+test_non_handle_errors
+test_handle_errors
+test_walk_rows
