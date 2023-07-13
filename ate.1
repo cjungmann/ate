@@ -527,9 +527,7 @@ action invokes a callback function for each row:
 .EX
 display_row()
 {
-   local -i row_num=\(dq$1\(dq
-   # try to avoid name collisions with nameref variables:
-   local -n dr_row=\(dq$2\(dq
+   local -n dr_row=\(dq$1\(dq
 
    printf \(dq%s makes a %s\(rsn\(dq \(dq${dr_row[@]}\(dq
 
@@ -547,9 +545,14 @@ procedure might also be used to update the rows of a table.
 .EX
 capitalize_name()
 {
-   local -i row_num=\(dq$1\(dq
-   local -n ur_row=\(dq$2\(dq
+   local -n ur_row=\(dq$1\(dq
+   local -i row_num=\(dq$2\(dq
+   local -n ur_handle=\(dq$3\(dq
+
    ur_row[0]=\(dq${ur_row[0]^}\(dq
+   ate put_row ur_handle \(dq$row_num\(dq ur_row
+
+   return 0
 }
 
 ate \fBwalk_rows\fP pet_handle capitalize_name
@@ -620,8 +623,7 @@ print_formatted_table()
     \fB# Embedded callback print function\fP
     print_row()
     {
-        # ignoring argument $1, the row index
-        local -n pr_row=\(dq$2\(dq
+        local -n pr_row=\(dq$1\(dq
         printf \(dq$fmt\(dq \(dq${pr_row[@]}\(dq
     }
 
