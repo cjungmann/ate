@@ -1025,7 +1025,7 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
 
       // CALL CALLBACK HERE
       char *numstr = itos(i);
-      callback_result = invoke_shell_function(func_var, numstr, name_array, name_handle, NULL);
+      callback_result = invoke_shell_function(func_var, name_array, numstr, name_handle, NULL);
       free(numstr);
 
       if (callback_result != 0)
