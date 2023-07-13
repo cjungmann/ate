@@ -17,6 +17,14 @@ if [ "$?" -ne 0 ]; then
     exit 1
 fi
 
+
+# Declare without an array, the load it with append_data:
+ate declare new_handle 2
+ate append_data new_handle "${pets[@}}"
+# See what name was used for the new array
+ate get_array_name new_handle
+echo "The generated handle array name is $ATE_VALUE"
+
 ###############################################
 #  Demonstration of getting and putting rows  #
 ###############################################
@@ -87,8 +95,8 @@ update_global_format_string()
 # Callback function for "walk_rows" action
 display_row()
 {
-    local -i row_number="$1"
-    local -n dr_row="$2"
+    local -n dr_row="$1"
+    local -i row_number="$2"
     printf "$global_format_string" "${dr_row[@]}"
 }
 
@@ -131,7 +139,7 @@ ate append_data pet_handle pig oink chicken cluck wolf howl owl hoot hummingbird
 
 echo
 echo "After adding rows to a table, the index must be updated, too"
-ate update_index pet_handle
+ate index_rows pet_handle
 echo
 echo "Recommend updating field widths after append_data for any longer elements."
 update_global_format_string "pet_handle"
@@ -151,7 +159,7 @@ declare -a more_animals=(
     horse whinny
     )
 ate append_data pet_handle "${more_animals[@]}"
-ate update_index pet_handle
+ate index_rows pet_handle
 ate sort pet_handle sort_by_animal sorted_handle
 update_global_format_string "pet_handle"
 ate walk_rows sorted_handle display_row
