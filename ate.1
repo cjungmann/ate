@@ -386,11 +386,11 @@ This action exposes the C-library
 function for use in a Bash script.
 .PP
 .B ate sort
-.I handle_name sort_function sorted_handle_name
+.I handle_name comparison_function sorted_handle_name
 .RS 4
 .arg_handle
 .TP
-.I sort_function
+.I comparison_function
 the name of a script callback function that will report the
 relative order of two given rows
 .TP
@@ -398,8 +398,8 @@ relative order of two given rows
 the requested name for the new sorted handle
 .RE
 .PP
-The
-.I sort_function
+The callback
+.I campare_function
 will get three SHELL_VAR names, the first of the variable in
 which the comparison result will be returned, the second is the
 left-hand row, and the third argument is the name of the right-hand
@@ -412,6 +412,41 @@ variables.
 Refer to
 .B SORT EXAMPLE
 below.
+.SS RESIZE_ROWS
+.PP
+Modify an existing table by adding or removing columns.
+To achieve the new row size, and this function will remove columns
+from or add empty columns to the end of each virtual row.
+.PP
+A row size of zero or less will not be honored.
+.PP
+.B ate resize_rows
+.I handle_name new_row_size
+.RS 4
+.arg_handle
+.TP
+.I new_row_size
+is the requested new row size
+.SS REINDEX_ELEMENTS
+.PP
+This reassigns the internal index number of the Bash array elements
+according to the indexed order of the rows.
+It is automatically called when resizing rows because adding columns
+results in the addition of new elements between existing consecutive
+array elements.
+.PP
+This function may also be useful to reorder the Bash array after
+a sort.
+Recalling that a sort does not change the order of an array's
+elements, calling
+.B reindex_elements
+will reorder and reindex the elements in the sorted order.
+.PP
+.B ate reindex_elements
+.I handle_name
+.RS 4
+.arg_handle
+.RE
 .SH EXAMPLES
 .PP
 A picture is worth a thousand words, likewise, an example may be more
