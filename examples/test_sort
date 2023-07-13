@@ -32,8 +32,8 @@ make_format_string()
 
 line_print()
 {
-    local -i row_num="$1"
-    local -n lp_row="$2"
+    local -n lp_row="$1"
+    local -i row_num="$2"
 
     printf "$format_str" "${lp_row[@]}"
 }
@@ -81,9 +81,9 @@ if ate declare handle sources 2; then
 
     echo
     echo "Making a format string"
-    if ate get_field_sizes handle col_widths; then
-        echo "col_widths are ${col_widths[*]}"
-        make_format_string format_str col_widths
+    if ate get_field_sizes handle; then
+        echo "col_widths are ${ATE_ARRAY[*]}"
+        make_format_string format_str "ATE_ARRAY"
         echo
     else
         format_str="%s %s\n"
