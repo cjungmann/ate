@@ -608,27 +608,15 @@ int ate_action_append_data(const char *name_handle,
 int ate_action_index_rows (const char *name_handle, const char *name_value,
                            const char *name_array, WORD_LIST *extra)
 {
-   int retval = EXECUTION_FAILURE;
-
-   SHELL_VAR *shandle = find_variable(name_handle);
-   if (shandle == NULL)
-   {
-      ate_register_variable_not_found(name_handle);
-      retval = EX_USAGE;
+   AHEAD *old_head;
+   int retval = get_handle_from_name(&old_head, name_handle, "index_rows");
+   if (retval)
       goto early_exit;
-   }
 
-   if (!ahead_p(shandle))
-   {
-      ate_register_variable_wrong_type(name_handle, "ate handle");
-      retval = EX_USAGE;
-      goto early_exit;
-   }
-
-   AHEAD *old_head = ahead_cell(shandle);
    AHEAD *new_head = NULL;
    if (ate_create_indexed_head(&new_head, old_head->array, old_head->row_size))
    {
+      SHELL_VAR *shandle = find_variable(name_handle);
       shandle->value = (char*)new_head;
       free(old_head);
       retval = EXECUTION_SUCCESS;
