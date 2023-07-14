@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+enable -f ../ate.so ate
+
+prompt_continue()
+{
+    read -n1 -p "'q' to quit, any other key for next set of tests"
+    if [ "$REPLY" == 'q' ]; then
+        exit 1
+    fi
+    echo $'\e[2J\e[1,1H'
+}
+
+make_simple_handle()
+{
+    local -a table_array=( dog woof cat meow duck quack )
+    local handle_name="$1"
+    if ate declare "$handle_name" 2; then
+        if ate append_data "$handle_name" "${table_array[@]}"; then
+           if ! ate index_rows "$handle_name"; then
+               echo "Failed to index rows: $ATE_ERROR"
+           fi
+           return 0
+        else
+            echo "Failed to append data: $ATE_ERROR"
+        fi
+    fi
+    return 1
+}
+
+declare -a Actions=( $( ate list_actions ) )
+
+# Skip testing "list_actions" and "show_action"
+Actions=( "${Actions[@]:2}" )
+
+
+run_test()
+{
+    local -n rt_args="$1"
+    local action="${rt_args[0]}"
+    echo "testing: 'ate ${rt_args[*]}'"
+    printf $'Action \e[33;1m%s\e[m ' "$action"
+    if ate "${rt_args[@]}"; then
+        printf $'\e[32;1msucceeded\e[m\n\n'
+        return 0
+    else
+        printf $'\e[31;1mFAILED\e[m: %s\n\n' "$ATE_ERROR"
+        return 1
+    fi
+}
+
+test_declare()
+{
+    local -a table_array=( dog woof cat meow duck quack )
+    local -a args
+
+    args=( declare new_handle )
+    if run_test args; then
+        unset new_handle
+    fi
+
+    args=( declare new_handle 2 )
+    if run_test args; then
+        unset new_handle
+    fi
+
+    args=( declare new_handle 2 table_array )
+    if run_test args; then
+        unset new_handle
+    fi
+
+    args=( declare new_handle table_array 2 )
+    if run_test args; then
+        unset new_handle
+    fi
+
+    args=( declare new_handle 4 table_array )
+    if run_test args; then
+        unset new_handle
+    fi
+}
+
+test_actions_only()
+{
+    for action in "${Actions[@]}"; do
+        local -a args=( "$action" )
+        run_test args
+    done
+}
+
+test_handle_actions()
+{
+    local -n tha_missed_actions="$1"
+    if make_simple_handle "handle"; then
+        for action in "${Actions[@]}"; do
+            args=( "$action" handle )
+            if ! run_test args; then
+                if [[ "$ATE_ERROR" =~ missing ]]; then
+                    tha_missed_actions+=( "$action" )
+                fi
+            fi
+        done
+        unset handle
+    fi
+
+
+
+    local -a args
+}
+
+test_three_parms()
+{
+    local -n ttp_actions="$1"
+    local -a args
+    if make_simple_handle "handle"; then
+        for action in "${ttp_actions[@]}"; do
+            args=( "$action" "handle" 2 )
+            run_test args
+        done
+        unset handle
+    fi
+    }
+
+test_actions_only
+
+prompt_continue
+test_declare
+
+prompt_continue
+declare -a new_actions=()
+test_handle_actions "new_actions"
+
+echo "Action needing more than an action name and a handle:"
+echo "${new_actions[*]}"
+
+prompt_continue
+test_three_parms "new_actions"
