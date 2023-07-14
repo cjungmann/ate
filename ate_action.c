@@ -355,7 +355,7 @@ int ate_action_get_row(const char *name_handle,
    int requested_index;
    if (! get_int_from_list(&requested_index, extra, 0))
    {
-      ate_register_missing_argument("row_index", "get_row action");
+      ate_register_missing_argument("row_index", "get_row");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -443,7 +443,7 @@ int ate_action_put_row(const char *name_handle,
    int requested_index;
    if (! get_int_from_list(&requested_index, extra, 0))
    {
-      ate_register_missing_argument("row_index", "put_row action");
+      ate_register_missing_argument("row_index", "put_row");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -469,7 +469,7 @@ int ate_action_put_row(const char *name_handle,
    // Find array name
    if (!get_string_from_list(&array_name, extra, 1))
    {
-      ate_register_missing_argument("source array name", "put_row action");
+      ate_register_missing_argument("source array name", "put_row");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -761,7 +761,7 @@ int ate_action_sort(const char *name_handle,
    }
    else
    {
-      ate_register_missing_argument("sorting callback function", "sort action");
+      ate_register_missing_argument("sorting callback function", "sort");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -770,7 +770,7 @@ int ate_action_sort(const char *name_handle,
    const char *name_new_handle = NULL;
    if (!get_string_from_list(&name_new_handle, extra, 1))
    {
-      ate_register_missing_argument("sorted handle name", "sort action");
+      ate_register_missing_argument("sorted handle name", "sort");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -913,7 +913,7 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
    const char *func_name = NULL;
    if (!get_string_from_list(&func_name, extra, 0))
    {
-      ate_register_missing_argument("callback function name", "walk_rows action");
+      ate_register_missing_argument("callback function name", "walk_rows");
       retval = EX_USAGE;
       goto early_exit;
    }
