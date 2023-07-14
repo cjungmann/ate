@@ -88,7 +88,7 @@ void ate_register_invalid_row_index(int requested, int available)
 
 void ate_register_invalid_row_size(int row_size, int el_count)
 {
-   ate_register_error("invalid row size, %d, does not divide evenly into %d elements",
+   ate_register_error("invalid row size: %d does not divide evenly into %d elements",
                       row_size, el_count);
 }
 
