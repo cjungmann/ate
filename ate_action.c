@@ -21,6 +21,9 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
+#define HOSTED_ARRAY_STEM "ATE_HOSTED_ARRAY_"
+#define QSORT_VAR_STEM "ATE_QSORT_VAR_"
+#define FILTER_ROW_STEM "ATE_FILTER_ARRAY_"
 
 
 /*****
@@ -185,9 +188,9 @@ int ate_action_declare(const char *name_handle,
    // Handle missing array name
    if (hosted_array == NULL)
    {
-      static const char *stem = "ATE_HOSTED_ARRAY_";
+      static const char *stem = HOSTED_ARRAY_STEM;
+      const static int buff_len = 4 + sizeof HOSTED_ARRAY_STEM;
 
-      int buff_len = strlen(stem) + 5;
       char *name = (char*)alloca(buff_len);
       if (name && make_unique_name(name, buff_len, stem))
          hosted_array = make_new_array_variable(name);
@@ -778,8 +781,9 @@ int ate_action_sort(const char *name_handle,
    AHEAD *head = NULL;
    if (ate_create_indexed_head(&head, handle->array, handle->row_size))
    {
-      static const char name_stem[] = "ATE_QSORT_VAR_";
-      int buffer_len = strlen(name_stem) + 5;   // '9999\0'
+      static const char name_stem[] = QSORT_VAR_STEM;
+      static const int buffer_len = 4 + sizeof QSORT_VAR_STEM;
+
       char *name_return = (char*)alloca(buffer_len);
       char *name_left = (char*)alloca(buffer_len);
       char *name_right = (char*)alloca(buffer_len);
@@ -878,6 +882,133 @@ int ate_action_resize_rows(const char *name_handle, const char *name_value,
       retval = table_extend_rows(handle, new_row_size - handle->row_size);
    else if (new_row_size < handle->row_size)
       retval = table_contract_rows(handle, handle->row_size - new_row_size);
+
+  early_exit:
+   return retval;
+}
+
+/**
+ * @brief Make new handle with filtered subset of rows.
+ *
+ * Invokes callback function to filter rows from tabke.
+ *
+ * @param "name_handle"  [in] name of valid ate handle
+ * @param "name_value"   [in] ignored
+ * @param "name_array"   [in] ignored
+ * @param "extra"        [in] extra[0] = callback filter function
+ *                            extra[1] = name of SHELL_VAR in which to build the handle
+ *
+ * @return EXECUTION_SUCCESS or error code
+ */
+int ate_action_filter(const char *name_handle, const char *name_value,
+                      const char *name_array, WORD_LIST *extra)
+{
+   AHEAD *handle;
+   int retval = get_handle_from_name(&handle, name_handle, "filter");
+   if (retval)
+      goto early_exit;
+
+   // Most errors are EX_USAGE, so set as default to avoid
+   // so much code setting retval to EX_USAGE
+   retval = EX_USAGE;
+
+   const char *callback_name = NULL;
+   SHELL_VAR *callback_var = NULL;
+   if (get_string_from_list(&callback_name, extra, 0))
+   {
+      callback_var = find_function(callback_name);
+      if (callback_var == NULL)
+      {
+         ate_register_function_not_found(callback_name);
+         goto early_exit;
+      }
+   }
+   else
+   {
+      ate_register_missing_argument("filter function name", "filter");
+      goto early_exit;
+   }
+
+   const char *output_name = NULL;
+   SHELL_VAR *output_var = NULL;
+   if (get_string_from_list(&output_name, extra, 1))
+   {
+      output_var = find_variable(output_name);
+      if (output_var == NULL)
+         output_var = bind_variable(output_name, "", 0);
+
+      if (output_var == NULL)
+      {
+         ate_register_unexpected_error("attempting to bind a new shell variable");
+         retval = EXECUTION_FAILURE;
+         goto early_exit;
+      }
+   }
+   else
+   {
+      ate_register_missing_argument("filtered handle name", "filter");
+      goto early_exit;
+   }
+
+   static const char *name_stem = FILTER_ROW_STEM;
+   static int buffer_len = 4 + sizeof FILTER_ROW_STEM;
+
+   // Make SHELL_VAR array to pass to the callback function
+   char *name_row_var = (char*)alloca(buffer_len);
+   make_unique_name(name_row_var, buffer_len, name_stem);
+   SHELL_VAR *sv_array = make_new_array_variable(name_row_var);
+   ARRAY *cur_row = array_cell(sv_array);
+
+   // Grow a list of accepted rows
+   AEL *head = NULL, *tail = NULL;
+
+   ARRAY_ELEMENT *anchor_ael,  *cur_ael;
+   for (int i = 0; i < handle->row_count; ++i)
+   {
+      array_flush(cur_row);
+      if (NULL == (anchor_ael = ate_get_indexed_row(handle, i)))
+      {
+         ate_register_corrupt_table();
+         retval = EXECUTION_FAILURE;
+         goto early_exit;
+      }
+
+      cur_ael = anchor_ael;
+
+      for (int ei = 0; ei < handle->row_size; ++ei)
+      {
+         array_insert(cur_row, ei, cur_ael->value);
+         cur_ael = cur_ael->next;
+      }
+
+      int cb_result = invoke_shell_function(callback_var, name_row_var, NULL);
+      if (cb_result == 0)
+      {
+         AEL *cur = (AEL*)alloca(sizeof(AEL));
+         cur->element = anchor_ael;
+         cur->next = NULL;
+
+         if (tail)
+            tail->next = cur;
+         else
+            head = cur;
+
+         tail = cur;
+      }
+   }
+
+
+   if (head)
+   {
+      AHEAD *newhead = NULL;
+      if (ate_create_head_from_list(&newhead, head, handle))
+      {
+         ate_dispose_variable_value(output_var);
+         output_var->value = (char*)newhead;
+         output_var->attributes = att_special;
+         retval = EXECUTION_SUCCESS;
+      }
+   }
 
   early_exit:
    return retval;
@@ -1002,7 +1133,8 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
       if (NULL == (current_ael = ate_get_indexed_row(handle, i)))
       {
          ate_register_corrupt_table();
-         retval = EX_USAGE;
+         retval = EXECUTION_FAILURE;
+         goto early_exit;
       }
 
       for (int ei=0; ei < row_size && current_ael; ++ei)
