@@ -46,6 +46,14 @@ typedef struct ate_head {
 } AHEAD;
 
 /**
+ * @brief Element of row-head linked-list for filter action scratch list
+ */
+typedef struct array_element_list {
+   ARRAY_ELEMENT            *element;  ///< pointer to an accepted row head
+   struct array_element_list *next;    ///< next link
+} AEL;
+
+/**
  * @defgroup Bash_Conventions Implementation of Bash Conventions
  * @brief Use Bash builtins model for type-confirming and extracting
  *        @ref AHEAD information from a SHELL_VAR
@@ -79,6 +87,10 @@ bool ate_initialize_row_pointers(AHEAD *target,
 bool ate_create_indexed_head(AHEAD **head,
                              SHELL_VAR *array,
                              int row_size);
+
+bool ate_create_head_from_list(AHEAD **head,
+                               AEL *list,
+                               const AHEAD *source_head);
 
 bool ate_install_head_in_handle(SHELL_VAR **handle,
                                const char *name,
