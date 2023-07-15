@@ -187,6 +187,44 @@ bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
    return False;
 }
 
+bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head)
+{
+   int count=0;
+   AEL *ptr = list;
+   while (ptr)
+   {
+      ++count;
+      ptr = ptr->next;
+   }
+
+   if (count)
+   {
+      size_t head_size = ate_calculate_head_size(count);
+      AHEAD *newhead = (AHEAD*)xmalloc(head_size);
+      if (newhead)
+      {
+         memset(newhead, 0, sizeof(struct ate_head));
+         newhead->typeid = AHEAD_ID;
+         newhead->array = source_head->array;
+         newhead->row_size = source_head->row_size;
+         newhead->row_count = count;
+
+         ARRAY_ELEMENT **ae_ptr = &newhead->rows[0];
+         ptr = list;
+         while (ptr)
+         {
+            *ae_ptr = ptr->element;
+
+            ++ae_ptr;
+            ptr = ptr->next;
+         }
+         *head = newhead;
+         return True;
+      }
+   }
+   return False;
+}
+
 /**
  * @brief Manage reuse or creation of new SHELL_VAR for a handle
  *
