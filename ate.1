@@ -412,6 +412,31 @@ variables.
 Refer to
 .B SORT EXAMPLE
 below.
+.SS FILTER
+.PP
+Create a new handle on the array with a subset of rows, as determined
+by a callback function.
+.PP
+.B ate filter
+.I handle_name filter_function_name new_handle_name
+.RS 4
+.arg_handle
+.TP
+.I filter_function_name
+is a script function that will be called with each row of the source
+handle.
+The callback function will receive two arguments, an array name to be
+used with a nameref variable, and an integer row number that will
+almost always be ignored.
+Return 0 to keep the row, 1 (or other non-zero) to discard the row.
+.TP
+.I new_handle_name
+is the name to use for the new handle if the filtering succeeded.
+.RE
+.PP
+Refer to the
+.B FILTER EXAMPLE
+below.
 .SS RESIZE_ROWS
 .PP
 Modify an existing table by adding or removing columns.
@@ -589,6 +614,38 @@ compare_names()
 .B # Create (and use) sorted handle:
 ate \fBsort\fP pet_handle compare_names pets_by_name
 ate \fBwalk_rows\fP pets_by_name display_row
+.EE
+.SS FILTER EXAMPLE
+.PP
+Another callback function, this time the script provides a function
+that decides whether or not a given record should be included in the
+filtered group.
+.PP
+In the following example, the table contained in handle
+.B handle_calendar
+contains the appointments for everyone in a family.
+Chuck want to check on his appointments, so he uses the
+.B filter
+action to isolate his appointments in the new handle,
+.BR handle_chuck_appts .
+The resulting filtered table is then printed with the
+.B print_formatted_table
+function found in the following code example.
+.IP
+.EX
+select_chucks()
+{
+    local -n sc_row=\(dq$1\(dq
+    local first_name=\(dq${sc_row[1]}\(dq
+    if [ \(dq${first_name,,}\(dq == \(dqchuck\(dq ]; then
+        return 0
+    fi
+    return 1
+}
+
+if ate \fBfilter\fP handle_calendar select_chucks handle_chuck_appts; then
+   print_formatted_table handle_chuck_appts
+fi
 .EE
 .SS FORMATTED TABLE EXAMPLE
 .PP
