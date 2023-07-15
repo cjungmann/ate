@@ -62,6 +62,9 @@ ATE_AGENT agent_pool[] = {
    , { "resize_rows", ate_action_resize_rows, "set a new row size for the table",
       "ate resize_rows name_handle new_row_size"
    }
+   , { "filter", ate_action_filter, "make handle with subset of a table's contents",
+      "ate resize_rows name_handle filter_func new_handle_name"
+   }
    , { "walk_rows", ate_action_walk_rows, "invoke callback function with each row in table",
       "ate walk_rows name_handle name_callback [start_row] [row_count]"
    }
