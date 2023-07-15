@@ -78,13 +78,16 @@ int ate_action_reindex_elements(const char *name_handle, const char *name_value,
 int ate_action_resize_rows(const char *name_handle, const char *name_value,
                            const char *name_array, WORD_LIST *extra);
 
+int ate_action_filter(const char *name_handle, const char *name_value,
+                      const char *name_array, WORD_LIST *extra);
+
 int ate_action_walk_rows(const char *name_handle, const char *name_value,
                          const char *name_array, WORD_LIST *extra);
 
 /** @} */
 
 /**
- * @defgroup Action_Delegation Internal Action Delegation
+ * @defgroup Action_Structs Internal ate_action.c structs
  * @{
  */
 
@@ -103,6 +106,16 @@ struct qsort_package {
    const char *name_left;     ///< pre-allocated left comparison shell variable
    const char *name_right;    ///< pre-allocated right comparison shell variable
 };
+
+
+/** @} */
+
+
+/**
+ * @defgroup Action_Delegation Internal Action Delegation
+ * @{
+ */
+
 
 /**
  * @brief Used to map action strings to the action functions for
