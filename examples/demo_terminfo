@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+enable $( enable_ate )
+
+source print_formatted_table_with_nulls
+
+make_terminfo_regex()
+{
+    local -n mtr_regex="$1"
+    local -a rearr=(
+        ^
+        \([[:space:]]\{50,\}\) # must by highly-indented,
+                               # save to determine indentation
+
+        \([^[:space:]]+\)      # variable name
+        [[:space:]]\{2,\}      # gap of at least 2 spaces
+        \([^[:space:]]+\)      # cap name
+        [[:space:]]\{2,\}      # gap of at least 2 spaces
+        \([^[:space:]]\{2\}\)  # termcap code
+        [[:space:]]\{2,\}      # gap of at least 2 spaces
+        \(.*\)                 # description
+        $
+    )
+
+    IFS=''
+    mtr_regex="${rearr[*]}"
+}
+
+make_terminfo_array()
+{
+    local -n mta_array="$1"
+    local parse_variable=^[[:space:]]\{50,\}Variable[[:space:]]\{6,\}Cap
+    local parse_var_type=^[[:space:]]\{50,\}\([^[:space:]]\{2,\}\)
+    local parse_line
+    make_terminfo_regex "parse_line"
+    local regex_extra=[[:space:]]\{80\}\(.*\)$
+
+    local -i inline=0
+    local -i margin=0
+    local indented
+
+    local var_type
+
+    local -a line_parts
+    local -n rm_indent="BASH_REMATCH[1]"
+
+    while read -r; do
+        # Skip lines until we have a var type
+        if [ "${#var_type}" -lt 2 ]; then
+            if [ -z "$var_type" ]; then
+                 if [[ "$REPLY" =~ $parse_variable ]]; then
+                     var_type=1
+                 fi
+            elif [[ "$REPLY" =~ $parse_var_type ]]; then
+                var_type="${BASH_REMATCH[1]}"
+            fi
+            continue
+        fi
+
+        # Ignore empty lines when we're processing a var_type
+        if [[ "$REPLY" =~ ^[[:space:]]*$ ]]; then
+            continue
+        fi
+
+        # Handle description continuations
+        if [[ "$REPLY" =~ $regex_extra ]]; then
+            if [ "${#line_parts[@]}" -eq 4 ]; then
+                local desc="${line_parts[3]}"
+                if [[ "${desc: -1:1}" != '-' ]] ; then
+                    desc="$desc "
+                fi
+                line_parts[3]="${desc}${BASH_REMATCH[1]}"
+                continue
+            fi
+        fi
+
+        if [[ "$REPLY" =~ $parse_line ]]; then
+            if [ "${#line_parts[*]}" -gt 3 ]; then
+                mta_array+=( "$var_type" "${line_parts[@]}" )
+                line_parts=()
+            fi
+            if (( margin == 0 )); then
+                indented="${BASH_REMATCH[1]}"
+                margin="${#indented}"
+                regex_extra=^[[:space:]]\{$(( margin + 10 )),\}\(.\*\)$
+            fi
+            line_parts=( "${BASH_REMATCH[@]:2}" )
+        elif [ "${#line_parts[*]}" -gt 3 ]; then
+            mta_array+=( "$var_type" "${line_parts[@]}" )
+            line_parts=()
+        else
+            var_type=''
+        fi
+        # Avoid need to parse word-break hyphens by disabling hyphenation:
+    done < <( MANWIDTH=300 man --nh 5 terminfo )
+
+}
+
+
+
+declare -a lines
+make_terminfo_array "lines"
+
+if ate declare ti_handle 5 "lines"; then
+    print_formatted_table_with_nulls ti_handle
+else
+    echo "Failed to initialise the ti_handle"
+fi
+
+
+# declare -a row
+# IFS='|'
+# for el in "${lines[@]}"; do
+#     row+=( "$el" )
+#     if [ "${#row[@]}" -eq 5 ]; then
+#         echo "${row[*]}"
+#         row=()
+#     fi
+# done
