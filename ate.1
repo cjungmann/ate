@@ -339,6 +339,45 @@ the values of the row indicated by
 Refer to
 .B PUT_ROW EXMPLE
 below.
+.SS RESIZE_ROWS
+.PP
+Modify an existing table by adding or removing columns.
+To achieve the new row size, and this function will remove columns
+from or add empty columns to the end of each virtual row.
+.PP
+A row size of zero or less will not be honored.
+.PP
+.B ate resize_rows
+.I handle_name new_row_size
+.RS 4
+.arg_handle
+.TP
+.I new_row_size
+is the requested new row size
+.SS REINDEX_ELEMENTS
+.PP
+This reassigns the internal index number of the Bash array elements
+according to the indexed order of the rows.
+It is automatically called when resizing rows because adding columns
+results in the addition of new elements between existing consecutive
+array elements.
+.PP
+This function may also be useful to reorder the Bash array after
+a sort.
+Recalling that a sort does not change the order of an array's
+elements, calling
+.B reindex_elements
+will reorder and reindex the elements in the sorted order.
+.PP
+.B ate reindex_elements
+.I handle_name
+.RS 4
+.arg_handle
+.RE
+.SH ACTIONS INVOKING CALLBACK FUNCTIONS
+.PP
+The following actions call a script function on each table row to
+perform an action or to judge one or more records.
 .SS WALK_ROWS
 .PP
 Repeatedly invokes a callback function with a row index value and
@@ -373,6 +412,15 @@ If specified (following the
 .IR starting_row ),
 this is the number of rows to send to the callback function.
 .RE
+.PP
+The callback function will get the following arguments:
+.TS
+tab(|) center;
+l l.
+\(Do1|the name of array containing a row's contents
+\(Do2|an integer value indicating the row index
+\(Do3|the name of the row's source \fBate\fP handle
+.TE
 .PP
 Refer to
 .BR "WALK_ROWS EXAMPLES " and " FORMATTED TABLE EXAMPLE"
@@ -409,6 +457,18 @@ The three arguments should be assigned to
 .B name_ref
 variables.
 .PP
+The callback function will get the following arguments:
+.TS
+tab(|) center;
+l l.
+\(Do1|T{
+the name of the variable to which the comparison result
+should be written
+T}
+\(Do2|name of the variable with contents of the left row
+\(Do3|name of the variable with contents of the right row
+.TE
+.PP
 Refer to
 .B SORT EXAMPLE
 below.
@@ -434,44 +494,17 @@ Return 0 to keep the row, 1 (or other non-zero) to discard the row.
 is the name to use for the new handle if the filtering succeeded.
 .RE
 .PP
+The callback function will get the following arguments:
+.TS
+tab(|) center;
+l l.
+\(Do1|name of array with a row's contents
+.TE
+.PP
 Refer to the
 .B FILTER EXAMPLE
 below.
-.SS RESIZE_ROWS
-.PP
-Modify an existing table by adding or removing columns.
-To achieve the new row size, and this function will remove columns
-from or add empty columns to the end of each virtual row.
-.PP
-A row size of zero or less will not be honored.
-.PP
-.B ate resize_rows
-.I handle_name new_row_size
-.RS 4
-.arg_handle
-.TP
-.I new_row_size
-is the requested new row size
-.SS REINDEX_ELEMENTS
-.PP
-This reassigns the internal index number of the Bash array elements
-according to the indexed order of the rows.
-It is automatically called when resizing rows because adding columns
-results in the addition of new elements between existing consecutive
-array elements.
-.PP
-This function may also be useful to reorder the Bash array after
-a sort.
-Recalling that a sort does not change the order of an array's
-elements, calling
-.B reindex_elements
-will reorder and reindex the elements in the sorted order.
-.PP
-.B ate reindex_elements
-.I handle_name
-.RS 4
-.arg_handle
-.RE
+
 .SH EXAMPLES
 .PP
 A picture is worth a thousand words, likewise, an example may be more
