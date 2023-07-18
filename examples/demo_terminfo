@@ -52,14 +52,15 @@ make_terminfo_array()
                      var_type=1
                  fi
             elif [[ "$REPLY" =~ $parse_var_type ]]; then
-                var_type="${BASH_REMATCH[1]}"
+                var_type="${BASH_REMATCH[1]:0:2}"
+                var_type="${var_type,,}"
             fi
             continue
         fi
 
         # Ignore empty lines when we're processing a var_type
         if [[ "$REPLY" =~ ^[[:space:]]*$ ]]; then
-            continue
+           continue
         fi
 
         # Handle description continuations
@@ -76,7 +77,7 @@ make_terminfo_array()
 
         if [[ "$REPLY" =~ $parse_line ]]; then
             if [ "${#line_parts[*]}" -gt 3 ]; then
-                mta_array+=( "$var_type" "${line_parts[@]}" )
+                  mta_array+=( "${line_parts[@]}" "$var_type" "n/a")
                 line_parts=()
             fi
             if (( margin == 0 )); then
@@ -86,7 +87,7 @@ make_terminfo_array()
             fi
             line_parts=( "${BASH_REMATCH[@]:2}" )
         elif [ "${#line_parts[*]}" -gt 3 ]; then
-            mta_array+=( "$var_type" "${line_parts[@]}" )
+            mta_array+=( "${line_parts[@]}" "$var_type" "n/a" )
             line_parts=()
         else
             var_type=''
@@ -96,12 +97,111 @@ make_terminfo_array()
 
 }
 
+string_compare()
+{
+    local -n sc_compval="$1"
+    local left="$2"
+    local right="$3"
+    if [[ "$left" < "$right" ]]; then
+        sc_compval=-1
+    elif [[ "$left" > "$right" ]]; then
+        sc_compval=1
+    else
+        sc_compval=0
+    fi
+    return 0;
+}
+
+# Sort on capname to speed row search when updating value
+sort_on_capname()
+{
+    local -n soc_result="$1"
+    local -n soc_row_left="$2"
+    local -n soc_row_right="$3"
+
+    string_compare "$1" "${soc_row_left[1]}" "$soc_row_right[1]}"
+}
+
+find_row_by_capname()
+{
+    local -n frbc_row_index="$1"
+    local -n frbc_handle="$2"
+    local capname="$3"
+    local -i row_left=0 row_right
+    local -i range compval
+    local -i search_row
+    if ate get_row_count fbrc_row_index -v row_right; then
+        (( --row_right ))  # move back to existing row
+
+        while True; do
+            (( range = row_right - row_left ))
+            (( search_row = row_left + (range / 2) ))
+            if ate get_row fbrc_row_index "$search_row"; then
+                string_compare compval "$capname" "${ATE_ARRAY[1]}"
+                if (( compval == 0 )); then
+                    fbrc_row_index="$search_row"
+                    return 0
+                else
+            else
+                echo "get_row failed for row index '$search_row'"
+            fi
+        done
+    fi
+}
+
+update_with_values()
+{
+    local -n uwv_handle="$1"
+
+    local -a re_arr=(
+        ^
+        [[:space:]]+
+        \(
+           [^=]+
+        \)
+        \(
+           =
+           \(
+              [^,]+
+           \)
+           ,
+        \)?
+        $
+    )
+    IFS=''
+    local re="${re_arr[*]}"
+
+    local -n field="BASH_REMATCH[1]"
+    local -n raw_value="BASH_REMATCH[3]"
+
+    local field_format=$'\e[41m%s\e[m'
+    local value_format=$'\e[40m%s\e[m'
+
+    while read -r; do
+        if [[ "$REPLY" =~ $re ]]; then
+            printf "$field_format"  "${field}"
+            if [ -n "$raw_value" ]; then
+                value="${raw_value//\\,|\\054/,}"
+                value="${raw_value}"
+            else
+                value="1"
+            fi
+            # printf " : ${value_format}\n" "$value"
+        fi
+    done < <( infocmp -1 )
+}
 
 
 declare -a lines
 make_terminfo_array "lines"
 
-if ate declare ti_handle 5 "lines"; then
+if ate declare ti_handle 6 "lines"; then
+    if ate sort ti_handle sort_on_capname ti_capname; then
+        update_with_values ti_capname
+    else
+        echo "Sort failed"
+    fi
+    # update_with_values ti_handle
     print_formatted_table_with_nulls ti_handle
 else
     echo "Failed to initialise the ti_handle"
