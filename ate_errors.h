@@ -17,6 +17,7 @@ void ate_register_variable_not_found(const char *name);
 void ate_register_function_not_found(const char *name);
 void ate_register_variable_wrong_type(const char *name, const char *desired_type);
 void ate_register_argument_wrong_type(const char *name, const char *desired_type);
+void ate_register_empty_table(const char *handle_name);
 void ate_register_corrupt_table(void);
 void ate_register_invalid_row_index(int requested, int available);
 void ate_register_invalid_row_size(int row_size, int el_count);

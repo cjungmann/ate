@@ -76,6 +76,11 @@ void ate_register_argument_wrong_type(const char *value, const char *desired_typ
    ate_register_error("argument value '%s' should be type %s", value, desired_type);
 }
 
+void ate_register_empty_table(const char *handle_name)
+{
+   ate_register_error("ate handle '%s' is empty or unindexed", handle_name);
+}
+
 void ate_register_corrupt_table(void)
 {
    ate_register_error("the ate handle is corrupted");
