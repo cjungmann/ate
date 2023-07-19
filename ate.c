@@ -95,11 +95,17 @@ static int ate(WORD_LIST *list)
                break;
 
             default:
-               fprintf(stderr, "Invalid option '-%c'\n", cur_arg[1]);
-               ate_register_error("invalid option '-%c'", cur_arg[1]);
-               retval = EX_USAGE;
-               builtin_usage();
-               goto exit_for_error;
+               // determine if just the flag, or the flag AND following arg:
+               WL_APPEND(etail, cur_arg);
+               if (!extras)
+                  extras = etail;
+               if (cur_arg[2] == '\0')
+               {
+                  ptr = ptr->next;
+                  if (ptr)
+                     WL_APPEND(etail, ptr->word->word);
+               }
+               break;
          }
       }
       // Positional options
