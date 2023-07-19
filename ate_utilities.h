@@ -25,6 +25,7 @@
 
 bool make_unique_name(char *buffer, int bufflen, const char *stem);
 
+bool get_int_from_string(int *result, const char *str);
 bool get_string_from_list(const char **result, WORD_LIST *list, int index);
 bool get_int_from_list(int *result, WORD_LIST *list, int index);
 bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index);
@@ -55,6 +56,7 @@ int table_extend_rows(AHEAD *head, int new_columns);
 int table_contract_rows(AHEAD *head, int columns_to_remove);
 
 int invoke_shell_function(SHELL_VAR *function, ...);
+int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl);
 
 /** @} */
 

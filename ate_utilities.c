@@ -48,6 +48,25 @@ bool make_unique_name(char *buffer, int bufflen, const char *stem)
    return 1;
 }
 
+/**
+ * @brief Safely convert a string to an integer
+ * @param "result" [out]  pointer to where result should be set
+ * @param "str"    [in]   character string with possible numeric value
+ * @return True (!0) if successfully converted the string, False (0) if
+ *                   the string is not a number
+ */
+bool get_int_from_string(int *result, const char *str)
+{
+   char *end_str;
+   long val = strtol(str, &end_str, 10);
+   if (end_str > str)
+   {
+      *result = (long)val;
+      return True;
+   }
+
+   return False;
+}
 
 /**
  * @brief Get string value at specified index of the WORD_LIST.
@@ -656,6 +675,23 @@ int invoke_shell_function(SHELL_VAR *function, ...)
    COMMAND *command;
    command = make_bare_simple_command();
    command->value.Simple->words = list;
+   command->value.Simple->redirects = (REDIRECT*)NULL;
+   command->flags = command->value.Simple->flags = cmd_flags;
+
+   return execute_command(command);
+}
+
+int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl)
+{
+   WORD_LIST *params = NULL;
+   WL_APPEND(params, function->name);
+   params->next = wl;
+
+   int cmd_flags = CMD_INHIBIT_EXPANSION | CMD_STDPATH;
+
+   COMMAND *command;
+   command = make_bare_simple_command();
+   command->value.Simple->words = params;
    command->value.Simple->redirects = (REDIRECT*)NULL;
    command->flags = command->value.Simple->flags = cmd_flags;
 
