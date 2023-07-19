@@ -141,7 +141,11 @@ find_row_by_capname()
                 if (( compval == 0 )); then
                     fbrc_row_index="$search_row"
                     return 0
+                elif (( compval < 0 )); then
+                    row_right=search_row
                 else
+                    row_left=search_row
+                fi
             else
                 echo "get_row failed for row index '$search_row'"
             fi
