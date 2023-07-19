@@ -394,7 +394,7 @@ will be terminated.
 .PP
 .B ate walk_rows
 .I handle_name callback_name
-.RI "[ " starting_row " ] [ " row_count " ]"
+.RI [ "\fB-s\fP\ starting_row" "] [" "\fB-c\fP\ row_count" ]
 .RS 4
 .arg_handle
 .TP
@@ -403,11 +403,11 @@ to a function that
 .B ate
 will call with each indexed table row.
 .TP
-.I starting_row
+.BI "-s " starting_row
 If specified, this is the (0-based) row number of the first
 row to be sent to the callback function.
 .TP
-.I row_count
+.BI  "-c " row_count
 If specified (following the
 .IR starting_row ),
 this is the number of rows to send to the callback function.
