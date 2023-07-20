@@ -167,6 +167,12 @@ next_to_continue() { read -n1 -p "Press any key to continue."; }
 
 test_non_handle_errors()
 {
+    echo "Next: Error testing for actions that don't expect a handle"
+
+    if ! get_ysq; then
+        return 0
+    fi
+
     clear_and_origin
 
     cat <<EOF
@@ -175,10 +181,8 @@ Error testing for actions that don't expect a handle
 In order to ensure bad-usage failures and the error message
 feedback is useful, the following examples use 'ate'
 inappropriately in order to generate errors.
+
 EOF
-    if ! get_ysq; then
-        return 0
-    fi
 
     test_params "missing action name"
     test_params "unknown action name"                 do_nothing   unknown_handle
@@ -189,12 +193,16 @@ EOF
     test_params "inappropriate declaration params"    declare      new_handle    0
     test_params "inappropriate declaration params"    declare      new_handle    -1
     test_params "declare with unknown array"          declare      new_handle    2   bogus
-
-    next_to_continue
 }
 
 test_handle_errors()
 {
+    echo "Next: Error testing for actions work on an initialized handle."
+
+    if ! get_ysq; then
+        return 0
+    fi
+
     clear_and_origin
 
     cat <<EOF
@@ -203,12 +211,8 @@ Error testing for actions work on an initialized handle.
 In order to ensure bad-usage failures and the error message
 feedback is useful, the following examples use 'ate'
 inappropriately in order to generate errors.
-EOF
 
-    if ! get_ysq; then
-        return 0
-    fi
-    echo "Got here"
+EOF
 
     if ! make_table "good_handle" "array_animals"; then
         printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
@@ -216,30 +220,31 @@ EOF
     fi
 
     test_params "bad row_size value" resize_rows good_handle 0
-    test_params "get_row bad row index" get_row good_handle -1 -a gotten_row
     test_params "put_row missing array" put_row good_handle 0
-    test_params "put_row bad row index" put_row good_handle -1 gotten_row
-    test_params "put_row bad row index" put_row good_handle 10 gotten_row
-    test_params "put_row empty array" put_row good_handle 0 gotten_row
+    test_params "put_row bad row index (too low)" put_row good_handle -1 gotten_row
+    test_params "put_row bad row index (too high)" put_row good_handle 10 gotten_row
+    test_params "put_row non-existent array" put_row good_handle 0 gotten_row
 
     unset good_handle
-
-    next_to_continue
 }
 
 test_walk_rows()
 {
+    echo "Next: Testing walk_rows procedures"
+
+    if ! get_ysq; then
+        return 0
+    fi
+
     clear_and_origin
+
     cat <<EOF
 Testing walk_rows procedures
 
 These are a bit more involved, and may have before and after views
 that benefit from starting with an empty screen.
-EOF
 
-    if ! get_ysq; then
-        return 0
-    fi
+EOF
 
     if ! make_table "good_handle" "array_animals"; then
         printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
@@ -254,23 +259,16 @@ EOF
     test_params "walk_rows naming non-existent callback function" walk_rows good_handle bogus_callback
     test_params "walk_rows with out-of-range start" walk_rows good_handle capitalize_row -s10
     test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row
-
-    next_to_continue
 }
 
 test_resize_rows_and_sort()
 {
-    clear_and_origin
-    cat <<EOF
-Testing resize_rows and sort using walk_rows to set values
-
-These are a bit more involved, and may have before and after views
-that benefit from starting with an empty screen.
-EOF
-
+    echo "Next: Testing resize_rows and sort using walk_rows to set values"
     if ! get_ysq; then
         return 0
     fi
+
+    clear_and_origin
 
     if ! make_table "good_handle" "array_animals"; then
         printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
@@ -342,11 +340,9 @@ EOF
         test_params "sort with false callback" sort good_handle bogus_callback
         test_params "sort without results handle" sort good_handle dnuos_sort
     fi
-
-    next_to_continue
 }
 
-# test_non_handle_errors
-# test_handle_errors
+test_non_handle_errors
+test_handle_errors
 test_walk_rows
 test_resize_rows_and_sort
