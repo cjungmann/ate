@@ -202,6 +202,7 @@ get_ysq()
 }
 
 clear_and_origin() { echo $'\e[2J\e[1;1H'; }
+next_to_continue() { read -n1 -p "Press any key to continue."; }
 
 
 test_non_handle_errors()
@@ -226,8 +227,10 @@ EOF
     test_params "unknown handle name"                 get_row_size unknown_handle
     test_params "non-handle as a handle"              get_row_size USER
     test_params "inappropriate declaration params"    declare      new_handle    0
-    test_params "inappropriate declaration params"    declare      new_handle    \-1
+    test_params "inappropriate declaration params"    declare      new_handle    -1
     test_params "declare with unknown array"          declare      new_handle    2   bogus
+
+    next_to_continue
 }
 
 test_handle_errors()
@@ -258,6 +261,8 @@ EOF
     test_params "put_row bad row index" put_row good_handle -1 gotten_row
     test_params "put_row bad row index" put_row good_handle 10 gotten_row
     test_params "put_row empty array" put_row good_handle 0 gotten_row
+
+    next_to_continue
 }
 
 test_walk_rows()
@@ -288,8 +293,8 @@ EOF
 
     test_params "walk_rows with missing callback function argument" walk_rows good_handle
     test_params "walk_rows naming non-existent callback function" walk_rows good_handle bogus_callback
-    test_params "walk_rows with out-of-range start" walk_rows good_handle capitalize_row 10
-    test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row 10
+    test_params "walk_rows with out-of-range start" walk_rows good_handle capitalize_row -s10
+    test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row -s 10
 
     echo
     echo "Using 'walk_rows' to capitalize each animal name"
@@ -353,6 +358,7 @@ EOF
         test_params "sort without results handle" sort good_handle dnuos_sort
     fi
 
+    next_to_continue
 }
 
 
