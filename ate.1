@@ -468,6 +468,21 @@ T}
 \(Do2|name of the variable with contents of the left row
 \(Do3|name of the variable with contents of the right row
 .TE
+Assuming a nameref variable for
+.B \(Do1
+named
+.BR comp_result ,
+set
+.B comp_result
+to an integer value based on how the left and right rows should be
+ordered.
+.TS
+tab(|) center;
+l l.
+left before right|set comp_result to a negative integer
+right before left|set comp_result to a positive integer
+left equals right|set comp_result to 0
+.TE
 .PP
 Refer to
 .B SORT EXAMPLE
