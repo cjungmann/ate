@@ -205,6 +205,12 @@ int ate_action_declare(const char *name_handle,
 
    // We have all the parts, construct the SHELL_VAR host:
 
+   if (row_size < 1)
+   {
+      ate_register_error("missing or invalid row_size argument");
+      goto early_exit;
+   }
+
    // Check for and announce otherwise silent error during ate_create_handle
    int el_count = array_num_elements(array_cell(hosted_array));
    if ( el_count % row_size)
@@ -363,7 +369,7 @@ int ate_action_get_row(const char *name_handle,
       goto early_exit;
    }
 
-   if (requested_index < 0 && requested_index >= handle->row_count)
+   if (requested_index < 0 || requested_index >= handle->row_count)
    {
       ate_register_invalid_row_index(requested_index, handle->row_count);
       retval = EX_USAGE;
@@ -451,7 +457,7 @@ int ate_action_put_row(const char *name_handle,
       goto early_exit;
    }
 
-   if (requested_index < 0 && requested_index >= handle->row_count)
+   if (requested_index < 0 || requested_index >= handle->row_count)
    {
       ate_register_invalid_row_index(requested_index, handle->row_count);
       retval = EX_USAGE;
@@ -996,7 +1002,6 @@ int ate_action_filter(const char *name_handle, const char *name_value,
          tail = cur;
       }
    }
-
 
    if (head)
    {
