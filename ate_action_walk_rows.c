@@ -44,6 +44,9 @@ int ate_action_walk_rows(const char *name_handle, const char *name_value,
    if (retval)
       goto early_exit;
 
+   // default exit code for early exit
+   retval = EX_USAGE;
+
    // Create a new array shell_var to use for transferring rows
    static const char *stem = STEP_ARRAY_STEM;
    const static int buff_len = 4 + sizeof STEP_ARRAY_STEM;
