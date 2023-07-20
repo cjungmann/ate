@@ -101,9 +101,12 @@ static int ate(WORD_LIST *list)
                   extras = etail;
                if (cur_arg[2] == '\0')
                {
-                  ptr = ptr->next;
-                  if (ptr)
-                     WL_APPEND(etail, ptr->word->word);
+                  if (ptr->next)
+                  {
+                     ptr = ptr->next;
+                     if (ptr)
+                        WL_APPEND(etail, ptr->word->word);
+                  }
                }
                break;
          }
