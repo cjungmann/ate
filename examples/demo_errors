@@ -3,54 +3,7 @@
 enable -f ../ate.so ate
 
 declare -a five_el_array=( one two three four five )
-
-print_formatted_table_with_nulls()
-{
-    local -n pft_handle="$1"
-    local null_label="${2:-''}"
-
-    local -i null_len="${#null_label}"
-
-    # Make format string
-    ate get_field_sizes pft_handle
-    local -a parts=()
-    local width
-    local delim=''
-    for width in "${ATE_ARRAY[@]}"; do
-        if [ "$width" -lt "$null_len" ]; then
-            width="$null_len"
-        fi
-        parts+=( "$delim" "%-${width}s" )
-        delim=' '
-    done
-    # Scrunch array to format string
-    local IFS=''
-    local fmt="${parts[*]}\n"
-
-    replace_nulls()
-    {
-        local -n rn_row="$1"
-        local -i ndx=0
-        for el in "${rn_row[@]}"; do
-            if [ -z "$el" ]; then
-                rn_row[$ndx]="$null_label"
-            fi
-            (( ++ndx ))
-        done
-    }
-
-    # Embedded callback print function
-    print_row()
-    {
-        local -n pr_row="$1"
-        if [ "$null_len" -gt 0 ]; then
-            replace_nulls "$1"
-        fi
-        printf "$fmt" "${pr_row[@]}"
-    }
-
-    ate walk_rows pft_handle print_row
-}
+source print_formatted_table_with_nulls
 
 survey_handle()
 {
@@ -62,6 +15,7 @@ survey_handle()
     printf "Handle '%s':\n  %d rows of %d columns in array '%s'\n" "$1" "$row_count" "$row_size" "$array_name"
 }
 
+# walk_rows callback function
 capitalize_row()
 {
     local -n cr_row="$1"
@@ -74,6 +28,7 @@ capitalize_row()
     ate put_row cr_handle "$row_index" cr_row
 }
 
+# walk_rows callback function
 corrupt_row()
 {
     local -n cc_row="$1"
@@ -130,6 +85,11 @@ make_table()
 {
     local handle_name="$1"
     local -n source="$2"
+
+    if declare -p "$1" 1>/dev/null 2>&1; then
+        local -n old_handle="$1"
+        unset old_handle
+    fi
 
     local -i row_size="${source[0]}"
     local -a els=( "${source[@]:1}" )
@@ -262,6 +222,8 @@ EOF
     test_params "put_row bad row index" put_row good_handle 10 gotten_row
     test_params "put_row empty array" put_row good_handle 0 gotten_row
 
+    unset good_handle
+
     next_to_continue
 }
 
@@ -284,17 +246,40 @@ EOF
         return 1
     fi
 
-    echo "Starting condition of animals table:"
-    print_formatted_table_with_nulls good_handle
-    echo
-
     echo "The following procedures purposfully cause error conditions"
     echo "in order to confirm reasonable results and error messages."
+    echo
 
     test_params "walk_rows with missing callback function argument" walk_rows good_handle
     test_params "walk_rows naming non-existent callback function" walk_rows good_handle bogus_callback
     test_params "walk_rows with out-of-range start" walk_rows good_handle capitalize_row -s10
-    test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row -s 10
+    test_params "walk_rows with corrupted put_row" walk_rows good_handle corrupt_row
+
+    next_to_continue
+}
+
+test_resize_rows_and_sort()
+{
+    clear_and_origin
+    cat <<EOF
+Testing resize_rows and sort using walk_rows to set values
+
+These are a bit more involved, and may have before and after views
+that benefit from starting with an empty screen.
+EOF
+
+    if ! get_ysq; then
+        return 0
+    fi
+
+    if ! make_table "good_handle" "array_animals"; then
+        printf $'make table failed: \e[31;1m%s\e[m.\n' "$ATE_ERROR"
+        return 1
+    fi
+
+    echo "Starting condition of animals table:"
+    print_formatted_table_with_nulls good_handle
+    echo
 
     echo
     echo "Using 'walk_rows' to capitalize each animal name"
@@ -361,9 +346,7 @@ EOF
     next_to_continue
 }
 
-
-
-
-test_non_handle_errors
-test_handle_errors
+# test_non_handle_errors
+# test_handle_errors
 test_walk_rows
+test_resize_rows_and_sort
