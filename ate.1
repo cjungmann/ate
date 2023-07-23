@@ -38,6 +38,71 @@ Show list of action names
 .B ate show_action \fR[\fP\fIaction_name\fP\fR]\fP
 Show details about
 .IR action_name .
+.PP
+.B ate declare
+.I handle_name row_size
+.RI [ array_name ]
+.PP
+.B ate append_data
+.I handle_name
+.RI [ value1 ", " value2 ", " ... ]
+.PP
+.B ate index_rows
+.I handle_name
+.PP
+.B ate get_row_count
+.I handle_name
+[\c
+.BI -v " value_name"\c
+]
+.PP
+.B ate get_row_size
+.I handle_name
+[\c
+.BI -v " value_name"
+]\c
+.PP
+.B ate get_array_name
+.I handle_name
+[\c
+.BI -v " value_name"\c
+]
+.PP
+.B ate get_field_sizes
+.I handle_name
+[\c
+.BI -a " array_name"\c
+]
+.PP
+.B ate get_row
+.I handle_name row_index
+[\c
+.BI -a " array_name"\c
+]
+.PP
+.B ate put_row
+.I handle_name row_index array_name
+.PP
+.B ate resize_rows
+.I handle_name new_row_size
+.PP
+.B ate reindex_elements
+.I handle_name
+.PP
+.B ate walk_rows
+.I handle_name callback
+[\c
+.BI -s " starting_row"\c
+] [\c
+.BI -c " row_count"\c
+]
+.PP
+.B ate sort
+.I handle_name comparison_function sorted_handle_name
+.PP
+.B ate filter
+.I handle_name filter_function filtered_handle_name
+
 .SH DESCRIPTION
 .PP
 Standard Bash arrays are one-dimensional and sequential (slow) access.
