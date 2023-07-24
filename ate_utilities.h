@@ -106,6 +106,7 @@ int get_function_by_name_or_fail(SHELL_VAR **rvar,
                                  const char *name,
                                  const char *action);
 
+int update_row_array(SHELL_VAR *target_var, ARRAY_ELEMENT *source_row, int row_size);
 /** @} */
 
 

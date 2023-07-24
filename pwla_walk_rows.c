@@ -100,8 +100,8 @@ int pwla_walk_rows(ARG_LIST *alist)
 
    ARRAY_ELEMENT **ae_ptr = &ahead->rows[start_ndx];
    ARRAY_ELEMENT **ae_end = ae_ptr + count_rows;
-   ARRAY *target_array = array_cell(array_var);
 
+   // Track current row index for callback parameter
    int cur_ndx = start_ndx;
 
    while (ae_ptr < ae_end)
@@ -110,14 +110,8 @@ int pwla_walk_rows(ARG_LIST *alist)
       snprintf(row_number_buffer, sizeof(row_number_buffer), "%d", cur_ndx++);
 
       // Fill the target row with current row contents
-      int ndx = 0;
-      array_flush(target_array);
-      ARRAY_ELEMENT *src_el = *ae_ptr;
-      while (ndx < ahead->row_size)
-      {
-         array_insert(target_array, ndx++, src_el->value);
-         src_el = src_el->next;
-      }
+      if ((retval = update_row_array(array_var, *ae_ptr, ahead->row_size)))
+         goto early_exit;
 
       // Prepare and call the callback
       invoke_shell_function_word_list(function_var, cb_args);

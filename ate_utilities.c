@@ -1017,3 +1017,26 @@ int get_function_by_name_or_fail(SHELL_VAR **rvar,
 
    return retval;
 }
+
+int update_row_array(SHELL_VAR *target_var, ARRAY_ELEMENT *source_row, int row_size)
+{
+   ARRAY *array = array_cell(target_var);
+   array_flush(array);
+
+   ARRAY_ELEMENT *ael = source_row;
+
+   int index = 0;
+   while (ael && index < row_size)
+   {
+      array_insert(array, index++, ael->value);
+      ael = ael->next;
+   }
+
+   if (index < row_size)
+   {
+      ate_register_error("corrupted table: incomplete row");
+      return EX_USAGE;
+   }
+
+   return EXECUTION_SUCCESS;
+}
