@@ -69,6 +69,25 @@ bool get_int_from_string(int *result, const char *str)
 }
 
 /**
+ * @brief Replace SHELL_VAR value with string representing an integer value.
+ * @param "result"   [in,out]  variable whose value is to be changed
+ * @param "value"    [in]      number to use for new value
+ * @return EXECUTION_SUCCESS if successful
+ */
+int set_var_from_int(SHELL_VAR *result, int value)
+{
+   char *intstr = itos(value);
+   if (intstr && intstr[0])
+   {
+      ate_dispose_variable_value(result);
+      result->value = intstr;
+      return EXECUTION_SUCCESS;
+   }
+
+   return EX_BADUSAGE;
+}
+
+/**
  * @brief Get string value at specified index of the WORD_LIST.
  * @param "result"  [out]  where value will be stored, if found
  * @param "list"    [in]   list to search
@@ -142,23 +161,79 @@ bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index)
    return False;
 }
 
-/**
- * @brief Replace SHELL_VAR value with string representing an integer value.
- * @param "result"   [in,out]  variable whose value is to be changed
- * @param "value"    [in]      number to use for new value
- * @return EXECUTION_SUCCESS if successful
- */
-int set_var_from_int(SHELL_VAR *result, int value)
+
+int get_handle_by_name(SHELL_VAR **var, const char *name, const char *action)
 {
-   char *intstr = itos(value);
-   if (intstr && intstr[0])
+   SHELL_VAR *sv = NULL;
+   if (!name || !(sv = find_variable(name)))
    {
-      ate_dispose_variable_value(result);
-      result->value = intstr;
+      ate_register_missing_argument("handle", action);
+      return EX_USAGE;
+   }
+
+   if (!ahead_p(sv))
+   {
+      ate_register_argument_wrong_type("name", "ate handle");
+      return EX_USAGE;
+   }
+
+   *var = sv;
+   return EXECUTION_SUCCESS;
+}
+
+int get_ahead_by_name(AHEAD **ahead, const char *name, const char *action)
+{
+   SHELL_VAR *sv;
+   int retval;
+   if ((retval = get_handle_by_name(&sv, name, action)))
+      return retval;
+
+   *ahead = ahead_cell(sv);
+   return EXECUTION_SUCCESS;
+}
+
+int get_var_by_name(SHELL_VAR **var, const char *name, const char *action)
+{
+   SHELL_VAR *sv = NULL;
+   if (!name || !(sv = find_variable(name)))
+   {
+      ate_register_missing_argument(name, action);
+      return EX_USAGE;
+   }
+
+   *var = sv;
+   return EXECUTION_SUCCESS;
+}
+
+int get_new_var_by_stem(SHELL_VAR **var, const char *stem)
+{
+   int len = strlen(stem) + 5;
+   char *buffer = (char*)alloca(len);
+   make_unique_name(buffer, len, stem);
+   SHELL_VAR *sv = bind_variable(buffer, "", 0);
+   if (sv)
+   {
+      *var = sv;
+      return EXECUTION_SUCCESS;
+   }
+   ate_register_error("failed to create variable");
+   return EXECUTION_FAILURE;
+}
+
+int get_new_array_var_by_stem(SHELL_VAR **var, const char *stem)
+{
+   int len = strlen(stem) + 5;
+   char *buffer = (char*)alloca(len);
+   make_unique_name(buffer, len, stem);
+   SHELL_VAR *sv = make_new_array_variable(buffer);
+   if (sv)
+   {
+      *var = sv;
       return EXECUTION_SUCCESS;
    }
 
-   return EX_BADUSAGE;
+   ate_register_error("failed to create array");
+   return EXECUTION_FAILURE;
 }
 
 /**
@@ -167,14 +242,15 @@ int set_var_from_int(SHELL_VAR *result, int value)
  *
  * Does the job of Bash's unavailable internal function,
  * dispose_variable_value.  Frees the memory pointed to by value
- * member according to its type.
+ * member according to its type.  The `value` member of the
+ * SHELL_VAR will be NULL when done.
  */
 void ate_dispose_variable_value(SHELL_VAR *var)
 {
    if (array_p(var))
-      var->value = NULL;
+      array_dispose(array_cell(var));
    else if (assoc_p(var))
-      var->value = NULL;
+      assoc_dispose(assoc_cell(var));
    else if (function_p(var))
       dispose_command(function_cell(var));
    else if (nameref_p(var))
@@ -696,4 +772,248 @@ int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl)
    command->flags = command->value.Simple->flags = cmd_flags;
 
    return execute_command(command);
+}
+
+
+/************************************
+ * ARG_VARS group functions
+ ***********************************/
+
+int create_var_by_stem(SHELL_VAR **var, const char *stem, const char *action)
+{
+   assert(stem);
+
+   int len = strlen(stem) + 5;
+   char *buffer = (char*)alloca(len);
+   make_unique_name(buffer, len, stem);
+   SHELL_VAR *sv = bind_variable(buffer, "", 0);
+   if (sv)
+   {
+      *var = sv;
+      return EXECUTION_SUCCESS;
+   }
+
+   ate_register_error("failed to create variable in action '%s'", action);
+   return EXECUTION_FAILURE;
+}
+
+int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *action)
+{
+   assert(stem);
+
+   int len = strlen(stem) + 5;
+   char *buffer = (char*)alloca(len);
+   make_unique_name(buffer, len, stem);
+   SHELL_VAR *sv = make_new_array_variable(buffer);
+   if (sv)
+   {
+      *var = sv;
+      return EXECUTION_SUCCESS;
+   }
+
+   ate_register_error("failed to create array in action '%s'", action);
+   return EXECUTION_FAILURE;
+}
+
+
+/**
+ * @brief Used by actions that work with a handle, "get_row_size", "get_row_count", "get_row", etc
+ */
+int get_handle_var_by_name_or_fail(SHELL_VAR **rvar,
+                                   const char *name,
+                                   const char *action)
+{
+   int retval = EX_USAGE;
+   SHELL_VAR *sv = NULL;
+   if (name == NULL)
+      ate_register_error("failed to specific a handle name in '%s'", action);
+   else
+   {
+      if ((sv = find_variable(name)))
+      {
+         if (ahead_p(sv))
+         {
+            *rvar = sv;
+            retval = EXECUTION_SUCCESS;
+         }
+         else
+            ate_register_error("variable '%s' is not a handle in action '%s'", name, action);
+      }
+      else
+         ate_register_error("failed to find handle variable '%s' in action '%s'", name, action);
+   }
+
+   return retval;
+}
+
+/**
+ * @brief Used by actions that generate a new handle like "sort" or "filter"
+ */
+int create_handle_by_name_or_fail(SHELL_VAR **rvar,
+                                  const char *name,
+                                  AHEAD *ahead,
+                                  const char *action)
+{
+   int retval = EX_USAGE;
+   SHELL_VAR *sv = NULL;
+   if (name == NULL)
+      ate_register_error("failed to specific a handle name in '%s'", action);
+   else if (ahead == NULL)
+   {
+      ate_register_error("internal error, failed to provide AHEAD for handle in '%s'", action);
+      retval = EXECUTION_FAILURE;
+   }
+   else
+   {
+      sv = bind_variable(name, "", 0);
+      if (sv)
+      {
+         sv->attributes = att_special;
+         sv->value = (char*)ahead;
+         *rvar = sv;
+         retval = EXECUTION_SUCCESS;
+      }
+      else
+      {
+         ate_register_error("failed to bind a variable named '%s' in '%s'", name, action);
+         retval = EXECUTION_FAILURE;
+      }
+   }
+
+   return retval;
+}
+
+/**
+ * @brief Used by actions that report value info, like "get_row_size", "get_row_count", "get_array_name"
+ */
+int create_var_by_given_or_default_name(SHELL_VAR **rvar,
+                                        const char *name,
+                                        const char *default_name,
+                                        const char *action)
+{
+   int retval = EX_USAGE;
+   SHELL_VAR *sv = NULL;
+   if (name == NULL)
+      name = default_name;
+
+   if (name == NULL)
+   {
+      ate_register_error("internal failure to ensure variable name in '%s'", action);
+      retval = EXECUTION_FAILURE;
+   }
+   else
+   {
+      sv = find_variable(name);
+      if (!sv)
+         sv = bind_variable(name, "", 0);
+
+      if (sv)
+      {
+         *rvar = sv;
+         retval = EXECUTION_SUCCESS;
+      }
+      else
+      {
+         ate_register_error("internal failure to bind variable '%s' in '%'", name, action);
+         retval = EXECUTION_SUCCESS;
+      }
+   }
+   return retval;
+}
+
+/**
+ * @brief Used by actions that report to an array, like "get_row", "get_row_size"
+ */
+int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
+                                              const char *name,
+                                              const char *default_name,
+                                              const char *action)
+{
+   int retval = EX_USAGE;
+   SHELL_VAR *sv = NULL;
+   if (name == NULL)
+      name = default_name;
+
+   if (name == NULL)
+   {
+      ate_register_error("internal failure to ensure variable name in '%s'", action);
+      retval = EXECUTION_FAILURE;
+   }
+   else
+   {
+      unbind_variable_noref(name);
+      sv = make_new_array_variable((char*)name);
+
+      if (sv)
+      {
+         *rvar = sv;
+         retval = EXECUTION_SUCCESS;
+      }
+      else
+      {
+         ate_register_error("internal failure to bind array variable '%s' in '%'", name, action);
+         retval = EXECUTION_SUCCESS;
+      }
+   }
+   return retval;
+}
+
+/**
+ * @brief Used for array argument, like action "put_row"
+ */
+int get_array_var_by_name_or_fail(SHELL_VAR **rvar,
+                                  const char *name,
+                                  const char *action)
+{
+   int retval = EX_USAGE;
+   if (name == NULL)
+      ate_register_error("failed to specific a array name in '%s'", action);
+   else
+   {
+      SHELL_VAR *sv = find_variable(name);
+      if (sv)
+      {
+         if (array_p(sv))
+         {
+            *rvar = sv;
+            retval = EXECUTION_SUCCESS;
+         }
+         else
+            ate_register_error("variable '%s' must be an array in '%s'", name, action);
+      }
+      else
+         ate_register_error("failed to find array '%s' in action '%s'", name, action);
+   }
+
+   return retval;
+}
+
+/**
+ * @brief Used for for callback functions, like "walk_rows", "sort", "filter".
+ */
+int get_function_by_name_or_fail(SHELL_VAR **rvar,
+                                 const char *name,
+                                 const char *action)
+{
+   int retval = EX_USAGE;
+   if (name == NULL)
+      ate_register_error("failed to specific a callback function name in '%s'", action);
+   else
+   {
+      SHELL_VAR *sv = find_function(name);
+      if (sv)
+      {
+         if (function_p(sv))
+         {
+            *rvar = sv;
+            retval = EXECUTION_SUCCESS;
+         }
+         else
+            ate_register_error("'%s' must be a shell function name in '%s'", name, action);
+      }
+      else
+         ate_register_error("failed to find shell function '%s' in action '%s'", name, action);
+   }
+
+   return retval;
 }
