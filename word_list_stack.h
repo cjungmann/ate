@@ -167,7 +167,7 @@ while(*(ARREL)) {                  \
    WL_APPEND((TAIL), *(ARREL));    \
    if ((HEAD) == NULL)             \
       (HEAD) = (TAIL);             \
-   ++(ARREL);                      \
+   ++((ARREL));                    \
 }
 
 /** @} */
