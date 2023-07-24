@@ -76,6 +76,7 @@ int pwla_put_row(ARG_LIST *alist);
 int pwla_walk_rows(ARG_LIST *alist);
 
 int pwla_sort(ARG_LIST *alist);
+int pwla_filter(ARG_LIST *alist);
 
 
 int test_pwla(WORD_LIST *wl);
