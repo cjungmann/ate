@@ -120,54 +120,6 @@ void dump_targets(ARG_TARGET *targets, const char *action)
 }
 
 /**
- * @brief FAKE ACTION template
- */
-int pwla_template(ARG_LIST *alist)
-{
-   const char *handle_name = NULL;
-   const char *value_name = NULL;
-   const char *array_name = NULL;
-
-   ARG_TARGET template_targets[] = {
-      { "handle_name", AL_ARG, &handle_name},
-      { "v",           AL_OPT, &value_name},
-      { "a",           AL_OPT, &array_name},
-      { NULL }
-   };
-
-   int retval;
-
-   if ((retval = process_word_list_args(template_targets, alist, 0)))
-       goto early_exit;
-
-   SHELL_VAR *handle_var;
-   if ((retval = get_handle_var_by_name_or_fail(&handle_var,
-                                                handle_name,
-                                                "template")))
-      goto early_exit;
-
-   SHELL_VAR *value_var;
-   if ((retval = create_var_by_given_or_default_name(&value_var,
-                                                     value_name,
-                                                     DEFAULT_VALUE_NAME,
-                                                     "template")))
-      goto early_exit;
-
-   SHELL_VAR *array_var;
-   if ((retval = create_array_var_by_given_or_default_name(&array_var,
-                                                           array_name,
-                                                           DEFAULT_ARRAY_NAME,
-                                                           "template")))
-      goto early_exit;
-
-   if (value_var)
-      retval = set_var_from_int(value_var, (ahead_cell(handle_var))->row_count);
-
-  early_exit:
-   return retval;
-}
-
-/**
  * @brief FAKE ACTION: declare
  */
 int pwla_declare(ARG_LIST *alist)
