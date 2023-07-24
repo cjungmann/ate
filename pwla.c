@@ -1,4 +1,4 @@
-#include "process_word_list_args.h"
+#include "pwla.h"
 
 ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option)
 {

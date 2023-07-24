@@ -39,6 +39,8 @@
 #include "ate_action.h"
 #include "ate_errors.h"
 
+#include "pwla.h"
+
 const char Error_Name[] = "ATE_ERROR";
 
 /**
@@ -48,9 +50,11 @@ const char Error_Name[] = "ATE_ERROR";
  * @param "list"   list of command line arguments
  * @return EXECUTION_SUCCESS or an error message.
  */
-static int ate(WORD_LIST *list)
+static int ate_disabled(WORD_LIST *list)
 {
    int retval = EXECUTION_SUCCESS;
+
+   test_pwla(list);
 
    unbind_variable_noref(Error_Name);
 
@@ -142,6 +146,14 @@ static int ate(WORD_LIST *list)
 
   exit_for_error:
    return retval;
+}
+
+static int ate(WORD_LIST *list)
+{
+   if (0)
+      return ate_disabled(list);
+
+   return test_pwla(list);
 }
 
 static char *desc_ate[] = {

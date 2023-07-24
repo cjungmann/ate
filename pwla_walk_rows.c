@@ -1,4 +1,4 @@
-#include "process_word_list_args.h"
+#include "pwla.h"
 
 #include <stdio.h>
 
