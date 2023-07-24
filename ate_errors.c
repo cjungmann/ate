@@ -86,6 +86,11 @@ void ate_register_corrupt_table(void)
    ate_register_error("the ate handle is corrupted");
 }
 
+void ate_register_not_an_int(const char *str, const char *action)
+{
+   ate_register_error("'%s' will not convert to an integer in action '%s'", str, action);
+}
+
 void ate_register_invalid_row_index(int requested, int available)
 {
    ate_register_error("index %d is invalid in list of %d rows", requested, available);
