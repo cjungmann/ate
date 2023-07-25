@@ -57,7 +57,15 @@ int pwla_walk_rows(ARG_LIST *alist)
 
    if (start_ndx_str)
    {
-      if (! get_int_from_string(&start_ndx, start_ndx_str))
+      if (get_int_from_string(&start_ndx, start_ndx_str))
+      {
+         if (start_ndx < 0 || start_ndx >= ahead->row_count)
+         {
+            ate_register_invalid_row_index(start_ndx, ahead->row_count);
+            goto early_exit;
+         }
+      }
+      else
       {
          ate_register_not_an_int(start_ndx_str, "walk_rows");
          goto early_exit;
@@ -114,7 +122,8 @@ int pwla_walk_rows(ARG_LIST *alist)
          goto early_exit;
 
       // Prepare and call the callback
-      invoke_shell_function_word_list(function_var, cb_args);
+      if ((retval = invoke_shell_function_word_list(function_var, cb_args)))
+         goto early_exit;
 
       ++ae_ptr;
    }
