@@ -1,3 +1,10 @@
+/**
+ * @file pwla.c
+ * @brief implementation of ate actionss
+ *
+ * "pwla" stands for __process word-list arguments__
+ */
+
 #include "pwla.h"
 
 ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option)
@@ -637,28 +644,6 @@ int pwla_put_row(ARG_LIST *alist)
    retval = EXECUTION_SUCCESS;
 
   early_exit:
-   return retval;
-}
-
-/**
- * @brief FAKE ACTION sort
- */
-int pwla_sort(ARG_LIST *alist)
-{
-   const char *handle_name = NULL;
-   const char *compare_function = NULL;
-   const char *new_handle_name = NULL;
-
-   ARG_TARGET sort_targets[] = {
-      { "handle_name", AL_ARG, &handle_name},
-      { "compare_function",  AL_ARG, &compare_function},
-      { "handle_name",       AL_ARG, &new_handle_name},
-      { NULL }
-   };
-
-   int retval = process_word_list_args(sort_targets, alist, 0);
-   dump_targets(sort_targets, "sort");
-
    return retval;
 }
 
