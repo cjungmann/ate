@@ -71,6 +71,8 @@ int pwla_get_field_sizes(ARG_LIST *alist);
 int pwla_get_row(ARG_LIST *alist);
 int pwla_put_row(ARG_LIST *alist);
 
+int pwla_resize_rows(ARG_LIST *alist);
+int pwla_reindex_elements(ARG_LIST *alist);
 
 // in pwla_walk_rows.c:
 int pwla_walk_rows(ARG_LIST *alist);

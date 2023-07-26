@@ -647,27 +647,61 @@ int pwla_put_row(ARG_LIST *alist)
    return retval;
 }
 
+
 /**
- * @brief FAKE ACTION filter
+ * @brief FAKE ACTION resize_rows
  */
-int pwla_filter(ARG_LIST *alist)
+int pwla_resize_rows(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
-   const char *filter_function = NULL;
-   const char *new_handle_name = NULL;
+   const char *new_row_size_str = NULL;
 
-   ARG_TARGET filter_targets[] = {
+   ARG_TARGET resize_rows_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
-      { "filter_function", AL_ARG, &filter_function},
-      { "new_handle",      AL_ARG, &new_handle_name},
+      { "new_row_size", AL_ARG, &new_row_size_str},
       { NULL }
    };
 
-   int retval = process_word_list_args(filter_targets, alist, 0);
-   dump_targets(filter_targets, "filter");
+   int retval;
 
+   if ((retval = process_word_list_args(resize_rows_targets, alist, 0)))
+       goto early_exit;
+
+   SHELL_VAR *handle_var;
+   if ((retval = get_handle_var_by_name_or_fail(&handle_var,
+                                                handle_name,
+                                                "resize_rows")))
+      goto early_exit;
+
+   retval = EX_USAGE;
+   AHEAD *ahead = ahead_cell(handle_var);
+
+   int new_row_size = 0;
+   if (get_int_from_string(&new_row_size, new_row_size_str))
+   {
+      if (new_row_size < 1)
+      {
+         ate_register_error("invalid row size of %d requested in action 'resize_rows'", new_row_size);
+         goto early_exit;
+      }
+   }
+   else
+   {
+      ate_register_not_an_int(new_row_size_str, "resize_rows");
+      goto early_exit;
+   }
+
+   if (new_row_size > ahead->row_size)
+      retval = table_extend_rows(ahead, new_row_size - ahead->row_size);
+   else if (new_row_size < ahead->row_size)
+      retval = table_contract_rows(ahead, ahead->row_size - new_row_size);
+
+  early_exit:
    return retval;
 }
+
+
+
 
 /**
  * @brief FAKE ENTRY like "act()"
@@ -724,6 +758,9 @@ int test_pwla(WORD_LIST *wl)
          retval = pwla_get_row(alist);
       else if (0==strcmp(action_name, "put_row"))
          retval = pwla_put_row(alist);
+
+      else if (0==strcmp(action_name, "resize_rows"))
+         retval = pwla_resize_rows(alist);
 
       // Beginning of actions invoking callback functions
       // Beginning of actions invoking callback functions
