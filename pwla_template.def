@@ -1,5 +1,15 @@
 /* -*- mode: c -*- */
 
+#include "pwla.h"
+
+#include <stdio.h>
+
+#include "ate_handle.h"
+#include "ate_utilities.h"
+#include "ate_errors.h"
+
+#include "word_list_stack.h"
+
 /**
  * @brief FAKE ACTION template
  */
@@ -8,11 +18,13 @@ int pwla_template(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *value_name = NULL;
    const char *array_name = NULL;
+   const char *start_row_str = NULL;
 
    ARG_TARGET template_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
       { "a",           AL_OPT, &array_name},
+      { "-s",          AL_ARG, &start_row_str},
       { NULL }
    };
 
@@ -21,12 +33,15 @@ int pwla_template(ARG_LIST *alist)
    if ((retval = process_word_list_args(template_targets, alist, 0)))
        goto early_exit;
 
+   // Gotta do this (with a couple of exceptions):
+   // get the handle variable
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
                                                 "template")))
       goto early_exit;
 
+   // For actions that return a discrete (single) value
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
@@ -34,6 +49,7 @@ int pwla_template(ARG_LIST *alist)
                                                      "template")))
       goto early_exit;
 
+   // For actions that return an array value
    SHELL_VAR *array_var;
    if ((retval = create_array_var_by_given_or_default_name(&array_var,
                                                            array_name,
@@ -41,8 +57,26 @@ int pwla_template(ARG_LIST *alist)
                                                            "template")))
       goto early_exit;
 
-   if (value_var)
-      retval = set_var_from_int(value_var, (ahead_cell(handle_var))->row_count);
+   retval = EX_USAGE;
+
+   // For actions that use a number-valued argument
+   int start_row = -1;
+   if (get_int_from_string(&start_row, start_row_str))
+   {
+      // validate the number
+   }
+   else
+   {
+      ate_register_not_an_int(start_row_str, "template");
+      goto early_exit;
+   }
+
+   // For actions that create an array for callback functions
+   SHELL_VAR *new_array = NULL;
+   if ((retval = create_array_var_by_stem(&new_array, "ATE_USER_ARRAY_", "template")))
+      goto early_exit;
+
+   // Use the values aquired above
 
   early_exit:
    return retval;
