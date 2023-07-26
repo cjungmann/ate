@@ -187,6 +187,52 @@ bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
    return False;
 }
 
+/**
+ * @brief Create new head from dimensions and row heads.
+ *
+ * This should replace @ref ate_create_head_from_list in order
+ * to create a new AHEAD without needing an existing AHEAD.
+ * @param "head"      [out] pointer to new AHEAD pointer if successful
+ * @param "array"     [in]  array to which list rows point
+ * @param "row_size"  [in]  number of elements in a row
+ * @param "row_count" [in]  number of ARRAY_ELEMENTS in rows member
+ * @param "list"      [in]  linked list of ARRAY_ELEMENTs
+ *
+ * @return True if successful (@p head set with new head), or
+ *         False if failed
+ */
+bool ate_create_head_with_ael(AHEAD **head,
+                              SHELL_VAR *array,
+                              int row_size,
+                              int row_count,
+                              AEL *list)
+{
+   size_t head_size = ate_calculate_head_size(row_count);
+   AHEAD *new_head = (AHEAD*)xmalloc(head_size);
+   if (new_head)
+   {
+      if (ate_initialize_head(new_head, array, row_size))
+      {
+         ARRAY_ELEMENT **ptr = new_head->rows;
+
+         while (list)
+         {
+            *ptr = list->element;
+
+            list = list->next;
+            ++ptr;
+         }
+         new_head->row_count = row_count;
+         *head = new_head;
+         return True;
+      }
+      else
+         xfree(new_head);
+   }
+
+   return False;
+}
+
 bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head)
 {
    int count=0;
@@ -198,31 +244,13 @@ bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head
    }
 
    if (count)
-   {
-      size_t head_size = ate_calculate_head_size(count);
-      AHEAD *newhead = (AHEAD*)xmalloc(head_size);
-      if (newhead)
-      {
-         memset(newhead, 0, sizeof(struct ate_head));
-         newhead->typeid = AHEAD_ID;
-         newhead->array = source_head->array;
-         newhead->row_size = source_head->row_size;
-         newhead->row_count = count;
-
-         ARRAY_ELEMENT **ae_ptr = &newhead->rows[0];
-         ptr = list;
-         while (ptr)
-         {
-            *ae_ptr = ptr->element;
-
-            ++ae_ptr;
-            ptr = ptr->next;
-         }
-         *head = newhead;
-         return True;
-      }
-   }
-   return False;
+      return ate_create_head_with_ael(head,
+                                      source_head->array,
+                                      source_head->row_size,
+                                      count,
+                                      list);
+   else
+      return False;
 }
 
 /**

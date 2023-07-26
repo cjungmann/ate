@@ -88,6 +88,12 @@ bool ate_create_indexed_head(AHEAD **head,
                              SHELL_VAR *array,
                              int row_size);
 
+bool ate_create_head_with_ael(AHEAD **head,
+                                  SHELL_VAR *array,
+                                  int row_size,
+                                  int row_count,
+                                  AEL *list);
+
 bool ate_create_head_from_list(AHEAD **head,
                                AEL *list,
                                const AHEAD *source_head);
