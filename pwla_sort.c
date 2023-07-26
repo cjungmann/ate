@@ -74,6 +74,13 @@ int pwla_sort(ARG_LIST *alist)
                                               "template")))
       goto early_exit;
 
+   if (new_handle_name == NULL)
+   {
+      ate_register_error("no handle name provided for sort result in 'sort'");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
+
    const char *stem = "QSORT_ROW_STEM_";
    if ((retval = create_var_by_stem(&return_var, stem, "sort")))
       goto early_exit;
@@ -121,8 +128,6 @@ int pwla_sort(ARG_LIST *alist)
                                                    newhead,
                                                    "sort")))
          xfree(newhead);
-      else
-         retval = EXECUTION_SUCCESS;
    }
    else
    {
