@@ -1,3 +1,8 @@
+/**
+ * @file pwla_sort.c
+ * @brief `sort` action implementation with qsort support function
+ */
+
 #include <builtins.h>
 
 // Prevent multiple inclusion of shell.h:
