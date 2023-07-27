@@ -76,6 +76,9 @@ typedef enum {
    AL_END               ///< bounds-confirming value
 } AL_FLAGS;
 
+/**
+ * @brief Container for action information to support selection and usage info
+ */
 struct pwla_action_def {
    const char *name;               ///< name for searching the vector
    const char *desc;               ///< description for usage messages
@@ -84,13 +87,23 @@ struct pwla_action_def {
 };
 
 
-
+/**
+ * @defgroup PWLA_Basics PWLA argument-processing utilities
+ * @brief These functions found in pwla.c
+ * @{
+ */
 ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option);
 ARG_TARGET *pwla_next_arg_target(ARG_TARGET *targets);
 int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS flags);
 
 void dump_targets(ARG_TARGET *targets, const char *action);
+/** @} */
 
+
+/**
+ * @defgroup PWLA_ActImps PWLA Action Implementations
+ * @{
+ */
 // list_actions and show_action are in pwla_agent.c for
 // access to the array of action definitions:
 int pwla_list_actions(ARG_LIST *alist);
@@ -116,5 +129,6 @@ int pwla_walk_rows(ARG_LIST *alist);
 int pwla_sort(ARG_LIST *alist);
 int pwla_filter(ARG_LIST *alist);
 
+/** @} */
 
 #endif
