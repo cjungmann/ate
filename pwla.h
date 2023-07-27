@@ -54,11 +54,25 @@ typedef enum {
    AL_END               ///< bounds-confirming value
 } AL_FLAGS;
 
+struct pwla_action_def {
+   const char *name;               ///< name for searching the vector
+   const char *desc;               ///< description for usage messages
+   const char *usage;              ///< usage string
+   int (*func)(ARG_LIST *alist);   ///< function pointer to action
+};
+
+
+
 ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option);
 ARG_TARGET *pwla_next_arg_target(ARG_TARGET *targets);
 int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS flags);
 
 void dump_targets(ARG_TARGET *targets, const char *action);
+
+// list_actions and show_action are in pwla_agent.c for
+// access to the array of action definitions:
+int pwla_list_actions(ARG_LIST *alist);
+int pwla_show_action(ARG_LIST *alist);
 
 int pwla_declare(ARG_LIST *alist);
 int pwla_append_data(ARG_LIST *alist);
@@ -74,11 +88,15 @@ int pwla_put_row(ARG_LIST *alist);
 int pwla_resize_rows(ARG_LIST *alist);
 int pwla_reindex_elements(ARG_LIST *alist);
 
-// in pwla_walk_rows.c:
+// The following are each in their own source file,
+// the function name plus .c extension:
 int pwla_walk_rows(ARG_LIST *alist);
-
 int pwla_sort(ARG_LIST *alist);
 int pwla_filter(ARG_LIST *alist);
+
+
+// In pwla_agent.c
+int pwla_run(WORD_LIST *wl);
 
 
 int test_pwla(WORD_LIST *wl);
