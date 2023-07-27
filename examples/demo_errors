@@ -305,8 +305,9 @@ test_resize_rows_and_sort()
         local -n ds_return="$1"
         local -n ds_row_left="$2"
         local -n ds_row_right="$3"
-        local left="${ds_row_left[2]}"
-        local right="${ds_row_left[2]}"
+        local -i sort_column="${4:- 0}"
+        local left="${ds_row_left[$sort_column]}"
+        local right="${ds_row_right[$sort_column]}"
         if [[ "$left" < "$right" ]]; then
             ds_return=-1
         elif [[ "$left" > "$right" ]]; then
@@ -314,6 +315,8 @@ test_resize_rows_and_sort()
         else
             ds_return=0
         fi
+
+        printf $'\e[32;1m%s\e[m ? \e[32;1m%s\e[m: %d\n' "$left" "$right" "$ds_return"
 
         return 0
     }
@@ -330,8 +333,19 @@ test_resize_rows_and_sort()
 
         echo
         echo "Sort on third row"
-        ate sort good_handle dnuos_sort sorted_handle
-        print_formatted_table_with_nulls sorted_handle
+        if ate sort good_handle dnuos_sort new_sorted_handle 3; then
+            print_formatted_table_with_nulls new_sorted_handle
+        else
+            echo "Failed to sort: '$ATE_ERROR'"
+        fi
+
+        echo
+        echo "Sort on second row"
+        if ate sort good_handle dnuos_sort new_sorted_handle 2; then
+            print_formatted_table_with_nulls new_sorted_handle
+        else
+            echo "Failed to sort: '$ATE_ERROR'"
+        fi
 
         echo
         echo "Now let's check error messages"
@@ -339,6 +353,8 @@ test_resize_rows_and_sort()
         test_params "sort without callback" sort good_handle
         test_params "sort with false callback" sort good_handle bogus_callback
         test_params "sort without results handle" sort good_handle dnuos_sort
+    else
+        echo "resize_rows failed: '$ATE_ERROR'"
     fi
 }
 

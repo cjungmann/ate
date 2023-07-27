@@ -20,7 +20,7 @@ fi
 
 # Declare without an array, the load it with append_data:
 ate declare new_handle 2
-ate append_data new_handle "${pets[@}}"
+ate append_data new_handle "${pets[@]}"
 # See what name was used for the new array
 ate get_array_name new_handle
 echo "The generated handle array name is $ATE_VALUE"
