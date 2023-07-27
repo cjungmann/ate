@@ -25,37 +25,7 @@ bool make_unique_name(char *buffer, int bufflen, const char *stem);
 bool get_int_from_string(int *result, const char *str);
 int set_var_from_int(SHELL_VAR *result, int value);
 
-
-
-bool get_string_from_list(const char **result, WORD_LIST *list, int index);
-bool get_int_from_list(int *result, WORD_LIST *list, int index);
-bool get_var_from_list(SHELL_VAR **result, WORD_LIST *list, int index);
-
-
-
-int get_handle_by_name(SHELL_VAR **var, const char *name, const char *action);
-int get_var_by_name(SHELL_VAR **var, const char *name, const char *action);
-int get_new_var_by_stem(SHELL_VAR **var, const char *stem);
-int get_new_array_var_by_stem(SHELL_VAR **var, const char *stem);
-
-
-
-
 void ate_dispose_variable_value(SHELL_VAR *var);
-SHELL_VAR *ate_get_prepared_variable(const char *name, int attributes);
-
-bool prepare_clean_array_var(SHELL_VAR **var, const char *name);
-
-int get_handle_from_name(AHEAD **head, const char *name_handle, const char *action_name);
-
-int get_shell_var_by_name_and_type(SHELL_VAR **retval,
-                                   const char *name,
-                                   int attributes);
-
-int clone_range_to_array(SHELL_VAR **new_array,
-                         ARRAY_ELEMENT *starting_element,
-                         int el_count,
-                         const char *name);
 
 int reindex_array_elements(AHEAD *head);
 
