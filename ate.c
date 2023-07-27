@@ -30,131 +30,67 @@
 #include <shell.h>
 #endif
 
-#include <builtins/bashgetopt.h>  // for internal_getopt(), etc
-#include <builtins/common.h>      // for no_options()
-
 #include <stdio.h>
 
 #include "word_list_stack.h"
-#include "ate_action.h"
 #include "ate_errors.h"
 
 #include "pwla.h"
 
 const char Error_Name[] = "ATE_ERROR";
 
+
+// Found in pwla_agent.c
+extern struct pwla_action_def pwla_actions[];
+extern int pwla_action_count;
+
 /**
  * @brief effective `main` function, initial entry of an instance
  *        of `ate`.
  *
  * @param "list"   list of command line arguments
- * @return EXECUTION_SUCCESS or an error message.
+ * @return EXECUTION_SUCCESS or an error-dignalling non-zero value.
  */
-static int ate_disabled(WORD_LIST *list)
-{
-   int retval = EXECUTION_SUCCESS;
-
-   test_pwla(list);
-
-   unbind_variable_noref(Error_Name);
-
-   // String pointers that can be set with options
-   const char *name_handle = NULL;
-   const char *name_action = NULL;
-   const char *name_result_value = "ATE_VALUE";
-   const char *name_result_array = "ATE_ARRAY";
-   WORD_LIST *extras = NULL, *etail = NULL;
-
-   // Option parsing status variables
-   const char *cur_arg;
-   const char **pending_option = NULL;
-
-   WORD_LIST *ptr = list;
-   while (ptr)
-   {
-      cur_arg = ptr->word->word;
-      if (pending_option)
-      {
-         *pending_option = cur_arg;
-         pending_option = NULL;
-      }
-      else if (*cur_arg == '-' && cur_arg[1])
-      {
-         switch(cur_arg[1])
-         {
-            case 'a':
-               // Immediate resolution when no space between option and value:
-               if (cur_arg[2])
-                  name_result_array = &cur_arg[2];
-               // Defer getting option value until next loop:
-               else
-                  pending_option = &name_result_array;
-               break;
-
-            case 'v':
-               if (cur_arg[2])
-                  name_result_value = &cur_arg[2];
-               else
-                  pending_option = &name_result_value;
-               break;
-
-            default:
-               // determine if just the flag, or the flag AND following arg:
-               WL_APPEND(etail, cur_arg);
-               if (!extras)
-                  extras = etail;
-               if (cur_arg[2] == '\0')
-               {
-                  if (ptr->next)
-                  {
-                     ptr = ptr->next;
-                     if (ptr)
-                        WL_APPEND(etail, ptr->word->word);
-                  }
-               }
-               break;
-         }
-      }
-      // Positional options
-      else if (name_action == NULL)
-         name_action = cur_arg;
-      else if (name_handle == NULL)
-         name_handle = cur_arg;
-      else
-      {
-         WL_APPEND(etail, cur_arg);
-         if (!extras)
-            extras = etail;
-      }
-
-      ptr = ptr->next;
-   }
-
-   if (name_action == NULL)
-   {
-      ate_register_error("missing action name");
-      retval = EX_USAGE;
-      builtin_usage();
-      goto exit_for_error;
-   }
-
-   retval = delegate_action(name_action,
-                            name_handle,
-                            name_result_value,
-                            name_result_array,
-                            extras);
-
-  exit_for_error:
-   return retval;
-}
-
 static int ate(WORD_LIST *list)
 {
-   if (0)
-      return ate_disabled(list);
+   if (list == NULL)
+   {
+      ate_register_error("no action name provide for ate");
+      return EX_USAGE;
+   }
 
-   return test_pwla(list);
+   const char *action = list->word->word;
+
+   struct pwla_action_def *ptr = pwla_actions;
+   struct pwla_action_def *end = ptr + pwla_action_count;
+
+   while (ptr < end)
+   {
+      if (0 == strcmp(action, ptr->name))
+      {
+         ARG_LIST *alist = NULL;
+         args_from_word_list(alist, list->next);
+         int retval = (*(ptr->func))(alist);
+         // if (retval == EX_USAGE)
+         // {
+         //    builtin_usage();
+         //    // printf("usage:\n  %s\n", ptr->usage);
+         // }
+
+         return retval;
+      }
+
+      ++ptr;
+   }
+
+   ate_register_error("'%s' is not a recognized action at this time.", action);
+   return EX_USAGE;
 }
+
+// static int ate(WORD_LIST *list)
+// {
+//    return pwla_run(list);
+// }
 
 static char *desc_ate[] = {
    "ate - Table extension for Bash arrays",
