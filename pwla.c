@@ -122,9 +122,6 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
 
          // Copy value to found target
          *cur_target->value = arg_val;
-
-         if (cur_target->shellvar != NULL)
-            *cur_target->shellvar = find_variable(arg_val);
       }
 
       // discard consumed argument
