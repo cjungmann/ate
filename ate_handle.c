@@ -233,6 +233,12 @@ bool ate_create_head_with_ael(AHEAD **head,
    return False;
 }
 
+/**
+ * @brief Deprecated function now calling @ref ate_create_head_with_ael.
+ * @param "head"        [out] where successfully created and initialized head will be copied
+ * @param "list"        [in]  list of row heads, mostly likely from an existing ate handle
+ * @param "source_head" [in]  existing header from which table dimensions and contents will be copied
+ */
 bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head)
 {
    int count=0;
