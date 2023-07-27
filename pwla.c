@@ -701,6 +701,35 @@ int pwla_resize_rows(ARG_LIST *alist)
 }
 
 
+int pwla_reindex_elements(ARG_LIST *alist)
+{
+   const char *handle_name = NULL;
+
+   ARG_TARGET resize_rows_targets[] = {
+      { "handle_name", AL_ARG, &handle_name},
+      { NULL }
+   };
+
+   int retval;
+
+   if ((retval = process_word_list_args(resize_rows_targets, alist, 0)))
+       goto early_exit;
+
+   SHELL_VAR *handle_var;
+   if ((retval = get_handle_var_by_name_or_fail(&handle_var,
+                                                handle_name,
+                                                "resize_rows")))
+      goto early_exit;
+
+   AHEAD *ahead = ahead_cell(handle_var);
+   if ((retval = ate_check_head_integrity(ahead)))
+      goto early_exit;
+
+   retval = reindex_array_elements(ahead);
+
+  early_exit:
+   return retval;
+}
 
 
 /**
@@ -781,3 +810,5 @@ int test_pwla(WORD_LIST *wl)
 
    return retval;
 }
+
+
