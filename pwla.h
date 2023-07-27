@@ -1,3 +1,8 @@
+/**
+ * @file pwla.h
+ * @brief Header file for various pwla (`process word list arguments`) features
+ */
+
 #ifndef PROCESS_WORD_LIST_ARGS_H
 #define PROCESS_WORD_LIST_ARGS_H
 
@@ -23,8 +28,6 @@ struct arg_target {
    const char *name;
    AL_TYPE    type;
    const char **value;
-   SHELL_VAR **shellvar;
-   const char *default_value;
 };
 
 struct arg_values {
@@ -32,6 +35,25 @@ struct arg_values {
    ARG_LIST *next;
 };
 
+/**
+ * @brief Convenience macro for creating a stack-based ARG_LIST list linked list.
+ *
+ * This simplifies what would otherwise be a tedious process of
+ * copying the contents of a WORD_LIST to a simpler ARG_LIST array
+ * into a stack-based array.  Doing it as a macro is the easiest way
+ * to do this, though a function-based solution could be done by
+ * calculating the memory need and handing the memory to a function
+ * that would prepare the memory.
+ *
+ * The argument-handling concept I'm exploring here discards list
+ * elements as they are consumed.  Having the elements in stack memory
+ * prevents memory leaks.
+ *
+ * One important aspect of the generated list is the the first element
+ * of the ARG_LIST array is a non-data member that points to the first
+ * element.  This is needed so we can discard the first element without
+ * losing a handle on the memory.
+ */
 #define args_from_word_list(AFWL_ARGS, AFWL_WL)    \
    ARG_LIST *AFWL_ARG_NEW;                                              \
    ARG_LIST *AFWL_ARG_TAIL = (AFWL_ARGS) = (ARG_LIST*)alloca(sizeof(ARG_LIST)); \
