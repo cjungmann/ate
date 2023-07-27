@@ -95,12 +95,4 @@ int pwla_sort(ARG_LIST *alist);
 int pwla_filter(ARG_LIST *alist);
 
 
-// In pwla_agent.c
-int pwla_run(WORD_LIST *wl);
-
-
-int test_pwla(WORD_LIST *wl);
-
-
-
 #endif
