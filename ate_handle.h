@@ -8,9 +8,6 @@
 #include <shell.h>
 #endif
 
-#include <builtins/bashgetopt.h>  // for internal_getopt(), etc
-#include <builtins/common.h>      // for no_options()
-
 /**
  * @defgroup HANDLE_Resources AHEAD and ATE Handle Resources
  *

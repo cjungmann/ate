@@ -7,9 +7,6 @@
 #include <shell.h>
 #endif
 
-#include <builtins/bashgetopt.h>  // for internal_getopt(), etc
-#include <builtins/common.h>      // for no_options()
-
 #include "ate_handle.h"
 
 /**
