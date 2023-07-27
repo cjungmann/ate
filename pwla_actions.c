@@ -1,3 +1,8 @@
+/**
+ * @file pwla_actions.c
+ * @brief Contains most of the simpler action implementations.
+ */
+
 #include "pwla.h"
 
 #include "word_list_stack.h"
@@ -9,7 +14,9 @@
 #include "ate_errors.h"
 
 /**
- * @brief FAKE ACTION: declare
+ * @brief Initialize a new ate handle
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_declare(ARG_LIST *alist)
 {
@@ -87,7 +94,13 @@ int pwla_declare(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION append_data
+ * @brief Adds data directly to the hosted array of an initialized handle
+ *
+ * In order for the new elements to be available as table rows, the
+ * handle must be reindexed after a `append_data` action.
+ * 
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_append_data(ARG_LIST *alist)
 {
@@ -140,7 +153,18 @@ int pwla_append_data(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION index_rows
+ * @brief Generate a new index to virtual table rows
+ *
+ * This function must be called after a `append_data` action in order
+ * for the new elements to be made available as table rows to be make
+ * available.
+ *
+ * Although discouraged, it is possible to directly manipulate the
+ * contents of the host array through array methods.  Doing this may
+ * necessitate running this action to bring the index up-to-date.
+ * 
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_index_rows(ARG_LIST *alist)
 {
@@ -182,7 +206,15 @@ int pwla_index_rows(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION get_row_count
+ * @brief Return the number of indexed rows.
+ *
+ * The number value returned will reflect the indexed rows.  The
+ * value may be out-of-date if the host array has been changed
+ * through the `append_data` action or direct manipulation of the
+ * array.
+ 
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_get_row_count(ARG_LIST *alist)
 {
@@ -221,7 +253,9 @@ int pwla_get_row_count(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION get_row_size
+ * @brief Return the number of elements in a row.
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_get_row_size(ARG_LIST *alist)
 {
@@ -260,7 +294,14 @@ int pwla_get_row_size(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION get_array_name
+ * @brief Return the name of the hosted array
+ *
+ * This name will be either of the array name used for action
+ * `declare`, or the generated array name if an array name was
+ * not supplied to that action.
+ *
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_get_array_name(ARG_LIST *alist)
 {
@@ -301,7 +342,12 @@ int pwla_get_array_name(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION get_field_sizes
+ * @brief Survey the rows to get and return each field's maximum string length.
+ *
+ * This function is useful for formatting a table-like view.
+ * 
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_get_field_sizes(ARG_LIST *alist)
 {
@@ -374,7 +420,9 @@ int pwla_get_field_sizes(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION get_row
+ * @brief Return an array with a given row's contents.
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_get_row(ARG_LIST *alist)
 {
@@ -448,7 +496,15 @@ int pwla_get_row(ARG_LIST *alist)
 }
 
 /**
- * @brief FAKE ACTION put_row
+ * @brief Replace a given row with the contents of a named array.
+ *
+ * This function is intended to work alongside action `get_row` or
+ * during a callback of the `walk_rows` action.
+ *
+ * The size of the array must match the row_size of the table.
+ * 
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_put_row(ARG_LIST *alist)
 {
@@ -531,7 +587,17 @@ int pwla_put_row(ARG_LIST *alist)
 
 
 /**
- * @brief FAKE ACTION resize_rows
+ * @brief Add or remove fields in the table
+ *
+ * This action will add or remove elements from the host array
+ * in each virtual row of the table.  The function bypasses normal
+ * array processes to add elements without regard to their index
+ * number, and when finished, the Bash array's elements will be
+ * assigned new indexes according to their position in the altered
+ * array.
+ *
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
  */
 int pwla_resize_rows(ARG_LIST *alist)
 {
@@ -583,6 +649,20 @@ int pwla_resize_rows(ARG_LIST *alist)
 }
 
 
+/**
+ * @brief Replace Bash array elements with new index numbers.
+ *
+ * The new array numbers will be assigned according to the order of
+ * the row array elements.  If accessing this action through a sorted
+ * handle, the entire hosted array will be rearranged.
+ *
+ * The array elements will not be moved in memory, only the pointers
+ * between the elements, so handles that share the same hosted array
+ * will still access the same rows with the row indexes.
+ *
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ */
 int pwla_reindex_elements(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
