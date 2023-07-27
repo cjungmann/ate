@@ -300,7 +300,7 @@ test_resize_rows_and_sort()
         return 0
     }
 
-    dnuos_sort()
+    generic_sort()
     {
         local -n ds_return="$1"
         local -n ds_row_left="$2"
@@ -316,8 +316,6 @@ test_resize_rows_and_sort()
             ds_return=0
         fi
 
-        printf $'\e[32;1m%s\e[m ? \e[32;1m%s\e[m: %d\n' "$left" "$right" "$ds_return"
-
         return 0
     }
 
@@ -332,16 +330,16 @@ test_resize_rows_and_sort()
         print_formatted_table_with_nulls good_handle
 
         echo
-        echo "Sort on third row"
-        if ate sort good_handle dnuos_sort new_sorted_handle 3; then
+        echo "Sort on third column (index 2)"
+        if ate sort good_handle generic_sort new_sorted_handle 2; then
             print_formatted_table_with_nulls new_sorted_handle
         else
             echo "Failed to sort: '$ATE_ERROR'"
         fi
 
         echo
-        echo "Sort on second row"
-        if ate sort good_handle dnuos_sort new_sorted_handle 2; then
+        echo "Sort on second column (index 1)"
+        if ate sort good_handle generic_sort new_sorted_handle 1; then
             print_formatted_table_with_nulls new_sorted_handle
         else
             echo "Failed to sort: '$ATE_ERROR'"
@@ -352,7 +350,7 @@ test_resize_rows_and_sort()
         test_params "resize_rows with illegal size value" resize_rows good_handle 0
         test_params "sort without callback" sort good_handle
         test_params "sort with false callback" sort good_handle bogus_callback
-        test_params "sort without results handle" sort good_handle dnuos_sort
+        test_params "sort without results handle" sort good_handle generic_sort
     else
         echo "resize_rows failed: '$ATE_ERROR'"
     fi
