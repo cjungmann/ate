@@ -16,6 +16,13 @@
 #define DEFAULT_VALUE_NAME "ATE_VALUE"
 #define DEFAULT_ARRAY_NAME "ATE_ARRAY"
 
+/**
+ * @defgroup PWLA PWLA Data and Function Definitions
+ * @brief Improved WORD_LIST Argument Processing Code
+ * @{
+ */
+
+
 typedef enum {
    AL_ARG = 1,
    AL_OPT
@@ -131,4 +138,5 @@ int pwla_filter(ARG_LIST *alist);
 
 /** @} */
 
+/** @} <!-- PWLA --> */
 #endif
