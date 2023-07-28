@@ -521,8 +521,7 @@ int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl)
  ***********************************/
 
 /**
- * @defgroup CALLBACK_ARG_VARS Create variables for passing data to
- *           callback functions.
+ * @defgroup CALLBACK_ARG_VARS SHELL_VARS to pass to callback functions.
  *
  * These variables are created to be accessed by name (as a nameref
  * variable) in callback functions as the means by which data is
@@ -592,7 +591,7 @@ int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *acti
 */
 
 /**
- * @defgroup INPUT_ARG_VARS Get shell resources as named by the user.
+ * @defgroup INPUT_ARG_VARS Get User-requested SHELL_VARs
  *
  * For shell resources named on the command line that are required
  * for an action, these following functions handle return a SHELL_VAR
@@ -772,7 +771,7 @@ int get_function_by_name_or_fail(SHELL_VAR **rvar,
  */
 
 /**
- * @defgroup RESULT_ARG_VARS Guaranteeing Existence of Result Variables
+ * @defgroup RESULT_ARG_VARS Secure Result SHELL_VARs
  *
  * These functions handle replacing the default result value variables are
  * available when using `-v` or `-a` for value and array result variables.
