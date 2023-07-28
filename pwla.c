@@ -57,7 +57,7 @@ ARG_TARGET *pwla_next_arg_target(ARG_TARGET *targets)
  * hyphen-prefixed character) to be entered anywhere in the list of
  * command line arguments.
  *
- * The targets are an array of structs (@ref struct arg_target) that
+ * The targets are an array of structs (@ref arg_target) that
  * identify the match and include a string-pointer-pointer to which
  * argument or option's value will be saved.
  *
