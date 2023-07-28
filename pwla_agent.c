@@ -3,7 +3,9 @@
 
 #include <stdio.h>
 
-
+/**
+ * @brief Catalog of action implementations
+ */
 struct pwla_action_def pwla_actions[] = {
    {"list_actions", "show list of available actions",
     "ate list_actions",
@@ -70,8 +72,17 @@ struct pwla_action_def pwla_actions[] = {
      pwla_filter }
 };
 
+/**
+ * @brief Calculated total of catalog implementation entries.
+ */
 int pwla_action_count = sizeof(pwla_actions) / sizeof(struct pwla_action_def);
 
+
+/**
+ * @brief Show simple list of action names
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ */
 int pwla_list_actions(ARG_LIST *alist)
 {
    struct pwla_action_def *ptr = pwla_actions;
@@ -88,6 +99,11 @@ int pwla_list_actions(ARG_LIST *alist)
    return EXECUTION_SUCCESS;
 }
 
+/**
+ * @brief Show usage for one or all of the catalog entries
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ */
 int pwla_show_action(ARG_LIST *alist)
 {
    const char *desired_action = NULL;
