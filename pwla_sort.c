@@ -27,6 +27,13 @@ struct sort_data {
    WORD_LIST *args;
 };
 
+/**
+ * @brief Transfer function between C-library qsort and a Bash shell comparison function
+ * @param "left"  [in] pointer to left-side element
+ * @param "right" [in] pointer to right-side element
+ * @param "arg"   [in] void* to a @ref sort_data structure
+ * @return -1 if left < right, 0 if left == right, 1 if left > right
+ */
 int pwla_sort_qsort_callback(const void *left, const void *right, void *arg)
 {
    struct sort_data *data = (struct sort_data*)arg;
@@ -45,6 +52,13 @@ int pwla_sort_qsort_callback(const void *left, const void *right, void *arg)
    return compval;
 }
 
+/**
+ * @brief Create new handle with rows sorted via qsort
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ *
+ * see man ate(1)
+ */
 int pwla_sort(ARG_LIST *alist)
 {
    const char *handle_name = NULL;

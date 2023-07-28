@@ -9,7 +9,11 @@
 #include "word_list_stack.h"
 
 /**
- * @brief FAKE ACTION walk_rows
+ * @brief Sends each row to a callback function
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ *
+ * see man ate(1)
  */
 int pwla_walk_rows(ARG_LIST *alist)
 {

@@ -11,7 +11,11 @@
 #include "word_list_stack.h"
 
 /**
- * @brief FAKE ACTION filter
+ * @brief Create new handle with subset of source table
+ * @param "alist"   Stack-based simple linked list of argument values
+ * @return EXECUTION_SUCCESS or one of the failure codes
+ *
+ * see man ate(1)
  */
 int pwla_filter(ARG_LIST *alist)
 {
