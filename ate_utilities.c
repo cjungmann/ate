@@ -263,6 +263,16 @@ ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size)
    return row;
 }
 
+/**
+ * @brief Change a table's row size and add empty fields to the end
+ *        of each row.
+ * @param "head"       [in] pointer to the AHEAD struct of an
+ *                          initialized handle.
+ * @param "new_columns [in] the number of fields to add to the row
+ *                          size
+ *
+ * @return EXECUTION_SUCCESS if it works, otherwise EX_USAGE or EXECUTION_FAILURE
+ */
 int table_extend_rows(AHEAD *head, int new_columns)
 {
    int retval = EXECUTION_SUCCESS;
@@ -340,7 +350,17 @@ int table_extend_rows(AHEAD *head, int new_columns)
    return retval;
 }
 
-int table_contract_rows(AHEAD *head, int columns_to_remove)
+/**
+ * @brief Change a table's row size, removing out-of-range fields
+ *        from the rows.
+ * @param "head"             [in] pointer to the AHEAD struct of an
+ *                                initialized handle.
+ * @param "fields_to_remove" [in] the number of fields to remove from the
+ *                                row size
+ *
+ * @return EXECUTION_SUCCESS if it works, otherwise EX_USAGE or EXECUTION_FAILURE
+ */
+int table_contract_rows(AHEAD *head, int fields_to_remove)
 {
    int retval = EXECUTION_SUCCESS;
 
@@ -364,7 +384,7 @@ int table_contract_rows(AHEAD *head, int columns_to_remove)
       after_row = field->next;
 
       el_count = 0;
-      while (el_count < columns_to_remove)
+      while (el_count < fields_to_remove)
       {
          prev_element = field->prev;
          array_dispose_element(field);
@@ -404,7 +424,7 @@ int table_contract_rows(AHEAD *head, int columns_to_remove)
 
    // Update first because reindex_array_elements uses
    // head->row_size to process the elements.
-   head->row_size -= columns_to_remove;
+   head->row_size -= fields_to_remove;
 
    // Call to assign appropriate indexes, or future
    // additions will fail:
@@ -414,6 +434,37 @@ int table_contract_rows(AHEAD *head, int columns_to_remove)
    return retval;
 }
 
+int update_row_array(SHELL_VAR *target_var, ARRAY_ELEMENT *source_row, int row_size)
+{
+   ARRAY *array = array_cell(target_var);
+   array_flush(array);
+
+   ARRAY_ELEMENT *ael = source_row;
+
+   int index = 0;
+   while (ael && index < row_size)
+   {
+      array_insert(array, index++, ael->value);
+      ael = ael->next;
+   }
+
+   if (index < row_size)
+   {
+      ate_register_error("corrupted table: incomplete row");
+      return EX_USAGE;
+   }
+
+   return EXECUTION_SUCCESS;
+}
+
+/**
+ * @brief Invoke a shell function with the parameters of this function
+ *        call
+ * @param "function"  [in] validated shell function variable
+ * @param  ...        [in] following arguments will be passed on as
+ *                         parameters to the function.
+ * @return EXECUTION_SUCCESS or a non-zero error value if it fails.
+ */
 int invoke_shell_function(SHELL_VAR *function, ...)
 {
    WORD_LIST *list = NULL, *tail = NULL;
@@ -440,6 +491,13 @@ int invoke_shell_function(SHELL_VAR *function, ...)
    return execute_command(command);
 }
 
+/**
+ * @brief Invoke a shell function with a word list
+ * @param "function"  [in] validated shell function variable
+ * @param "wl"        [in] a word list of arguments to submit
+ *                         to the shell function.
+ * @return EXECUTION_SUCCESS or a non-zero error value if it fails.
+ */
 int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl)
 {
    WORD_LIST *params = NULL;
@@ -462,6 +520,27 @@ int invoke_shell_function_word_list(SHELL_VAR *function, WORD_LIST *wl)
  * ARG_VARS group functions
  ***********************************/
 
+/**
+ * @defgroup CALLBACK_ARG_VARS Create variables for passing data to
+ *           callback functions.
+ *
+ * These variables are created to be accessed by name (as a nameref
+ * variable) in callback functions as the means by which data is
+ * passed to those functions.
+ *
+ * The variables are intended to be conceptually anonymous.
+ *
+ * @{
+ */
+
+/**
+ * @brief Use a name stem to create a generic SHELL_VAR.
+ * @param "var"    [out]  place to return new SHELL_VAR
+ * @param "stem"   [in]   string on which to base the new name
+ * @param "action" [in]   action name for reporting any errors
+ *
+ * @return EXECUTION_SUCCESS if the variable was created, EXECUTION_FAILURE if not.
+ */
 int create_var_by_stem(SHELL_VAR **var, const char *stem, const char *action)
 {
    assert(stem);
@@ -480,6 +559,15 @@ int create_var_by_stem(SHELL_VAR **var, const char *stem, const char *action)
    return EXECUTION_FAILURE;
 }
 
+
+/**
+ * @brief Use a name stem to create an array SHELL_VAR.
+ * @param "var"    [out]  place to return new array SHELL_VAR
+ * @param "stem"   [in]   string on which to base the new name
+ * @param "action" [in]   action name for reporting any errors
+ *
+ * @return EXECUTION_SUCCESS if the variable was created, EXECUTION_FAILURE if not.
+ */
 int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *action)
 {
    assert(stem);
@@ -498,9 +586,37 @@ int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *acti
    return EXECUTION_FAILURE;
 }
 
+/**
+ *  @}
+ * <!-- terminate CALLBACK_ARG_VARS group -->
+*/
 
 /**
- * @brief Used by actions that work with a handle, "get_row_size", "get_row_count", "get_row", etc
+ * @defgroup INPUT_ARG_VARS Get shell resources as named by the user.
+ *
+ * For shell resources named on the command line that are required
+ * for an action, these following functions handle return a SHELL_VAR
+ * if the named resource exists, or registers an error for any
+ * that prevents getting the resource (no name, missing variable).
+ *
+ * These functions will not return a SHELL_VAR unless it already
+ * exists.
+ *
+ * @{
+ */
+
+/**
+ * @brief Secure an `input` variable by name.
+ *
+ * This function is used to find a variable from which data will
+ * be read.  As such, if it will return an error value if it cannot
+ * be found.
+ *
+ * @param "rvar"  [out]  place to return the variable, if found
+ * @param "name"  [in]   name of sought variable
+ * @param "action" [in]  name of action for registering any errors
+ * @return EXECUTION_SUCCESS if the variable was found and returned,
+ *         EXECUTION_FAILURE if not.
  */
 int get_handle_var_by_name_or_fail(SHELL_VAR **rvar,
                                    const char *name,
@@ -530,7 +646,15 @@ int get_handle_var_by_name_or_fail(SHELL_VAR **rvar,
 }
 
 /**
- * @brief Used by actions that generate a new handle like "sort" or "filter"
+ * @brief Secure an `output` handle variable by a given name.
+ *
+ * This function will fail if the requested name is already in use.
+ *
+ * @param "rvar"   [out]  place to return the new handle, if successful
+ * @param "name"   [in]   name to use for new handle
+ * @param "ahead"  [in]   initialized AHEAD struct to attach to the handle
+ * @param "action" [in]   action name for error messaging
+ * @return EXECUTION_SUCCESS if successful, an error value if not.
  */
 int create_handle_by_name_or_fail(SHELL_VAR **rvar,
                                   const char *name,
@@ -545,6 +669,11 @@ int create_handle_by_name_or_fail(SHELL_VAR **rvar,
    {
       ate_register_error("internal error, failed to provide AHEAD for handle in '%s'", action);
       retval = EXECUTION_FAILURE;
+   }
+   else if (find_variable(name))
+   {
+      ate_register_error("action '%s' can't make variable '%s', it already exists", action, name);
+      retval = EX_USAGE;
    }
    else
    {
@@ -567,7 +696,103 @@ int create_handle_by_name_or_fail(SHELL_VAR **rvar,
 }
 
 /**
- * @brief Used by actions that report value info, like "get_row_size", "get_row_count", "get_array_name"
+ * @brief Secure an `input` array variable by name, generate error on failure
+ * @param "rvar"   [out]  place to return the variable if found
+ * @param "name"   [in]   name of variable to seek
+ * @param "action" [in]   action name for error messaging
+ * @return EXECUTION_SUCCESS if variable was found, a non-zero error
+ *         code if it failed
+ */
+int get_array_var_by_name_or_fail(SHELL_VAR **rvar,
+                                  const char *name,
+                                  const char *action)
+{
+   int retval = EX_USAGE;
+   if (name == NULL)
+      ate_register_error("failed to specific a array name in '%s'", action);
+   else
+   {
+      SHELL_VAR *sv = find_variable(name);
+      if (sv)
+      {
+         if (array_p(sv))
+         {
+            *rvar = sv;
+            retval = EXECUTION_SUCCESS;
+         }
+         else
+            ate_register_error("variable '%s' must be an array in '%s'", name, action);
+      }
+      else
+         ate_register_error("failed to find array '%s' in action '%s'", name, action);
+   }
+
+   return retval;
+}
+
+/**
+ * @brief Secure an `input` function variable by name, register the
+ *        error if it doesn't exist.
+ * @param "rvar"   [out]  place to return the function variable if found
+ * @param "name"   [in]   name of variable to seek
+ * @param "action" [in]   action name for error messaging
+ * @return EXECUTION_SUCCESS if the function was found, a non-zero error
+ *         code if it failed
+ */
+int get_function_by_name_or_fail(SHELL_VAR **rvar,
+                                 const char *name,
+                                 const char *action)
+{
+   int retval = EX_USAGE;
+   if (name == NULL)
+      ate_register_error("failed to specific a callback function name in '%s'", action);
+   else
+   {
+      SHELL_VAR *sv = find_function(name);
+      if (sv)
+      {
+         if (function_p(sv))
+         {
+            *rvar = sv;
+            retval = EXECUTION_SUCCESS;
+         }
+         else
+            ate_register_error("'%s' must be a shell function name in '%s'", name, action);
+      }
+      else
+         ate_register_error("failed to find shell function '%s' in action '%s'", name, action);
+   }
+
+   return retval;
+}
+
+/**
+ * @}
+ * <!-- terminate INPUT_ARG_VARS group -->
+ */
+
+/**
+ * @defgroup RESULT_ARG_VARS Guaranteeing Existence of Result Variables
+ *
+ * These functions handle replacing the default result value variables are
+ * available when using `-v` or `-a` for value and array result variables.
+ * @{
+ */
+
+/**
+ * @brief Secure the `output` value SHELL_VAR by a given or the default name.
+ *
+ * Used by actions like `get_row_size`, `get_row_count`, and
+ * `get_array_name`, this function will create or commandeer a
+ * variable, using either the given name or a default name if no
+ * name is provided.
+ *
+ * @param "rvar"         [out] place to return the SHELL_VAR
+ * @param "name"         [in]  name to use for the SHELL_VAR (may be null)
+ * @param "default_name" [in]  name to use if @p name not used
+ * @param "action"       [in]  action name to use for error messaging
+ * @return EXECUTION_SUCCESS if the variable was secured, otherwise a
+ *         non-zero error code
  */
 int create_var_by_given_or_default_name(SHELL_VAR **rvar,
                                         const char *name,
@@ -605,7 +830,18 @@ int create_var_by_given_or_default_name(SHELL_VAR **rvar,
 }
 
 /**
- * @brief Used by actions that report to an array, like "get_row", "get_row_size"
+ * @brief Secure the `output` array SHELL_VAR by a given or the default name
+ *
+ * Used by actions like `get_row` and `get_field_sizes`, this function
+ * will create or commandeer an array variable, using either the given
+ * name or a default name if no name is provided.
+ *
+ * @param "rvar"         [out] place to return the array SHELL_VAR
+ * @param "name"         [in]  name to use for the array SHELL_VAR (may be null)
+ * @param "default_name" [in]  name to use if @p name not used
+ * @param "action"       [in]  action name to use for error messaging
+ * @return EXECUTION_SUCCESS if the array variable was secured,
+ *         otherwise a non-zero error code
  */
 int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
                                               const char *name,
@@ -642,84 +878,7 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
 }
 
 /**
- * @brief Used for array argument, like action "put_row"
+ * @}
+ * <!-- terminate RESULT_ARG_VARS group -->
  */
-int get_array_var_by_name_or_fail(SHELL_VAR **rvar,
-                                  const char *name,
-                                  const char *action)
-{
-   int retval = EX_USAGE;
-   if (name == NULL)
-      ate_register_error("failed to specific a array name in '%s'", action);
-   else
-   {
-      SHELL_VAR *sv = find_variable(name);
-      if (sv)
-      {
-         if (array_p(sv))
-         {
-            *rvar = sv;
-            retval = EXECUTION_SUCCESS;
-         }
-         else
-            ate_register_error("variable '%s' must be an array in '%s'", name, action);
-      }
-      else
-         ate_register_error("failed to find array '%s' in action '%s'", name, action);
-   }
 
-   return retval;
-}
-
-/**
- * @brief Used for for callback functions, like "walk_rows", "sort", "filter".
- */
-int get_function_by_name_or_fail(SHELL_VAR **rvar,
-                                 const char *name,
-                                 const char *action)
-{
-   int retval = EX_USAGE;
-   if (name == NULL)
-      ate_register_error("failed to specific a callback function name in '%s'", action);
-   else
-   {
-      SHELL_VAR *sv = find_function(name);
-      if (sv)
-      {
-         if (function_p(sv))
-         {
-            *rvar = sv;
-            retval = EXECUTION_SUCCESS;
-         }
-         else
-            ate_register_error("'%s' must be a shell function name in '%s'", name, action);
-      }
-      else
-         ate_register_error("failed to find shell function '%s' in action '%s'", name, action);
-   }
-
-   return retval;
-}
-
-int update_row_array(SHELL_VAR *target_var, ARRAY_ELEMENT *source_row, int row_size)
-{
-   ARRAY *array = array_cell(target_var);
-   array_flush(array);
-
-   ARRAY_ELEMENT *ael = source_row;
-
-   int index = 0;
-   while (ael && index < row_size)
-   {
-      array_insert(array, index++, ael->value);
-      ael = ael->next;
-   }
-
-   if (index < row_size)
-   {
-      ate_register_error("corrupted table: incomplete row");
-      return EX_USAGE;
-   }
-
-   return EXECUTION_SUCCESS;
-}
