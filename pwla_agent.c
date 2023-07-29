@@ -64,12 +64,16 @@ struct pwla_action_def pwla_actions[] = {
      pwla_walk_rows },
 
    { "sort", "create a duplicate handle with a sorted order",
-     "ate sort handle_name comparison_function [extra ...]",
+     "ate sort handle_name comparison_function new_handle_name [extra ...]",
      pwla_sort },
 
    { "filter", "create a duplicate handle with filtered contents",
-     "ate filter handle_name filter_function [extra ...]",
-     pwla_filter }
+     "ate filter handle_name filter_function new_handle_name [extra ...]",
+     pwla_filter },
+
+   { "make_key", "create an key handle linking strings to row indexes",
+     "ate make_key handle_name tag_function new_handle_name[extra ...]",
+     pwla_make_key }
 };
 
 /**
