@@ -105,6 +105,8 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
 
 /** @} <!-- RESULT_ARG_VARS --> */
 
+int create_special_var_by_name(SHELL_VAR **rvar, const char *name, const char *action);
+
 /** @} <!-- ARG_VARS --> */
 
 /** @} <!-- ATE_UTILITIES --> */

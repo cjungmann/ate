@@ -881,3 +881,35 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
  * <!-- terminate RESULT_ARG_VARS group -->
  */
 
+/**
+ * @brief Create a special (handle) SHELL_VAR to be initialized later
+ *        by an action.
+ * @param "rvar"         [out] place to return the special SHELL_VAR
+ * @param "name"         [in]  name to use for the special SHELL_VAR (may be null)
+ * @param "action"       [in]  action name to use for error messaging
+ * @return EXECUTION_SUCCESS if the special variable was secured,
+ *         otherwise a non-zero error code
+ */
+int create_special_var_by_name(SHELL_VAR **rvar, const char *name, const char *action)
+{
+   int retval = EX_USAGE;
+
+   if (name == NULL)
+   {
+      ate_register_missing_argument("new_handle_name", "action");
+      goto early_exit;
+   }
+
+   if (find_variable(name))
+      unbind_variable(name);
+
+   SHELL_VAR *var = bind_variable(name, NULL, att_special);
+   if (var)
+   {
+      *rvar = var;
+      retval = EXECUTION_SUCCESS;
+   }
+
+  early_exit:
+   return retval;
+}
