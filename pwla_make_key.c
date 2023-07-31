@@ -133,8 +133,6 @@ int pwla_make_key(ARG_LIST *alist)
       new_handle_var->value = (char*)newhead;
       new_handle_var->attributes = att_special;
 
-      printf("By now we should have a good handle named %s\n", new_handle_var->name);
-
       retval = EXECUTION_SUCCESS;
    }
    else
