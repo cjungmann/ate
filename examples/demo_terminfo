@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-enable $( enable_ate )
+enable -f ../ate.so ate
 
 source print_formatted_table_with_nulls
 
@@ -22,11 +22,13 @@ make_terminfo_regex()
         $
     )
 
+    local OIFS="$IFS"
     IFS=''
     mtr_regex="${rearr[*]}"
+    IFS="$OIFS"
 }
 
-make_terminfo_array()
+make_caps_catalog_array()
 {
     local -n mta_array="$1"
     local parse_variable=^[[:space:]]\{50,\}Variable[[:space:]]\{6,\}Cap
@@ -63,38 +65,77 @@ make_terminfo_array()
            continue
         fi
 
-        # Handle description continuations
-        if [[ "$REPLY" =~ $regex_extra ]]; then
-            if [ "${#line_parts[@]}" -eq 4 ]; then
+        # Append follow-on description lines to line_parts[3]:
+        if [ "${#line_parts[*]}" -gt 3 ]; then
+            if [[ "$REPLY" =~ $regex_extra ]]; then
                 local desc="${line_parts[3]}"
                 if [[ "${desc: -1:1}" != '-' ]] ; then
                     desc="$desc "
                 fi
                 line_parts[3]="${desc}${BASH_REMATCH[1]}"
                 continue
+            else
+                mta_array+=( "${line_parts[@]}" "$var_type" "n/a" )
+                line_parts=()
             fi
         fi
 
         if [[ "$REPLY" =~ $parse_line ]]; then
-            if [ "${#line_parts[*]}" -gt 3 ]; then
-                  mta_array+=( "${line_parts[@]}" "$var_type" "n/a")
-                line_parts=()
-            fi
-            if (( margin == 0 )); then
-                indented="${BASH_REMATCH[1]}"
-                margin="${#indented}"
-                regex_extra=^[[:space:]]\{$(( margin + 10 )),\}\(.\*\)$
-            fi
             line_parts=( "${BASH_REMATCH[@]:2}" )
-        elif [ "${#line_parts[*]}" -gt 3 ]; then
-            mta_array+=( "${line_parts[@]}" "$var_type" "n/a" )
-            line_parts=()
+            if [ "${#line_parts[*]}" -gt 3 ]; then
+                if (( margin == 0 )); then
+                    indented="${BASH_REMATCH[1]}"
+                    margin="${#indented}"
+                    regex_extra=^[[:space:]]\{$(( margin + 10 )),\}\(.\*\)$
+                fi
+            fi
         else
             var_type=''
         fi
         # Avoid need to parse word-break hyphens by disabling hyphenation:
+    # done < terminfo2.txt
     done < <( MANWIDTH=300 man --nh 5 terminfo )
+}
 
+make_cap_values_array()
+{
+    local -n mva_values="$1"
+
+    local -a re_arr=(
+        ^
+        [[:space:]]+
+        \(
+           [^=]+
+        \)
+        \(
+           =
+           \(
+              [^,]+
+           \)
+           ,
+        \)?
+        $
+    )
+    local OIFS="$IFS"
+    IFS=''
+    local re="${re_arr[*]}"
+    IFS="$OIFS"
+
+    local -n field="BASH_REMATCH[1]"
+    local -n raw_value="BASH_REMATCH[3]"
+    local value
+
+    while read -r; do
+        if [[ "$REPLY" =~ $re ]]; then
+            if [ -n "$raw_value" ]; then
+                value="${raw_value//\\,|\\054/,}"
+                value="${raw_value}"
+            else
+                value="1"
+            fi
+            mva_values+=( "$field" "$value" )
+        fi
+    done < <( infocmp -1 )
 }
 
 string_compare()
@@ -172,8 +213,10 @@ update_with_values()
         \)?
         $
     )
+    OIFS="$IFS"
     IFS=''
     local re="${re_arr[*]}"
+    IFS="$OIFS"
 
     local -n field="BASH_REMATCH[1]"
     local -n raw_value="BASH_REMATCH[3]"
@@ -195,21 +238,131 @@ update_with_values()
     done < <( infocmp -1 )
 }
 
+lookup_key()
+{
+    local -n lk_recno="$1"
+    local -n lk_key_handle="$2"
+    local value="$3"
 
-declare -a lines
-make_terminfo_array "lines"
+    # Set as unchanged flag
+    lk_recno=-1
+    local -i found=-1
 
-if ate declare ti_handle 6 "lines"; then
-    if ate sort ti_handle sort_on_capname ti_capname; then
-        update_with_values ti_capname
-    else
-        echo "Sort failed"
+    lk_byrow()
+    {
+        local -n lkby_row="$1"
+        local val="${lkby_row[0]}"
+        if [[ "$val" < "$value" ]]; then
+            return 0
+        else
+            if [[ "$value" == "$val" ]]; then
+                found="${lkby_row[1]}"
+            fi
+            return 1
+        fi
+    }
+
+    ate walk_rows "lk_key_handle" lk_byrow
+
+    if [ "$found" -ge 0 ]; then
+        echo "We found it the record ($found) for value '$value'"
+        lk_recno="$found"
+        return 0
     fi
-    # update_with_values ti_handle
-    print_formatted_table_with_nulls ti_handle
-else
-    echo "Failed to initialise the ti_handle"
-fi
+
+    return 1
+}
+
+cat_name_tagger()
+{
+    local -n ct_return="$1"
+    local -n ct_row="$2"
+    ct_return="${ct_row[1]}"
+    return 0
+}
+
+reconcile_by_codes()
+{
+    local -n rbc_catalog="$1"
+    local -n rbc_value="$2"
+
+    # Make a temporary key for speedy record search
+    ate make_key "rbc_catalog" cat_name_tagger cat_key_name
+
+    rbc_fixrow()
+    {
+        local -n rf_row="$1"
+        local -i index="$2"
+        local -n rf_handle="$3"
+
+        local -i catndx
+
+        local capname="${rf_row[0]}"
+        local capvalue="${rf_row[1]}"
+
+        if ate seek_key cat_key_name "$capname" -v keyndx; then
+            if ate get_row cat_key_name "$keyndx" -a keyrow; then
+                catndx="${keyrow[1]}"
+                if ate get_row "rbc_catalog" "$catndx" -a catrow; then
+                    catrow[5]="$capvalue"
+                    ate put_row "rbc_catalog" "$catndx" "catrow"
+                fi
+            fi
+        else
+            printf $'for \e[32;1m%s\e[m, we did not find a key (%s).\n' "$capname" "$ATE_ERROR"
+        fi
+
+        return 0
+    }
+
+    # For each value, update its catalog entry:
+    ate walk_rows rbc_value rbc_fixrow
+}
+
+exit_on_error()
+{
+    local exval="$?"
+    if [ "$exval" -ne 0 ]; then
+        printf 'ate action failed (%d): %s.\n' "$exval" "$ATE_ERROR"
+        exit 1
+    fi
+}
+
+
+# Make a table with data from terminfo(5):
+declare -a caps_catalog_array
+make_caps_catalog_array "caps_catalog_array"
+ate declare catalog_handle 6 "caps_catalog_array"
+exit_on_error
+ate get_row_count catalog_handle -v row_count
+
+# Make a table with data from infocmp
+declare -a cap_values_array
+make_cap_values_array "cap_values_array"
+ate declare vals_handle 2 "cap_values_array"
+exit_on_error
+ate get_row_count vals_handle -v row_count
+
+reconcile_by_codes "catalog_handle" "vals_handle"
+
+
+print_formatted_table_with_nulls "catalog_handle"
+
+echo "All good"
+
+
+# if ate declare ti_handle 6 "lines"; then
+#     if ate sort ti_handle sort_on_capname ti_capname; then
+#         update_with_values ti_capname
+#     else
+#         echo "Sort failed"
+#     fi
+#     # update_with_values ti_handle
+#     read -n1 -p Press\ any\ key\ to\ display
+#     print_formatted_table_with_nulls ti_handle
+# else
+#     echo "Failed to initialise the ti_handle"
+# fi
 
 
 # declare -a row
