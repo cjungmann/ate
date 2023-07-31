@@ -73,7 +73,11 @@ struct pwla_action_def pwla_actions[] = {
 
    { "make_key", "create an key handle linking strings to row indexes",
      "ate make_key handle_name tag_function new_handle_name[extra ...]",
-     pwla_make_key }
+     pwla_make_key },
+
+   { "seek_key", "return key_handle row number of equal or greater key",
+     "ate seek_key handle_name target_value [-v value]",
+     pwla_seek_key }
 };
 
 /**
