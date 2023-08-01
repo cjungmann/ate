@@ -108,22 +108,31 @@ fi
 #  Demonstration of Sorting #
 #############################
 
+# Use this generic string comparison function as-is or as
+# a model for custom comparisons
+string_compare()
+{
+    local -n sc_compval="$1"
+    local left="$2"
+    local right="$3"
+    if [[ "$left" < "$right" ]]; then
+        sc_compval=-1
+    elif [[ "$left" > "$right" ]]; then
+        sc_compval=1
+    else
+        sc_compval=0
+    fi
+    return 0;
+}
+
+
 sort_by_animal()
 {
     local -n sba_result="$1"
     local -n sba_left="$2"
     local -n sba_right="$3"
 
-    local left_val="${sba_left[0]}"
-    local right_val="${sba_right[0]}"
-
-    if [[ "$left_val" < "$right_val" ]]; then
-        sba_result=-1
-    elif [[ "$left_val" > "$right_val" ]]; then
-        sba_result=1
-    else
-        sba_result=0
-    fi
+    string_compare "sba_result" "${sba_left[0]}" "${sba_right[0]}"
 
     return 0
 }
