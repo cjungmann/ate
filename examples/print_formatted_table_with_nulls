@@ -3,7 +3,7 @@
 print_formatted_table_with_nulls()
 {
     local -n pft_handle="$1"
-    local null_label="$2"
+    local null_label="${2:-''}"
 
     local -i null_len="${#null_label}"
 
