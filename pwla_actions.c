@@ -65,6 +65,7 @@ int pwla_declare(ARG_LIST *alist)
       int el_count = array_num_elements(array_cell(array_var));
       if (el_count % row_size)
       {
+         retval = EX_USAGE;
          ate_register_invalid_row_size(row_size, el_count);
          goto early_exit;
       }
