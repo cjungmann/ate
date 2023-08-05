@@ -1,4 +1,85 @@
 .TH ate 1 2023-06-26 "" "Loadable Bash Builtin Manual"
+.de proto_list_actions
+.  B ate list_actions
+..
+.de proto_show_action
+.  B ate show_action \c
+.  RI [ action_name ]
+..
+.de proto_declare
+.  B ate declare \c
+.  I handle_name row_size \c
+.  RI [ array_name ]
+..
+.de proto_append_data
+.  B ate append_data \c
+.  I handle_name \c
+.  RI [ value1 ", " value2 ", " ... ]
+..
+.de proto_index_rows
+.  B ate index_rows \c
+.  I handle_name
+..
+.de proto_get_row_count
+.  B ate get_row_count \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_row_size
+.  B ate get_row_size \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_array_name
+.  B ate get_array_name \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_field_sizes
+.  B ate get_field_sizes \c
+.  I handle_name \c
+.  RI [\fB-a\ \fP array_name ]
+..
+.de proto_get_row
+.  B ate get_row \c
+.  I handle_name row_index \c
+.  RI [\fB-a\ \fP array_name ]
+..
+.de proto_put_row
+.  B ate put_row \c
+.  I handle_name row_index array_name
+..
+.de proto_resize_rows
+.  B ate resize_rows \c
+.  I handle_name new_row_size
+..
+.de proto_reindex_elements
+.  B ate reindex_elements \c
+.  I handle_name
+..
+.de proto_walk_rows
+.  B ate walk_rows \c
+.  I handle_name callback \c
+.  RI [\fB-s\ \fP starting_row ] \c
+.  RI " [\fB-c\ \fP" row_count ]
+..
+.de proto_sort
+.  B ate sort \c
+.  I handle_name comparison_function sorted_handle_name
+..
+.de proto_filter
+.  B ate filter \c
+.  I handle_name filter_function filtered_handle_name
+..
+.de proto_make_key
+.  B ate make_key \c
+.  I handle_name assign_function new_handle_name
+..
+.de proto_seek_key
+.  B ate seek_key \c
+.  I handle_name target_value
+.  RI [\fB-v\ \fP value_name ]
+..
 .de arg_handle
 .   TP
 .   I handle_name
@@ -32,77 +113,44 @@ Without this option, the result will be returned in
 .RB [ "-v " "\fIvalue_name\fP" ]
 .RI [ "extra ..." ]
 .TP
-.B ate list_actions
+.proto_list_actions
 Show list of action names
 .TP
-.B ate show_action \fR[\fP\fIaction_name\fP\fR]\fP
+.proto_show_action
 Show details about
 .IR action_name .
 .PP
-.B ate declare
-.I handle_name row_size
-.RI [ array_name ]
+.proto_declare
 .PP
-.B ate append_data
-.I handle_name
-.RI [ value1 ", " value2 ", " ... ]
+.proto_append_data
 .PP
-.B ate index_rows
-.I handle_name
+.proto_index_rows
 .PP
-.B ate get_row_count
-.I handle_name
-[\c
-.BI -v " value_name"\c
-]
+.proto_get_row_count
 .PP
-.B ate get_row_size
-.I handle_name
-[\c
-.BI -v " value_name"
-]\c
+.proto_get_row_size
 .PP
-.B ate get_array_name
-.I handle_name
-[\c
-.BI -v " value_name"\c
-]
+.proto_get_array_name
 .PP
-.B ate get_field_sizes
-.I handle_name
-[\c
-.BI -a " array_name"\c
-]
+.proto_get_field_sizes
 .PP
-.B ate get_row
-.I handle_name row_index
-[\c
-.BI -a " array_name"\c
-]
+.proto_get_row
 .PP
-.B ate put_row
-.I handle_name row_index array_name
+.proto_put_row
 .PP
-.B ate resize_rows
-.I handle_name new_row_size
+.proto_resize_rows
 .PP
-.B ate reindex_elements
-.I handle_name
+.proto_reindex_elements
 .PP
-.B ate walk_rows
-.I handle_name callback
-[\c
-.BI -s " starting_row"\c
-] [\c
-.BI -c " row_count"\c
-]
+.proto_walk_rows
 .PP
-.B ate sort
-.I handle_name comparison_function sorted_handle_name
+.proto_sort
 .PP
-.B ate filter
-.I handle_name filter_function filtered_handle_name
-
+.proto_filter
+.PP
+.proto_make_key
+.PP
+.proto_seek_key
 .SH DESCRIPTION
 .PP
 Standard Bash arrays are one-dimensional and sequential (slow) access.
@@ -163,15 +211,14 @@ section below shows a variety of result variable manipulations.
 .SH ATE ACTIONS
 .SS LIST_ACTIONS
 .PP
-Displays a list of all action names without explanation.
+.proto_list_actions
 .PP
-.B ate list_actions
+Displays a list of all action names without explanation.
 .SS SHOW_ACTION
 .PP
-Show usage and short description for one or all actions.
+.proto_show_action
 .PP
-.B ate show_action
-.RI [ action_name ]
+Show usage and short description for one or all actions.
 .RS 4
 .TP
 .I action_name
@@ -181,13 +228,11 @@ If this action is omitted, all actions will be displayed.
 .RE
 .SS DECLARE
 .PP
+.proto_declare
+.PP
 Create and initialize an
 .B ate
 handle.
-.PP
-.B ate declare
-.I handle_name
-.RI  "[ " array_name " ] [ " row_size " ]"
 .RS 4
 .TP
 .I handle_name
@@ -197,25 +242,22 @@ will be used to create a new Bash
 .B ate
 handle variable.
 .TP
+.I row_size
+The number of array elements in a table row.
+.TP
 .I array_name
 Name of the hosted array.
 The array will be created if it doesn't already exist.
 An array with a generated name will be created if this argument
 is omitted.
-.TP
-.I row_size
-The number of array elements in a table row.
-The
-.I row_size
-will be set to 1 if
-.I row_size
-is not specified.
 .RE
 .PP
 Refer to
 .B DECLARE EXAMPLE
 below.
 .SS APPEND_DATA
+.PP
+.proto_append_data
 .PP
 Use this action to add rows to the table.
 If the number of
@@ -229,14 +271,10 @@ that the new rows are not immediately available.  Be sure to invoke
 action
 .B index_rows
 when finished appending data to access the new rows.
-.PP
-.B ate append_data
-.I handle_name
-.RI "[ " "value ..." " ]"
 .RS 4
 .arg_handle
 .TP
-.RI "[ " "value ..." " ]"
+.IR value1 ", " value2 ", " ...
 The values to be appended to the hosted array.
 .RE
 .PP
@@ -245,14 +283,13 @@ Refer to
 below.
 .SS INDEX_ROWS
 .PP
+.proto_index_rows
+.PP
 Generates an index into the elements of the hosted array,
 one index for each row head.
 The
 .BR get_row " and " put_row
 actions rely on the index being up-to-date.
-.PP
-.B ate index_rows
-.I handle_name
 .RS 4
 .arg_handle
 .RE
@@ -262,11 +299,9 @@ Refer to
 below.
 .SS GET_ROW_COUNT
 .PP
-Get the number of indexed rows in the table.
+.proto_get_row_count
 .PP
-.B ate get_row_count
-.I handle_name
-.RB [ " -v \fIvalue_name\fP " ]
+Get the number of indexed rows in the table.
 .RS 4
 .arg_handle
 .arg_return_value
@@ -277,14 +312,12 @@ Refer to
 below.
 .SS GET_ROW_SIZE
 .PP
+.proto_get_row_size
+.PP
 Returns the number of fields in a row.
 This value is defined with the
 .B declare
 action when the handle is initialized.
-.PP
-.B ate get_row_size
-.I handle_name
-.RB [ " -v \fIvalue_name\fP " ]
 .RS 4
 .arg_handle
 .arg_return_value
@@ -295,15 +328,13 @@ Refer to
 below.
 .SS GET_ARRAY_NAME
 .PP
+.proto_get_array_name
+.PP
 This action returns the name of the array on which the table is
 based.
 Use this action to learn the name of the hosted array when
 .B declare
 was called without an array name.
-.PP
-.B ate get_array_name
-.I handle_name
-.RB [ " -v \fIvalue_name\fP " ]
 .RS 4
 .arg_handle
 .arg_return_value
@@ -314,14 +345,11 @@ Refer to
 below.
 .SS GET_FIELD_SIZES
 .PP
+.proto_get_field_sizes
+.PP
 Returns an array whose elements contain the length of the longest
 string for each field in the table.
 Use these numbers to inform formatting of the table on a printout.
-.PP
-.B
-ate get_field_sizes
-.I handle_name
-.RB "[ " "-a \fIarrayname\fP" " ]"
 .RS 4
 .arg_handle
 .arg_return_array
@@ -334,18 +362,15 @@ for basic usage, and look at the
 for a more advanced usage.
 .SS GET_ROW
 .PP
-Read the contents of a virtual row into an array
+.proto_get_row
 .PP
-.B ate get_row
-.I handle_name
-.I row_index
-.RB [ " -a \fIarray_name\fP " ]
+Read the contents of a virtual row into an array
 .RS 4
 .arg_handle
 .TP
 .I row_index
 is the row number that should be retrieved.  The index value is
-zero-based, that is a row index of 0 \(aq0\(aq returns the first
+zero-based, that is a row index of \(aq0\(aq returns the first
 record.
 .arg_return_array
 .RE
@@ -354,6 +379,8 @@ Refer to
 .B GET_ROW EXMPLE
 below.
 .SS PUT_ROW
+.PP
+.proto_put_row
 .PP
 Updates a table row with the contents of a source array.
 Presumably, the source comes from a previous
@@ -379,9 +406,6 @@ to update the record.
 This action will not add new rows, use the
 .B append_data
 action to add rows to the table.
-.PP
-.B ate put_row
-.I handle_name row_index array_name
 .RS 4
 .arg_handle
 .TP
@@ -406,20 +430,21 @@ Refer to
 below.
 .SS RESIZE_ROWS
 .PP
+.proto_resize_rows
+.PP
 Modify an existing table by adding or removing columns.
 To achieve the new row size, and this function will remove columns
 from or add empty columns to the end of each virtual row.
 .PP
 A row size of zero or less will not be honored.
-.PP
-.B ate resize_rows
-.I handle_name new_row_size
 .RS 4
 .arg_handle
 .TP
 .I new_row_size
 is the requested new row size
 .SS REINDEX_ELEMENTS
+.PP
+.proto_reindex_elements
 .PP
 This reassigns the internal index number of the Bash array elements
 according to the indexed order of the rows.
@@ -433,12 +458,41 @@ Recalling that a sort does not change the order of an array's
 elements, calling
 .B reindex_elements
 will reorder and reindex the elements in the sorted order.
-.PP
-.B ate reindex_elements
-.I handle_name
 .RS 4
 .arg_handle
 .RE
+.SS SEEK_KEY
+.PP
+.proto_seek_key
+.PP
+Using a sorted key handle created by
+.BR "ate make_key" ,
+this function returns the index of the first key value that is
+lexically equal to or greater than the target string.
+Use the returned index value to get the key row, the second
+element of which is the index of the record in the source
+table.
+.PP
+This procedure is not immediately obvious, but it allows for the
+possibility of multiple exact matches or processing a range rows.
+.PP
+Implementing a simple shell script function can provide more
+targeted results, such as returning the matching row or returning
+a resultset of a matching rows.
+.RS 4
+.arg_handle
+.TP
+.I target_value
+is the string value against which the key values will are to be
+compared.
+.arg_return_value
+.RE
+.PP
+See the
+.B MAKE_KEY
+action and the
+.B SEEK_KEY EXAMPLE
+below.
 .SH ACTIONS INVOKING CALLBACK FUNCTIONS
 .PP
 The following actions call a script function on each table row to
@@ -584,7 +638,62 @@ l l.
 Refer to the
 .B FILTER EXAMPLE
 below.
-
+.SS MAKE_KEY
+.PP
+Create a new handle with a new array implementing a two-field table
+where the first field is the key value, the second field is the row
+index in the source table.
+The table is sorted in ascending lexical order of the key values.
+The new handle can be used to seek rows by key value and to iterate
+through a table in a given order.
+.PP
+.B ate make_key
+.I handle_name function_name new_handle_name
+.arg_handle
+.TP
+.I function_name
+The function reads a row and computes and returns an appropriate
+value to use for the key.
+The value might simply be a field's value, but it might also be a
+field's case-conversion for case-insenstive searches, or even a
+computed key taken from one or more field values.
+The
+.I function_name
+will be called for each row in the source table, and the function
+should return the desired key value for the record in the nameref
+first argument.
+.IP
+The callback function will receive the following arguments:
+.RS 8
+.TS
+tab(|);
+l lx.
+\(Do1|T{
+name of return variable to which the key value is written
+T}
+\(Do2|T{
+name or return array variable containing a copy of the row
+T}
+\(Do3 ...|T{
+extra arguments submitted to the action
+.BR make_key .
+T}
+.TE
+.RE
+.arg_return_value
+.PP
+Refer to the
+.B SEEK_KEY EXAMPLE
+below.
+.PP
+.B ate make_key
+.I handle_name function_name new_handle_name
+.PP
+See the
+.B SEEK_KEY
+action above and the
+.B SEEK_KEY EXAMPLE
+below.
 .SH EXAMPLES
 .PP
 A picture is worth a thousand words, likewise, an example may be more
@@ -760,6 +869,19 @@ if ate \fBfilter\fP handle_calendar select_chucks handle_chuck_appts; then
    print_formatted_table handle_chuck_appts
 fi
 .EE
+.SS SEEK_KEY EXAMPLE
+.PP
+Using the
+.B pets
+array and
+.B pet_handle
+from the
+.B DECLARE EXAMPLE
+above, use
+.BR MAKE_KEY " and " SEEK_KEY
+
+
+
 .SS FORMATTED TABLE EXAMPLE
 .PP
 Tables with aligned columns are easier to read.
