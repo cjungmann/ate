@@ -859,8 +859,15 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
    }
    else
    {
-      unbind_variable_noref(name);
-      sv = make_new_array_variable((char*)name);
+      sv = find_variable(name);
+      if (sv)
+      {
+         ate_dispose_variable_value(sv);
+         sv->attributes = att_array;
+         sv->value = (char*)array_create();
+      }
+      else
+         sv = make_new_array_variable((char*)name);
 
       if (sv)
       {
