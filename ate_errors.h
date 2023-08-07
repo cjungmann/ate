@@ -13,6 +13,8 @@
 void save_to_error_shell_var(const char *str);
 void ate_register_error(const char *format, ...);
 
+void ate_register_unknown_option(char option);
+void ate_register_option_missing_argument(char option);
 void ate_register_variable_not_found(const char *name);
 void ate_register_function_not_found(const char *name);
 void ate_register_variable_wrong_type(const char *name, const char *desired_type);

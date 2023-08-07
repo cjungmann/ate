@@ -53,6 +53,15 @@ void ate_register_error(const char *format, ...)
    }
 }
 
+void ate_register_unknown_option(char option)
+{
+   ate_register_error("option '-%c' is not recognized", option);
+}
+
+void ate_register_option_missing_argument(char option)
+{
+   ate_register_error("option '-%c' must be followed by a non-option argument", option);
+}
 
 void ate_register_variable_not_found(const char *name)
 {
