@@ -24,8 +24,9 @@
 
 
 typedef enum {
-   AL_ARG = 1,
-   AL_OPT
+   AL_ARG = 1,    ///< positional string argument
+   AL_OPT,        ///< option that take an argument
+   AL_FLAG        ///< option that takes no argument
 } AL_TYPE;
 
 typedef struct arg_target ARG_TARGET;
@@ -79,7 +80,7 @@ struct arg_values {
 typedef enum {
    AL_NONE = 0,         ///< no flags
    AL_NOTIFY_MISSING,   ///< notify for any missing arguments
-   AL_NOFITY_UNKNOWN,   ///< notify for unknown options
+   AL_NOTIFY_UNKNOWN,   ///< notify for unknown options
    AL_END               ///< bounds-confirming value
 } AL_FLAGS;
 
