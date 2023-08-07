@@ -6,6 +6,7 @@
  */
 
 #include "pwla.h"
+#include "ate_errors.h"
 #include <stdio.h>
 
 /**
@@ -20,7 +21,7 @@ ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option)
    ARG_TARGET *ptr = targets;
    while (ptr->name)
    {
-      if (ptr->type == AL_OPT && ptr->name[0] == option)
+      if (ptr->name[0] == option && (ptr->type == AL_OPT || ptr->type == AL_FLAG))
          return ptr;
 
       ++ptr;
@@ -87,7 +88,9 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
       const char *arg_val = arg_handle->next->value;
       if (arg_val[0] == '-')
       {
-         cur_target = pwla_find_option_target(target_head, arg_val[1]);
+         char cur_option = arg_val[1];
+
+         cur_target = pwla_find_option_target(target_head, cur_option);
 
          if (cur_target == NULL)
          {
@@ -97,16 +100,39 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
             continue;
          }
 
-         // Copy value to found target:
-         // the text following the option letter, if any,
-         if (arg_val[2])
-            *(cur_target->value) = &arg_val[2];
-         // or the text of the following argument (if any),xs
-         else if (arg_handle->next->next)
+         // Leave if last chance argument parsing and it's an
+         // unrecognized option
+         if (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN)
          {
-            *(cur_target->value) = arg_handle->next->next->value;
-            // discard the next argument since we're consuming two command line args
-            arg_handle->next = arg_handle->next->next;
+            ate_register_unknown_option(cur_option);
+            return EX_USAGE;
+         }
+
+         // Branch processing based on argument or flag option type
+         if (cur_target->type == AL_FLAG)
+         {
+            // A flag-type value is set with the option argument to indicate a match
+            *(cur_target->value) = arg_val;
+         }
+         else if (cur_target->type == AL_OPT)
+         {
+            // Copy value to found target:
+            // the text following the option letter, if any,
+            if (arg_val[2])
+               *(cur_target->value) = &arg_val[2];
+            // or the text of the following argument (if any),xs
+            else if (arg_handle->next->next)
+            {
+               *(cur_target->value) = arg_handle->next->next->value;
+               // discard the next argument since we're consuming two command line args
+               arg_handle->next = arg_handle->next->next;
+            }
+
+            if (*(cur_target->value) == NULL)
+            {
+               ate_register_option_missing_argument(cur_option);
+               return EX_USAGE;
+            }
          }
       }
       else
