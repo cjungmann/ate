@@ -39,11 +39,13 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *target_value = NULL;
    const char *value_name = NULL;
+   const char *random_flag = NULL;
 
    ARG_TARGET append_data_targets[] = {
       { "handle_name", AL_ARG, &handle_name },
       { "target_value", AL_ARG, &target_value },
       { "v",            AL_OPT, &value_name},
+      { "r",            AL_FLAG, &random_flag },
       { NULL }
    };
 
@@ -72,6 +74,10 @@ int pwla_seek_key(ARG_LIST *alist)
       goto early_exit;
    }
 
+   int order_random = 0;
+   if (random_flag)
+      order_random = 1;
+
    AHEAD *ahead = ahead_cell(handle_var);
 
    int ndx_left = 0;
@@ -86,8 +92,8 @@ int pwla_seek_key(ARG_LIST *alist)
       {
          int comp = strcmp(target_value, (*ael_ptr)->value);
 
-         // For exact match or if key is greater than the value
-         if (comp <= 0)
+         // Successful test depends on if random flag is set
+         if (comp == 0 || (!order_random && comp < 0))
          {
             found = (ael_ptr - ahead->rows);
             break;
