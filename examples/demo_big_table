@@ -136,6 +136,41 @@ set_key_name()
     return 0
 }
 
+test_seek_county()
+{
+    local hname_data="$1"
+    local hname_key="$2"
+    local value="$3"
+    local key_value
+
+    if ate seek_key "$hname_key" "$value" -v key_ndx; then
+        while true; do
+            if ate get_row "$hname_key" "$key_ndx" -a key_row; then
+                key_value="${key_row[0]}"
+                if [[ "$key_value" == "$value" ]]; then
+                    if ate get_row "$hname_data" "${key_row[1]}" -a data_row; then
+                        printf $'For value \e[32;1m%s\e[m, we found this row: \e[32;1m%s\e[m.\n' "$value" "${data_row[*]}"
+                    else
+                        echo "ATE_ERROR IS '$ATE_ERROR'"
+                        printf $'Key for \e[32;1m%s\e[m suggested table index \e[32;1m%d\e[m, but it failed.\n' "$value" "${key_row[1]}"
+                    fi
+                else
+                    break
+                fi
+            else
+                echo "ATE_ERROR IS '$ATE_ERROR'"
+                printf $'A key row for \e[32;1m%s\e[m found, but record not accessible.\n' "$value"
+                break
+            fi
+            (( ++key_ndx ))
+        done
+    else
+        echo "ATE_ERROR IS '$ATE_ERROR'"
+        printf $'Value \e[32;1m%s\e[m not found.\n' "$value"
+    fi
+
+}
+
 
 ate declare "counties_handle" 6
 exit_on_error "$?"
@@ -147,4 +182,7 @@ fill_table "counties_handle"
 ate make_key "counties_handle" set_key_name "key_county_names"
 exit_on_error "$?"
 
-print_formatted_table_with_nulls "key_county_names"
+test_seek_county "counties_handle" "key_county_names" "Hennepin"
+test_seek_county "counties_handle" "key_county_names" "York"
+
+# print_formatted_table_with_nulls "key_county_names"
