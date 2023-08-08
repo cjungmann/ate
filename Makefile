@@ -52,6 +52,8 @@ clean:
 	rm -f $(TARGET)
 	rm -f $(ENABLER)
 	rm -f $(MODULES)
+	rm -f examples/uscounties.csv
+	rm -f examples/simplemaps*
 
 help:
 	@echo "Makefile options:"
