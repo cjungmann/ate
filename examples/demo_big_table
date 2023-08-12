@@ -143,7 +143,8 @@ test_seek_county()
     local value="$3"
     local key_value
 
-    if ate seek_key "$hname_key" "$value" -v key_ndx; then
+    if ate seek_key "$hname_key" "$value" -v key_ndx -t seek_tally; then
+        echo "Seek succeeded with $seek_tally comparisons"
         while true; do
             if ate get_row "$hname_key" "$key_ndx" -a key_row; then
                 key_value="${key_row[0]}"
@@ -171,6 +172,41 @@ test_seek_county()
 
 }
 
+demo_range_output()
+{
+    local name_handle="$1"
+    local name_key="$2"
+    local range_prefix="$3"
+    local re_member=^"${range_prefix}".\*
+    local -i count=0
+
+    local -a fi_array=()
+
+    if ate seek_key "$name_key" "$range_prefix" -v key_ndx; then
+        while :; do
+            ate get_row "$name_key" "$key_ndx" -a key_row
+            exit_on_error
+
+            if [[ "${key_row[0]}" =~ $re_member ]]; then
+                ate get_row "$name_handle" "${key_row[1]}" -a county_row
+                exit_on_error
+
+                fi_array+=( "${county_row[1]}" "${county_row[2]}" "${county_row[5]}" )
+                (( ++key_ndx ))
+            else
+                break
+            fi
+        done
+
+        ate declare sub_handle 3 fi_array
+        exit_on_error
+
+        print_formatted_table_with_nulls "sub_handle"
+        unset "sub_handle"
+    else
+        echo "Error seeking '$range_prefix', '$ATE_ERROR'"
+    fi
+}
 
 ate declare "counties_handle" 6
 exit_on_error "$?"
@@ -182,7 +218,35 @@ fill_table "counties_handle"
 ate make_key "counties_handle" set_key_name "key_county_names"
 exit_on_error "$?"
 
-test_seek_county "counties_handle" "key_county_names" "Hennepin"
-test_seek_county "counties_handle" "key_county_names" "York"
+# print_formatted_table_with_nulls "key_county_names" | less
 
-# print_formatted_table_with_nulls "key_county_names"
+# read -n1 -pPress\ any\ key\ to\ begin\ seek\ tests
+
+
+# test_seek_county "counties_handle" "key_county_names" "Hennepin"
+# test_seek_county "counties_handle" "key_county_names" "York"
+# test_seek_county "counties_handle" "key_county_names" "Zapata"
+# test_seek_county "counties_handle" "key_county_names" "Adams"
+
+
+while :; do
+printf $'\e[2J\e[1;1H'
+cat <<EOF
+Type a few letters then ENTER to see the county names that start
+with the letters.
+
+Press ENTER with zero letters to quit.
+
+EOF
+
+declare filter
+if read -r filter; then
+    demo_range_output "counties_handle" "key_county_names" "$filter" | less
+else
+    echo "You're done, baby"
+fi
+
+done
+
+
+>>>>>>> seek_key

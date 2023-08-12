@@ -78,7 +78,8 @@
 .de proto_seek_key
 .  B ate seek_key \c
 .  I handle_name target_value
-.  RB [ -r ]
+.  RB [ -p "] [" -s ]
+.  RI [\fB-t\ \fP tally_value_name ]
 .  RI [\fB-v\ \fP value_name ]
 ..
 .de arg_handle
@@ -89,16 +90,20 @@ the name of an initialized
 handle
 ..
 .de arg_return_value
+.   ie (\\n[.$]>0) .ds rname \\$1
+.   el            .ds rname result
 .   TP
 .   BI "-v " value_name
-the name of the variable in which the result will be returned.
+the name of the variable in which the \\*[rname] will be returned.
 Without this option, the result will be returned in
 .   BR ATE_VALUE .
 ..
 .de arg_return_array
+.   ie (\\n[.$]>0) .ds rname \\$1
+.   el            .ds rname result
 .   TP
 .   BI "-a " array_name
-the name of the array variable in which the result will be
+the name of the array variable in which the \\*[rname] will be
 returned.
 Without this option, the result will be returned in
 .   BR ATE_ARRAY .
@@ -466,32 +471,82 @@ will reorder and reindex the elements in the sorted order.
 .PP
 .proto_seek_key
 .PP
-Ideally using a sorted key handle created by
-.BR "ate make_key" ,
-this function compares a target value against the
-.I key field
-(the first field) of the named handle, returning the index of the
-first row whose key value is equal to or greater than the target
-value.
-.PP
-While it is designed for use with a
-.B make_key
-handle, it can also be used to find the first row whose key field
-matches the target for any handle.
-For sorted keys, the search can be very efficient, isolating narrowing
-ranges of possible matches until the match is found.
-For random lists (using option
-.BR -r ),
-the search starts at row 0 and reads until the end or a match is
-found.
-.PP
-This function prioritizes flexibility over usability.
-Rather than returning a matched row, which may not be unique,
-it returns the index number of the matched row, from which a
-script can compare successive rows to find other matches.
-A script developer can easily use results from the
+The
 .B seek_key
-action to provide a more narrowly-specified result.
+action sets the value variable to the row index of the first row of
+the
+.I handle_name
+of the key table  whose key field (field number 1) is equal to the
+.IR target_value .
+.PP
+The exit code is 0 if the row is found, 127 if the row is not found.
+Other exit codes indicate a usage or other unexpected error.
+.PP
+.B Sorted Search
+.sp -1
+.RS 4
+.PP
+The
+.B seek_key
+action is a companion action to the
+.B make_key
+action, which generates a new
+.B ate
+table whose key fields, derived from a source table, are sorted in
+ascending order.
+.PP
+The default binary search pattern assumes a
+.BR make_key -sorted
+table.
+The binary search successively breaks search ranges into halves,
+using the half still containing the
+.I target_value
+for the each new search range until the
+.I target_value
+is isolated.
+.PP
+It is assumed that exact matches are required, but inexact matches
+can be allowed by using the
+.BR -p
+.RI ( "permissive mode" )
+option.
+When in
+.IR "permissive mode" ,
+the first row whose key field is equal to or greater than the
+.I target_value
+will be returned in the value variable.
+The
+.B permissive mode
+allows, for example, a search for rows whose key field begins with
+\&'a'.
+.PP
+.RE
+.PP
+.B Random-order Search
+.sp -1
+.RS 4
+.PP
+The
+.B seek_key
+action is not restricted to
+.BR make_key -generated
+tables.
+For a table not sorted in ascending key-field order, use the
+.B -s
+.RI ( "sequential mode" )
+option to conduct a linear search from first to the last row of the
+table, setting the value variable to the row index of the first
+row encountered with matching key field.
+.PP
+A
+.I sequential mode
+search requires an exact match, and therefore it ignores the
+.I permissive mode
+option, if set.
+.RE
+.PP
+.B Options
+.sp -1
 .RS 4
 .arg_handle
 .TP
@@ -499,10 +554,38 @@ action to provide a more narrowly-specified result.
 is the string value against which the key values will are to be
 compared.
 .TP
-.B -r
-specifies that the key values are not sorted (they're random) and
-searches should seek a match until the list is exhausted.
-.arg_return_value
+.B -p
+run search in
+.BR "permissive mode" ,
+which returns the row number in the key table of the first row
+whose value is
+.B equal to or greater than
+the
+.IR target_value .
+.TP
+.B -s
+run search in
+.BR "sequential mode" ,
+visiting each row in table order and returning the row
+index of the first perfect match.
+This search works for non-sorted tables, comparing the
+value of the first field of each row.
+.IP
+Running in
+.B sequential mode
+disables the
+.B -p
+flag.
+.TP
+.BI "-t " tally_value_name
+enables
+.BR "tally mode" ,
+where each comparison is counted and the total number of
+comparisons made in the search are returned in the shell
+variable named after the value in the
+.I tally_value_name
+option.
+.arg_return_value "key table row index"
 .RE
 .PP
 See the
@@ -896,8 +979,42 @@ from the
 .B DECLARE EXAMPLE
 above, use
 .BR MAKE_KEY " and " SEEK_KEY
+.IP
+.EX
+# use lower-case key for case-insensitive matches
+assign_key()
+{
+   local -n ak_return=\(dq\(Do1\(dq
+   local -n ak_row=\(dq\(Do2\(dq
+   local val=\(dq\(Do{ak_row[0]}\(dq
+   ak_return=\(dq\(Do{val,,}\(dq
+   return 0
+}
 
 
+\(sh Make the key table:
+ate \fBmake_key\fP pet_handle assign_key pet_key_handle
+
+\(sh Use the key table to find the \(dqdog\(dq row in the
+\(sh pet_handle table:
+
+\(sh Find the dog key row index:
+ate \fBseek_key\fP pet_key_handle \(dqdog\(dq -v dog_ndx
+
+# Get the key row:
+ate \fBget_row\fP pet_key_handle \(dq\(Dodog_ndx\(dq -a key_row
+
+# Get the table row:
+ate \fBget_row\fP pet_handle \(dq\(Do{key_row[1]}\(dq -a pet_row
+.EE
+.PP
+Using
+.BR make_key " and " seek_key
+is overly-complicated for a very small table like our pet table.
+They become much more useful when processing very large tables
+such as ones that might be derived from a command history list,
+.B journalctl
+output, or terminfo values.
 
 .SS FORMATTED TABLE EXAMPLE
 .PP
