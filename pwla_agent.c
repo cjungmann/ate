@@ -76,7 +76,7 @@ struct pwla_action_def pwla_actions[] = {
      pwla_make_key },
 
    { "seek_key", "return key_handle row number of equal or greater key",
-     "ate seek_key handle_name target_value [-v value]",
+     "ate seek_key handle_name target_value -p -s [-v value] [-t tally_name]",
      pwla_seek_key }
 };
 
