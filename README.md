@@ -1,16 +1,38 @@
 # PROJECT ARRAY TABLE EXTENSION
 
-Turn a Bash array into a quick-access virtual table.
+**ate** is an acronym for (Bash) Array Table Extension
 
 ## INTRODUCTION
 
-This builtin module enhances Bash arrays in two major ways:
-It allows for direct random access to elements, and it provides an
-interface through which the array will present as a table.
+**ate** is a loadable builtin function for Bash that extends the
+Bash language with an API (application programming interface) that
+treats a Bash array as table with simple database-like functions.
 
-## BUILD AND INSTALL
+**ate** works with a custom Bash shell variable that catalogs the
+first array element of each virtual row in a C-langauge array that
+enables nearly instant indexed access to the virtual rows for
+reading and writing.
 
-Clone project, build and install:
+**ate** features are accessed through the **ate** command, followed
+by an `action` string and parameters that control the operation of
+the requested action.
+
+## USAGE
+
+~~~.sh
+# display available ate actions:
+ate list_actions
+
+# display usage information about one or all ate actions:
+ate show_action declare    # display usage for declare action
+ate show_action            # display usage text for all actions
+~~~
+
+
+
+## SETUP
+
+### Clone project, build and install:
 
 ~~~sh
 clone https://www.github.com/cjungmann/ate.git
@@ -18,8 +40,10 @@ cd ate
 make
 sudo make install
 ~~~
+### Enable ate
 
-## USAGE
+As a Bash builtin, the **ate** module must be enabled before it can
+be used. 
 
 **ate** is a Bash builtin, and must be enabled for it to be used.
 
