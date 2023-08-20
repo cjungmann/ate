@@ -42,11 +42,14 @@ install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
 	install -D --mode=775 $(TARGET) $(PREFIX)/lib
 	gzip -c ate.1 > $(PREFIX)/share/man/man1/ate.1.gz
+	mkdir --mode=755 $(PREFIX)/share/man/man7
+	soelim ate.7 | gzip -c - > $(PREFIX)/share/man/man7/ate.7.gz
 
 uninstall:
 	rm -f $(PREFIX)/bin/$(ENABLER)
 	rm -f $(PREFIX)/lib/$(TARGET)
 	rm -f $(PREFIX)/share/man/man1/ate.1.gz
+	rm -f $(PREFIX)/share/man/man7/ate.7.gz
 
 clean:
 	rm -f $(TARGET)
