@@ -1,0 +1,81 @@
+.if \n[include_flag]==0 .TH debug 1
+.SH DESCRIPTION
+.PP
+The name
+.B ate
+stands for
+.IR "Array Table Extension" .
+The
+.B ate
+command exposes an API (Application Programming Interface) for
+manipulating a Bash array as a table.
+.PP
+Once a script declares sn
+.B ate
+handle, the handle can then be used to add rows, read or write
+specific rows, change the row size, sort, filter, and create and
+search a keyed index for sequential access by a user-defined key.
+.SS ARRAY AS TABLE
+.PP
+The following two statements declare the same two-column table
+of pet information.
+The second statement organizes the elements to look like the table
+they represent.
+.IP
+.EX
+# Declare a pet table with animal names and the sound they make.
+
+# flat table declaration
+declare -a pets=( dog bark cat meow parrot squawk pig oink )
+
+# shaped table declaration
+declare -a pets=(
+   dog    bark
+   cat    meow
+   parrot squawk
+   pig    oink
+)
+.EE
+.PP
+In table array declarations, it is necessary to include empty strings
+for missing or empty fields in order to maintain the alignment of
+subsequent elements to their rows.
+.PP
+While both the flat and the shaped styles of array declaration result
+in equivalent array contents, the shaped style with field-aligned
+columns of data makes it easier to detect content errors.
+.TP
+.B Key Field
+is the first field of a row.
+It serves as the anchor of the row.
+The index of rows contains pointers to the key field of each row
+in the table.
+The
+.B seek_key
+action compares a target value to the key fields in a special
+key table created by
+.BR make_key .
+.TP
+.B Element Index vs Number
+The first element of a Bash array is index 0:
+.in +4
+.EX
+\(dq\(Do{array[0]}\(dq
+.EE
+.in
+.IP
+The first row of an
+.B ate
+table is, likewise, index 0:
+.in +4
+.EX
+.invoke_ate get_row pet_handle 0 -a pet_row
+.EE
+.in
+.IP
+And of course, the key field of a row array is also index 0:
+.in +4
+.EX
+\(dq\(Do{pet_row[0]}\(dq
+.EE
+.in

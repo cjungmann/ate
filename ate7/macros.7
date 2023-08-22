@@ -1,0 +1,31 @@
+\" Print ate command parameters aligned on horizontal position
+\" of the previous output line.
+.de ate_args
+.  nr lll \\n[.n]
+.  sp -1
+.  in +\\n[lll]u
+ \fB\\$1\\fP \\c
+.  shift
+.  while \\n(.$>0 \{\
+.    ds arg \\$1
+.\" get first character to detect leading dash (-)
+.    ds char_one \\$1
+.    substring char_one 0 0
+.\" must discard backslash before it contaminates other tests
+.    ie '\\*[char_one].'\.' .nop \\*[arg] \\c
+.    el \{\
+.      ie '\\*[char_one]'-' .nop \\fB\\*[arg]\fP \\c
+.      el .nop \\*[arg] \\c
+.    \}
+.    shift
+.  \}
+.  in
+.  br
+..
+\" Simple implementation of complete ate command call, using
+.\" the .ate_args macro to complete the statement.
+.de invoke_ate
+ate
+.br
+.  ate_args \\$^
+..

@@ -1,0 +1,82 @@
+.if \n[include_flag]==0 .TH debug 1
+.SH ATE BASIC SYNTAX
+.PP
+A valid
+.B ate
+command is followed arguments that must follow a defined order, and
+options that may come in any order or position after the
+.B ate
+command.
+.SS OPTIONS
+.PP
+In an
+.B ate
+command, arguments that begin with a dash and a letter and may or may
+not be followed by the option's value.
+For options that take a value, the space between the option letter and the
+option value is optional.
+For example,
+.BI -v " row_size"
+and
+.BI -v row_size
+are equivalent.
+.TP
+.B Special options -a \fIarray_name\fP and -v \fIvalue_name\fP
+For actions that produce readable results, the options
+.BR -a " and " -v
+tell
+.B ate
+what names to use for reporting array and value results respectively.
+.IP
+.BI -v " value_name"
+is recognized by actions
+.BR get_row_count ", " get_row_size ", " get_row_count ", and " seek_key,
+which all return a single value in a shell variable named after
+.I value_name
+or
+.B ATE_VALUE
+if the
+.B -v
+option was not specified.
+.IP
+.BI -a " array_name"
+is recognized by actions
+.BR get_field_sizes ", and " get_row,
+which return the action results in an array shell variable named after the
+.B -a
+option or
+.B ATE_ARRAY
+if the
+.B -a
+options was not specified.
+.PP
+Other options may be available for specific actions.
+Refer to
+.BR ate (1).
+.SS ARGUMENTS
+.PP
+Arguments that are not options must be submitted to the
+.B ate
+command in the expected order after the options are removed from
+the commandline.
+.PP
+The first argument is always the
+.IR action_name .
+With the exceptions of help actions
+.BR list_actions " and " show_action ,
+the second argument is always a
+.IR handle_name .
+Other arguments may follow according to the needs of the
+.IR action_name .
+.PP
+Let's illustrate the syntax with a simple example where a handle is
+created and the second field of the dog row is changed from a verb to
+a sound.
+.IP
+.EX
+.invoke_ate declare pet_handle 2 pets
+.invoke_ate get_row pet_handle 0
+ATE_ARRAY[1]=\(dqwoof\(dq
+.invoke_ate put_row pet_handle 0 ATE_ARRAY
+.EE
+

@@ -1,0 +1,55 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH TABLE INFORMATION
+.PP
+There are four informational actions,
+.BR get_row_size ", " get_row_count ", " get_array_name ", and " get_field_sizes .
+.PP
+The each of the first three actions report a basic handle parameter.
+.BR get_row_size " and " get_row_count
+provide dimension values that help you avoid range errors when
+accessing field or row elements.
+.B get_array_name
+provides the name of the array hosted by the
+.B ate
+handle.
+This is how a generated array can be identified when using the
+delay-data method of the
+.B declare
+action.
+
+.B get_field_sizes
+surveys and populates an array containing the maximum size of each
+column in the table.
+These values are useful for generating a column-formatted table view.
+
+.PP
+The following code fragment shows the proper use of each information
+action.
+.IP
+.EX
+.invoke_ate declare pet_handle 2
+.invoke_ate append_data pet_handle \(dq\(Do{pets[@]}\(dq
+.invoke_ate index_rows pet_handle
+
+.invoke_ate get_row_size pet_handle -v row_size
+.invoke_ate get_row_count pet_handle -v row_count
+.invoke_ate get_array_name pet_handle -v array_name
+.invoke_ate get_field_sizes pet_handle -a field_sizes
+
+printf \(dqThe pet handle hosts array \(aq%s\(aq.\\n\(dq \(dq\(Doarray_name\(dq
+printf \(dqIt has %d rows and %d columns.\\n\(dq \(dq\(Dorow_count\(dq \(dq\(Dorow_size\(dq
+printf \(dqThe field sizes are\(dq
+printf \(dq %d\(dq \(dq\(Do{field_sizes[@]}\(dq
+printf \(dq.\\n\(dq
+.EE
+.PP
+The output would be:
+.IP
+.EX
+The pet handle hosts array \(aqATE_HOSTED_ARRAY_0001\(aq.
+It has 4 rows and 2 columns.
+The field sizes are 6 6.
+.EE

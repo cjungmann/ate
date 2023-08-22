@@ -1,0 +1,19 @@
+.if \n[include_flag]==0 \{\
+.TH debug 1
+.so macros.7
+\}
+.SH GET_ROW AND PUT_ROW
+.PP
+Use the
+.B get_row
+action to get a copy of the contents of the specified row.
+.PP
+Get the \(dqdog\(dq row, change the verb to a sound, then
+update the table with the changed row.
+
+.EX
+declare -i row_ndx=0
+.invoke_ate get_row pet_handle \(dq\(Dorow_ndx\(dq -a pet_row
+pet_row[1]=\(dqwoof\(dq
+.invoke_ate put_row pet_handle \(dq\(Dorow_ndx\(dq pet_row
+.EE

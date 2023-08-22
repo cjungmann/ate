@@ -1,0 +1,97 @@
+.if \n[include_flag]==0 .TH debug 1
+.SH CREATE AN ATE HANDLE
+.SS DIRECT-DATA METHOD
+.PP
+Initialize a new
+.B ate
+handle with our pet array:
+.IP
+.EX
+.invoke_ate declare pet_handle 2 pets
+.EE
+.PP
+where
+.I pet_handle
+is the requested name for the new handle,
+.I 2
+is the number of elements in a row, and
+.I pets
+is the name of the array to be attached to the handle.
+.RE
+.SS DEFERRED-DATA METHOD
+.PP
+When a source array is not specified in the
+.B ate declare
+action,
+.B ate
+will create an empty array with a unique name for its use.
+The data for the table must be introduced later.
+The following examples will show three methods of populating the
+table with data.
+.PP
+Pay attention to the notes following the examples.
+.TP 4
+.B Deferred-data Declare Example 1
+Using
+.B append_data
+action to Load data from the pets array:
+.IP
+.EX
+.invoke_ate declare pet_handle 3
+
+.invoke_ate append_data pet_handle "${pets[@]}"
+
+.invoke_ate index_rows pet_handle
+.EE
+.TP 4
+.B Deferred-data Declare Example 2
+Use the
+.B append_data
+action with output from a formatted data file:
+.IP
+.EX
+.invoke_ate declare mods_handle 6
+
+while read -r; do
+   ate
+.ate_args append_data mods_handle $REPLY
+done < <( cat /proc/modules )
+
+.invoke_ate index_rows mods_handle
+.EE
+.TP 4
+.B Deferred-data Declare Example 2
+Use the
+.B get_array_name
+action to load data directly into the array:
+.IP
+.EX
+.invoke_ate declare pet_handle 2
+.invoke_ate get_array_name pet_handle -v array_name
+
+declare -n tarray=\(dq\(Doarray_name\(dq
+tarray+=( \(dq\(Do{pets[@]}\(dq )
+
+.invoke_ate index_rows pet_handle
+.EE
+.TP
+.B DEFERRED-DATA NOTES:
+.RS 4
+.TP 4
+.B Index rows after adding data
+Any time data is added to the table, either through the
+.B append_data
+action or directly into the hosted array, the keys index must
+be regenerated with the
+.B index_rows
+action  before the new rows will be available.
+.TP 4
+.B APPEND_DATA only saves data row-size multiples
+The
+.B append_data
+action does not save incomplete rows.
+For example, when loading five new data members to a three-element
+row size table, the first three elements would be added, but the
+remaining two elements would be discarded because they would be an
+incomplete row.
+.RE
