@@ -1,4 +1,7 @@
-.if \n[include_flag]==0 .TH debug 1
+.if \n[include_flag]==0 \{\
+.TH debug 1
+.so macros.7
+\}
 .SH ATE BASIC SYNTAX
 .PP
 A valid
@@ -79,4 +82,26 @@ a sound.
 ATE_ARRAY[1]=\(dqwoof\(dq
 .invoke_ate put_row pet_handle 0 ATE_ARRAY
 .EE
+.SS RETURN VALUE
+.PP
+The exit code returned by the
+.B ate
+command is 0 for success and a non-zero value if the call failed in
+any way.
+.PP
+The
+.B seek_key
+action is a special case.
+It is not an error to fail to find a record, but it's also not a
+call.
+This action returns different exit codes for an error or a failure
+to find.
+.SS EXTRA ARGUMENTS
+.PP
+The callback functions,
+.BR walk_rows ", " sort ", " filter ", and " make_key ,
+all recognize arguments beyond each action's defined arguments.
+The extra arguments are passed to their callback functions after
+the defined arguments of the callback function.
+
 
