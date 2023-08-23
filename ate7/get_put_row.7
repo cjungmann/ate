@@ -2,18 +2,73 @@
 .TH debug 1
 .so macros.7
 \}
-.SH GET_ROW AND PUT_ROW
+.SH READING AND WRITING ROW DATA
 .PP
 Use the
 .B get_row
 action to get a copy of the contents of the specified row.
 .PP
-Get the \(dqdog\(dq row, change the verb to a sound, then
-update the table with the changed row.
-
+We can use the
+.B get_row
+action to retrieve the contents of the \(dqdog\(dq row.
+This is the first row of the table, so we need to use the index value
+.BR 0 .
+For this example, we'll request the row data to be put into an array
+named
+.BR pet_row .
+.IP
 .EX
-declare -i row_ndx=0
-.invoke_ate get_row pet_handle \(dq\(Dorow_ndx\(dq -a pet_row
-pet_row[1]=\(dqwoof\(dq
-.invoke_ate put_row pet_handle \(dq\(Dorow_ndx\(dq pet_row
+.invoke_ate get_row pet_handle 0 -a pet_row
 .EE
+.PP
+Let's say we want to change the second field of the row from
+.BR bark " to " woof .
+The second element of
+.B pet_row
+array is index 1, which we'll use to change the value:
+.IP
+.EX
+pet_row[1]=\(dqwoof\(dq
+.EE
+.PP
+To replace the existing \(dqdog\(dq with the modified row, we
+use the
+.B put_row
+action with the index value and the name of the array containing
+the row's new contents:
+.IP
+.EE
+.invoke_ate put_row pet_handle 0 pet_row
+.EX
+.SS NOTES:
+.TP
+.B Matching Array Sizes
+.B put_row
+requires that the number of element in the submitted array is the same
+as the
+.B row_size
+property of the table to which the array is submitted.
+.TP
+.B PUT_ROW only replaces rows
+.B put_row
+will not make a new row.
+Attempting to use an index that doesn't exist will generate an
+error.
+.IP
+Add elements directly to the hosted array or use
+.B append_data
+to add rows to the table.
+(Don't forget to use
+.B index_rows
+after adding data.)
+.TP
+.B Use PUT_ROW in the WALK_ROWS callback
+The callback function from
+.B walk_rows
+includes arguments for array name for the row,
+the row index, and the handle name, all the necessary
+elements for calling
+.B put_row
+to change one or more of a row's elements.
+
+
