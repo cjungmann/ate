@@ -1,4 +1,7 @@
-.if \n[include_flag]==0 .TH debug 1
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
 .SH CREATE AN ATE HANDLE
 .SS DIRECT-DATA METHOD
 .PP
@@ -35,20 +38,21 @@ Pay attention to the notes following the examples.
 Using
 .B append_data
 action to Load data from the pets array:
-.IP
+.PP
+.RS 8
 .EX
 .invoke_ate declare pet_handle 3
-
-.invoke_ate append_data pet_handle "${pets[@]}"
-
+.invoke_ate append_data pet_handle \(dq\(Do{pets[@]}\(dq
 .invoke_ate index_rows pet_handle
 .EE
+.RE
 .TP 4
 .B Deferred-data Declare Example 2
 Use the
 .B append_data
 action with output from a formatted data file:
 .IP
+.RS 8
 .EX
 .invoke_ate declare mods_handle 6
 
@@ -59,12 +63,23 @@ done < <( cat /proc/modules )
 
 .invoke_ate index_rows mods_handle
 .EE
+.RE
+.IP
+The
+.B REPLY
+variable in this examples is deliberately unquoted so each line
+read from
+.B /proc/modules
+will be broken into separate arguments based on the value of
+.BR IFS .
+
 .TP 4
 .B Deferred-data Declare Example 2
 Use the
 .B get_array_name
 action to load data directly into the array:
 .IP
+.RS 8
 .EX
 .invoke_ate declare pet_handle 2
 .invoke_ate get_array_name pet_handle -v array_name
@@ -74,6 +89,7 @@ tarray+=( \(dq\(Do{pets[@]}\(dq )
 
 .invoke_ate index_rows pet_handle
 .EE
+.RE
 .TP
 .B DEFERRED-DATA NOTES:
 .RS 4
