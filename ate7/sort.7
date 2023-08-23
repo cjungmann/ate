@@ -1,0 +1,67 @@
+.if \n[include_flag]==0 \{\
+.TH debug 1
+.so macros.7
+\}
+.SH SORT
+.PP
+Create an auxiliary
+.B ate
+handle that exposes the hosted array of the source handle in an
+alternate order.
+.PP
+After sorting, both the source handle and the sorted handle will
+access the same Bash array in the order set during each handle's
+initialization.
+.PP
+Given this code fragment using the sample array,
+.IP
+.EX
+# Function used by the \fBsort\fP action that sets the comparison
+# value according to the values of the first fields of the
+# comparison rows.
+pet_sort()
+{
+   local -n ps_comp=\(dq\(Do1\(dq
+   local -n ps_left=\(dq\(Do2\(dq
+   local -n ps_right=\(dq\(Do3\(dq
+   local left=\(dq\(Do{ps_left[0]}\(dq
+   local right=\(dq\(Do{ps_right[0]}\(dq
+
+   if [[ \(dq\(Doleft\(dq < \(dq\(Doright\(dq ]]; then
+      ps_comp=-1
+   elseif [[ \(dq\(Doleft\(dq > \(dq\(Doright\(dq ]]; then
+      ps_comp=1
+   else
+      ps_comp=0
+   fi
+
+   return 0
+}
+
+.invoke_ate declare pet_handle 2 pets
+.invoke_ate sort pet_handle pet_sort pets_by_name_handle
+
+echo \(dqTable in original order:\(dq
+print_formatted_table pet_handle
+
+echo
+echo \(dqTable in sorted order:\(dq
+print_formatted_table pets_by_name_handle
+.EX
+.PP
+the output would be:
+.IP
+.EX
+Table in original order:
+dog    bark
+cat    meow
+pig    oink
+parrot squawk
+
+Table in sorted order:
+cat    meow
+dog    bark
+parrot squawk
+pig    oink
+.EE
+

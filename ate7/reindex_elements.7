@@ -1,0 +1,64 @@
+.if \n[include_flag]==0 \{\
+.TH debug 1
+.so macros.7
+\}
+.SH REINDEX_ELEMENTS
+.PP
+Reorganize a host array to match the order of the rows index.
+.PP
+For the following example, we use the example array
+.B pets
+that we use throughout this document, and the
+.B pet_sort
+function that can be found in the
+.B SORT
+section below.
+.IP
+.EX
+echo \(dqSource array before exercise:\(dq
+echo \(dqPets array \(aq\(Do{pets[*]}\(aq\(dq
+
+.invoke_ate declare pet_handle 2 pets
+.invoke_ate sort pet_handle pet_sort by_names_handle
+
+echo
+echo \(dqSource array after declare and sort:\(dq
+echo \(dqPets array \(aq\(Do{pets[*]}\(aq\(dq
+
+.invoke_ate reindex_elements by_names_handle
+
+echo
+echo \(dqSource array after reindex_elements:\(dq
+echo \(dqPets array \(aq\(Do{pets[*]}\(aq\(dq
+.EE
+.PP
+The output would be:
+.IP
+.EX
+Source array before exercise:
+Pets array 'dog bark cat meow pig oink parrot squawk'
+
+Source array after declare and sort:
+Pets array 'dog bark cat meow pig oink parrot squawk'
+
+Source array after reindex_elements:
+Pets array 'cat meow dog bark parrot squawk pig oink'
+.EE
+
+.SS EXPLANATION
+.PP
+This feature exists because it is necessary for the execution of the
+.B resize_rows
+action.
+It is not obvious why someone might want to reorganize an array, but
+since it is trivial to make public, it is now public.
+Let the public decide its value.
+.PP
+This function reorders and reindexes the
+.B ate
+handle's hosted array according to the order of the handle's rows
+index.
+Using the handle's rows index, it changes connections between each
+key field and the last field of the previous row in the new order
+while at the same time setting new index values for all array elements
+so the indexes reflect their new positions within the array.

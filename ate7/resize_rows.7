@@ -1,0 +1,56 @@
+.if \n[include_flag]==0 \{\
+.TH debug 1
+.so macros.7
+\}
+.SH CHANGE TABLE DIMENSIONS WITH RESIZE_ROWS
+.PP
+An
+.B ate
+table's row size can be changed, either adding or removing columns
+from the right side as needed.
+Let's do a
+.B resize_rows
+experiment with a table using the
+.B pets
+array.
+.IP
+.EX
+.invoke_ate declare pet_handle 2 pets
+print_formatted_table pet_handle
+
+dog    bark
+cat    meow
+pig    oink
+parrot squawk
+.EE
+.PP
+Add a column:
+.IP
+.EX
+.invoke_ate resize_rows pet_handle 3
+print_formatted_table pet_handle
+
+dog    bark   \(aq\(aq
+cat    meow   \(aq\(aq
+pig    oink   \(aq\(aq
+parrot squawk \(aq\(aq
+.EE
+.PP
+Remove two columns from the augmented table:
+.IP
+.EX
+.invoke_ate resize_rows pet_handle 1
+print_formatted_table pet_handle
+
+dog
+cat
+pig
+parrot
+.EE
+.PP
+A common companion action to
+.BR resize_rows " is " walk_rows .
+Use
+.B walk_rows
+to set the new row fields.
+
