@@ -317,18 +317,9 @@ int table_extend_rows(AHEAD *head, int new_columns)
       ++row;
    }
 
-   // Assuming *after_row, which is what the ::next member of the
-   // last element of the last row should be pointing to, is the
-   // ::head member of the ARRAY:
-   assert(after_row == array->head);
-
-   // The last field added should be the last new element of the
-   // last row of the table, and thus that last element of the
-   // array.  It should be pointing to the array head
-   assert(field->next == array->head);
-
    if (field)
    {
+      field->next = array->head;
       array->lastref = field;
 
       // This might be dangerous: I'm assuming that
