@@ -772,10 +772,9 @@ int get_function_by_name_or_fail(SHELL_VAR **rvar,
 /**
  * @brief Secure the `output` value SHELL_VAR by a given or the default name.
  *
- * Used by actions like `get_row_size`, `get_row_count`, and
- * `get_array_name`, this function will create or commandeer a
- * variable, using either the given name or a default name if no
- * name is provided.
+ * Used by actions like `get_row_size`, `get_row_count`, `get_array_name`,
+ * and 'seek_key'.  this function will create or commandeer a variable,
+ * using either the given name or a default name if no name is provided.
  *
  * @param "rvar"         [out] place to return the SHELL_VAR
  * @param "name"         [in]  name to use for the SHELL_VAR (may be null)
@@ -802,7 +801,22 @@ int create_var_by_given_or_default_name(SHELL_VAR **rvar,
    else
    {
       sv = find_variable(name);
-      if (!sv)
+      if (sv)
+      {
+         if (sv->attributes & (att_assoc || att_array))
+         {
+            ate_register_error("attempting to change array variable %s to a non-array in %s",
+                               name, action);
+            retval = EX_USAGE;
+            goto early_exit;
+         }
+         else
+         {
+            ate_dispose_variable_value(sv);
+            sv->attributes &= ~att_invisible;
+         }
+      }
+      else
          sv = bind_variable(name, "", 0);
 
       if (sv)
@@ -816,6 +830,8 @@ int create_var_by_given_or_default_name(SHELL_VAR **rvar,
          retval = EXECUTION_SUCCESS;
       }
    }
+
+  early_exit:
    return retval;
 }
 
@@ -853,9 +869,19 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
       sv = find_variable(name);
       if (sv)
       {
-         ate_dispose_variable_value(sv);
-         sv->attributes = att_array;
-         sv->value = (char*)array_create();
+         if (!(sv->attributes & att_array))
+         {
+            ate_register_error("attempting to use non-array variable %s as an array in %s",
+                               name, action);
+            retval = EX_USAGE;
+            goto early_exit;
+         }
+         else
+         {
+            ate_dispose_variable_value(sv);
+            sv->attributes &= ~att_invisible;
+            sv->value = (char*)array_create();
+         }
       }
       else
          sv = make_new_array_variable((char*)name);
@@ -871,6 +897,8 @@ int create_array_var_by_given_or_default_name(SHELL_VAR **rvar,
          retval = EXECUTION_SUCCESS;
       }
    }
+
+  early_exit:
    return retval;
 }
 
