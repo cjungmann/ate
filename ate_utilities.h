@@ -25,6 +25,9 @@ bool make_unique_name(char *buffer, int bufflen, const char *stem);
 bool get_int_from_string(int *result, const char *str);
 int set_var_from_int(SHELL_VAR *result, int value);
 
+int int_strcmp(const char *left, const char *right);
+
+
 void ate_dispose_variable_value(SHELL_VAR *var);
 
 int reindex_array_elements(AHEAD *head);

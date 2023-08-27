@@ -87,6 +87,31 @@ int set_var_from_int(SHELL_VAR *result, int value)
    return EX_BADUSAGE;
 }
 
+/**
+ * @brief Converts arguments to integers and then compares as integers.
+ *
+ * This function returns `0` if either the @ref left or @ref right
+ * argument cannot be converted to an integer.
+ *
+ * This function is used by @ref pwla_make_key and @ref pwla_seek_key
+ * to enable sorting rows by integer key values.
+ *
+ * @param "left"   left-side comparator
+ * @param "right"  right-side comparator
+ * @return <0 if left < right, >0 if left > right
+ *         0 ifleft==right OR if either @ref left or @ref right
+ *         cannot be converted to an integer.
+ */
+int int_strcmp(const char *left, const char *right)
+{
+   int ileft=0, iright=0;
+   if (get_int_from_string(&ileft, left))
+      if (get_int_from_string(&iright, right))
+         return left - right;
+
+   return 0;
+}
+
 
 int get_var_by_name(SHELL_VAR **var, const char *name, const char *action)
 {
