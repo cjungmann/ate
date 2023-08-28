@@ -11,6 +11,20 @@
 
 typedef int (*pwla_comp_func)(const char*, const char*);
 
+/**
+ * @brief Ultimate determinor of comparison function to use by @ref pwla_seek_key
+ *
+ * This pointer is either directly referenced by the funtion pointer
+ * @r pcomp in @ref pwla_seek_key, or is called by the #ref tally_comp
+ * global function after it increments the comparison count.
+ */
+pwla_comp_func pwla_sort_func = strcmp;
+
+/**
+ * @brief This variable must be global to ensure it's available
+ *        to @ref tally_comp without having to add another parameter
+ *        to the p
+ */
 static int pwla_comp_tally=0;
 /**
  * @brief Drop-in replacement for strcmp() in order to count the
@@ -23,8 +37,23 @@ static int pwla_comp_tally=0;
 int tally_comp(const char *left, const char *right)
 {
    ++pwla_comp_tally;
-   return strcmp(left,right);
+   return (*pwla_sort_func)(left,right);
 }
+
+int debug_comp(const char *left, const char *right)
+{
+   ++pwla_comp_tally;
+   int result = (*pwla_sort_func)(left, right);
+   if (result < 0)
+      printf("%3d: %s is greater than pivot %s.\n", pwla_comp_tally, right, left);
+   else if (result > 0)
+      printf("%3d: %s is less than pivot %s.\n", pwla_comp_tally, right, left);
+   else
+      printf("%3d: %s is equal to pivot %s.\n", pwla_comp_tally, right, left);
+
+   return result;
+}
+
 
 /**
  * @brief Get index to key row whose value is equal to or greater than the target value
@@ -52,6 +81,8 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *search_value = NULL;
    const char *value_name = NULL;
    const char *comp_tally_name = NULL;
+   const char *debug_flag = NULL;
+   const char *int_sort_flag = NULL;
    const char *permissive_flag = NULL;
    const char *sequential_flag = NULL;
 
@@ -60,6 +91,8 @@ int pwla_seek_key(ARG_LIST *alist)
       { "search_value", AL_ARG, &search_value },
       { "v",            AL_OPT, &value_name},
       { "t",            AL_OPT, &comp_tally_name },
+      { "d",            AL_FLAG, &debug_flag},
+      { "i",            AL_FLAG, &int_sort_flag},
       { "p",            AL_FLAG, &permissive_flag},
       { "s",            AL_FLAG, &sequential_flag },
       { NULL }
@@ -89,7 +122,24 @@ int pwla_seek_key(ARG_LIST *alist)
       goto early_exit;
    }
 
-   pwla_comp_func pcomp = strcmp;
+   /**
+    * @brief int_sort_flag must be determined before comp_tally_name test
+    * 
+    * The following two tests (int_sort_flag and comp_tally_name) work
+    * together to set the sorting method.  The int_sort_flag must be
+    * handled first because the result of comp_tally_name sets the
+    * value of @ref pcomp to the value of @ref pwla_sort_func just
+    * before testing for a request to tally comparisons.  The integer
+    * sort request would be ignored if the test occurred after the
+    * comp_tally_name test.
+    */
+
+   if (int_sort_flag)
+      pwla_sort_func = int_strcmp;
+   else
+      pwla_sort_func = strcmp;
+
+   pwla_comp_func pcomp = pwla_sort_func;
    SHELL_VAR *tally_var = NULL;
    if (comp_tally_name)
    {
@@ -102,6 +152,15 @@ int pwla_seek_key(ARG_LIST *alist)
       pcomp = tally_comp;
       pwla_comp_tally = 0;
    }
+
+   // Set or override tally flag to use debug-reporting version of comparison:
+   if (debug_flag)
+   {
+      pwla_comp_tally = 0;
+      pcomp = debug_comp;
+   }
+
+
 
    int permissive_match = permissive_flag==NULL ? 0 : 1;
    int sequential_search = sequential_flag==NULL ? 0 : 1;
