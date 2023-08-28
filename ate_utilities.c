@@ -107,7 +107,7 @@ int int_strcmp(const char *left, const char *right)
    int ileft=0, iright=0;
    if (get_int_from_string(&ileft, left))
       if (get_int_from_string(&iright, right))
-         return left - right;
+         return ileft - iright;
 
    return 0;
 }
