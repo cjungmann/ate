@@ -1,0 +1,75 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH PRINT_FORMATTED_TABLE
+.PP
+Print an
+.B ate
+table in formatted style with a customizable representation of NULL
+values.
+.PP
+This somewhat advanced function prominently uses the
+.B ate
+actions
+.BR walk_rows " and " get_field_sizes .
+It also uses nested functions
+.BR make_format_str ", " replace_nulls ", and " print_line
+to avoid potential conflicts with other implementations and to take
+advantage of closure-like access to variables
+.BR handle_name ", " null_value ", and " fstr .
+.PP
+.EX
+print_formatted_table()
+{
+    local handle_name=\(dq\(Do1\(dq
+    local null_value=\(dq\(Do{2:-''}\(dq
+
+    make_format_str()
+    {
+        local -n mfs_str=\(dq\(Do1\(dq
+        local -i min_size=\(dq\(Do{#null_value}\(dq
+
+        local -a col_sizes
+        ate get_field_sizes \(dq\(Dohandle_name\(dq -a col_sizes
+        local -i row_size=\(dq\(Do{#col_sizes[*]}\(dq
+
+        for (( ndx=0; ndx < row_size; ++ndx )); do
+            local -i col_size=\(dq\(Do{col_sizes[\(Dondx]}\(dq
+            (( col_size = (col_size < min_size ? min_size : col_size) ))
+            col_sizes[\(Dondx]=\(dq%-\(Do{col_size}s\(dq
+        done
+
+        local IFS=' '
+        mfs_str=\(dq\(Do{col_sizes[*]}\n\(dq
+    }
+
+    replace_nulls()
+    {
+        local -n rn_row=\(dq\(Do1\(dq
+        local -i row_len=\(dq\(Do{#rn_row[*]}\(dq
+        for (( ndx=0; ndx < row_len; ++ndx )); do
+            local val=\(dq\(Do{rn_row[\(Dondx]}\(dq
+            if [ -z \(dq\(Doval\(dq ]; then
+                rn_row[\(Dondx]=\(dq\(Donull_value\(dq
+            fi
+        done
+    }
+
+    print_line()
+    {
+        replace_nulls \(dq\(Do1\(dq
+
+        local -n pl_row=\(dq\(Do1\(dq
+        local format_str=\(dq\(Do4\(dq
+
+        printf \(dq\(Doformat_str\(dq \(dq\(Do{pl_row[@]}\(dq
+        return 0
+    }
+
+    local fstr
+    make_format_str fstr
+
+    ate walk_rows \(dq\(Dohandle_name\(dq print_line \(dq\(Dofstr\(dq
+}
+.EE
