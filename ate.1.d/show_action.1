@@ -1,0 +1,16 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS SHOW_ACTION
+.PP
+.proto_show_action
+.PP
+Show usage and short description for one or all actions.
+.RS 4
+.TP
+.I action_name
+If used, this parameter will limit the usage display to the specified
+action.
+If this action is omitted, all actions will be displayed.
+.RE

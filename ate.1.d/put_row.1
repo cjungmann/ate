@@ -1,0 +1,54 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS PUT_ROW
+.PP
+.proto_put_row
+.PP
+Updates a table row with the contents of a source array.
+Presumably, the source comes from a previous
+.B get_row
+action.
+The
+.I array_name
+is a required argument.
+.PP
+Exactly
+.B row_size
+elements will be copied.
+Extra source elements will be ignored, and blank values will be
+saved to the elements of the target array for any missing source
+elements.
+.PP
+Typically, one retrieves a row with the
+.B get_row
+action, makes changes to the returned row, then calls
+.B put_row
+to update the record.
+.PP
+This action will not add new rows, use the
+.B append_data
+action to add rows to the table.
+.RS 4
+.arg_handle
+.TP
+.I row_index
+is the 0-based row number to which the contents of
+.I array_name
+will be copied.
+The
+.I row_index
+value must from 0 to
+.I row_count
+- 1.
+.TP
+.I array_name
+required name of the array with the values that should replace
+the values of the row indicated by
+.IR row_index .
+.RE
+.PP
+Refer to
+.B PUT_ROW EXMPLE
+below.

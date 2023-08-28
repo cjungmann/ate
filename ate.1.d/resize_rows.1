@@ -1,0 +1,18 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS RESIZE_ROWS
+.PP
+.proto_resize_rows
+.PP
+Modify an existing table by adding or removing columns.
+To achieve the new row size, and this function will remove columns
+from or add empty columns to the end of each virtual row.
+.PP
+A row size of zero or less will not be honored.
+.RS 4
+.arg_handle
+.TP
+.I new_row_size
+is the requested new row size

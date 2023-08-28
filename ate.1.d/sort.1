@@ -1,0 +1,66 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS SORT
+.PP
+Create a duplicate table handle with the rows sorted based
+on the order imposed by a callback function.
+This action exposes the C-library
+.B qsort
+function for use in a Bash script.
+.PP
+.B ate sort
+.I handle_name comparison_function sorted_handle_name
+.RS 4
+.arg_handle
+.TP
+.I comparison_function
+the name of a script callback function that will report the
+relative order of two given rows
+.TP
+.I sorted_handle_name
+the requested name for the new sorted handle
+.RE
+.PP
+The callback
+.I campare_function
+will get three SHELL_VAR names, the first of the variable in
+which the comparison result will be returned, the second is the
+left-hand row, and the third argument is the name of the right-hand
+row.
+.PP
+The three arguments should be assigned to
+.B name_ref
+variables.
+.PP
+The callback function will get the following arguments:
+.TS
+tab(|) center;
+l l.
+\(Do1|T{
+the name of the variable to which the comparison result
+should be written
+T}
+\(Do2|name of the variable with contents of the left row
+\(Do3|name of the variable with contents of the right row
+.TE
+Assuming a nameref variable for
+.B \(Do1
+named
+.BR comp_result ,
+set
+.B comp_result
+to an integer value based on how the left and right rows should be
+ordered.
+.TS
+tab(|) center;
+l l.
+left before right|set comp_result to a negative integer
+right before left|set comp_result to a positive integer
+left equals right|set comp_result to 0
+.TE
+.PP
+Refer to
+.B SORT EXAMPLE
+below.

@@ -1,0 +1,21 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS GET_ARRAY_NAME
+.PP
+.proto_get_array_name
+.PP
+This action returns the name of the array on which the table is
+based.
+Use this action to learn the name of the hosted array when
+.B declare
+was called without an array name.
+.RS 4
+.arg_handle
+.arg_return_value
+.RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+below.

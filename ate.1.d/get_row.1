@@ -1,0 +1,22 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS GET_ROW
+.PP
+.proto_get_row
+.PP
+Read the contents of a virtual row into an array
+.RS 4
+.arg_handle
+.TP
+.I row_index
+is the row number that should be retrieved.  The index value is
+zero-based, that is a row index of \(aq0\(aq returns the first
+record.
+.arg_return_array
+.RE
+.PP
+Refer to
+.B GET_ROW EXMPLE
+below.

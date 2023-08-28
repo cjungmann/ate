@@ -1,0 +1,23 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS REINDEX_ELEMENTS
+.PP
+.proto_reindex_elements
+.PP
+This reassigns the internal index number of the Bash array elements
+according to the indexed order of the rows.
+It is automatically called when resizing rows because adding columns
+results in the addition of new elements between existing consecutive
+array elements.
+.PP
+This function may also be useful to reorder the Bash array after
+a sort.
+Recalling that a sort does not change the order of an array's
+elements, calling
+.B reindex_elements
+will reorder and reindex the elements in the sorted order.
+.RS 4
+.arg_handle
+.RE

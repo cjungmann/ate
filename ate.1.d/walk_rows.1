@@ -1,0 +1,51 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS WALK_ROWS
+.PP
+Repeatedly invokes a callback function with a row index value and
+the name of an array containing a row's contents.
+If the
+.IR starting_row " and " row_count
+parameters are used, they will determine which rows are processed.
+Otherwise, every table row will be sent to the callback function.
+.PP
+If the callback function returns 0 or nothing, the next row will be
+sent.
+If the callback function return non-0, the row walk
+will be terminated.
+.PP
+.B ate walk_rows
+.I handle_name callback_name
+.RI [ "\fB-s\fP\ starting_row" "] [" "\fB-c\fP\ row_count" ]
+.RS 4
+.arg_handle
+.TP
+.I callback_name
+to a function that
+.B ate
+will call with each indexed table row.
+.TP
+.BI "-s " starting_row
+If specified, this is the (0-based) row number of the first
+row to be sent to the callback function.
+.TP
+.BI  "-c " row_count
+If specified (following the
+.IR starting_row ),
+this is the number of rows to send to the callback function.
+.RE
+.PP
+The callback function will get the following arguments:
+.TS
+tab(|) center;
+l l.
+\(Do1|the name of array containing a row's contents
+\(Do2|an integer value indicating the row index
+\(Do3|the name of the row's source \fBate\fP handle
+.TE
+.PP
+Refer to
+.BR "WALK_ROWS EXAMPLES " and " FORMATTED TABLE EXAMPLE"
+below.

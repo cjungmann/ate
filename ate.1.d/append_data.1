@@ -1,0 +1,30 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS APPEND_DATA
+.PP
+.proto_append_data
+.PP
+Use this action to add rows to the table.
+If the number of
+.I values
+is not evenly-divisible by
+.BR row_size ,
+the incomplete row will not be added to the table.
+.PP
+After using this action, the row index will be out-of-date, meaning
+that the new rows are not immediately available.  Be sure to invoke
+action
+.B index_rows
+when finished appending data to access the new rows.
+.RS 4
+.arg_handle
+.TP
+.IR value1 ", " value2 ", " ...
+The values to be appended to the hosted array.
+.RE
+.PP
+Refer to
+.B DECLARE EXAMPLE
+below.

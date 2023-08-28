@@ -1,0 +1,29 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SH ENABLING ATE
+.PP
+The
+.B ate
+loadable builtin must be enabled before it can be used.
+A script,
+.BR enable_ate ,
+is installed that provides the non-trivial arguments needed to enable
+the builtin.
+Enable the builtin with the following statement, in a shell, in a
+.B ~/.bashrc
+file, or in a script using
+.BR ate :
+.IP
+.EX
+enable $( enable_ate )
+.EE
+.PP
+Without the
+.B enable_ate
+script, the syntax to enable a loadable builtin is:
+.IP
+.EX
+enable -f /path/to/ate.so ate
+.EE

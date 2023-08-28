@@ -1,0 +1,33 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS DECLARE
+.PP
+.proto_declare
+.PP
+Create and initialize an
+.B ate
+handle.
+.RS 4
+.TP
+.I handle_name
+The
+.I handle_name
+will be used to create a new Bash
+.B ate
+handle variable.
+.TP
+.I row_size
+The number of array elements in a table row.
+.TP
+.I array_name
+Name of the hosted array.
+The array will be created if it doesn't already exist.
+An array with a generated name will be created if this argument
+is omitted.
+.RE
+.PP
+Refer to
+.B DECLARE EXAMPLE
+below.

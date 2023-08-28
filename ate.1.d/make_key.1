@@ -1,0 +1,60 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS MAKE_KEY
+.PP
+Create a new handle with a new array implementing a two-field table
+where the first field is the key value, the second field is the row
+index in the source table.
+The table is sorted in ascending lexical order of the key values.
+The new handle can be used to seek rows by key value and to iterate
+through a table in a given order.
+.PP
+.B ate make_key
+.I handle_name function_name new_handle_name
+.arg_handle
+.TP
+.I function_name
+The function reads a row and computes and returns an appropriate
+value to use for the key.
+The value might simply be a field's value, but it might also be a
+field's case-conversion for case-insenstive searches, or even a
+computed key taken from one or more field values.
+The
+.I function_name
+will be called for each row in the source table, and the function
+should return the desired key value for the record in the nameref
+first argument.
+.IP
+The callback function will receive the following arguments:
+.RS 8
+.TS
+tab(|);
+l lx.
+\(Do1|T{
+name of return variable to which the key value is written
+T}
+\(Do2|T{
+name or return array variable containing a copy of the row
+T}
+\(Do3 ...|T{
+extra arguments submitted to the action
+.BR make_key .
+T}
+.TE
+.RE
+.arg_return_value
+.PP
+Refer to the
+.B SEEK_KEY EXAMPLE
+below.
+.PP
+.B ate make_key
+.I handle_name function_name new_handle_name
+.PP
+See the
+.B SEEK_KEY
+action above and the
+.B SEEK_KEY EXAMPLE
+below.

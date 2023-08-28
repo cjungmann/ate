@@ -1,0 +1,21 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SS GET_FIELD_SIZES
+.PP
+.proto_get_field_sizes
+.PP
+Returns an array whose elements contain the length of the longest
+string for each field in the table.
+Use these numbers to inform formatting of the table on a printout.
+.RS 4
+.arg_handle
+.arg_return_array
+.RE
+.PP
+Refer to
+.B GET INFO EXAMPLES
+for basic usage, and look at the
+.B FORMATTED TABLE EXAMPLE
+for a more advanced usage.

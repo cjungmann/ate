@@ -1,0 +1,145 @@
+\" Print ate command parameters aligned on horizontal position
+\" of the previous output line.
+.de ate_args
+.  nr lll \\n[.n]
+.  sp -1
+.  in +\\n[lll]u
+ \fB\\$1\\fP \\c
+.  shift
+.  while \\n(.$>0 \{\
+.    ds arg \\$1
+.\" get first character to detect leading dash (-)
+.    ds char_one \\$1
+.    substring char_one 0 0
+.\" must discard backslash before it contaminates other tests
+.    ie '\\*[char_one].'\.' .nop \\*[arg] \\c
+.    el \{\
+.      ie '\\*[char_one]'-' .nop \\fB\\*[arg]\fP \\c
+.      el .nop \\*[arg] \\c
+.    \}
+.    shift
+.  \}
+.  in
+.  br
+..
+\" Simple implementation of complete ate command call, using
+.\" the .ate_args macro to complete the statement.
+.de invoke_ate
+ate
+.br
+.  ate_args \\$^
+..
+
+
+.de proto_list_actions
+.  B ate list_actions
+..
+.de proto_show_action
+.  B ate show_action \c
+.  RI [ action_name ]
+..
+.de proto_declare
+.  B ate declare \c
+.  I handle_name row_size \c
+.  RI [ array_name ]
+..
+.de proto_append_data
+.  B ate append_data \c
+.  I handle_name \c
+.  RI [ value1 ", " value2 ", " ... ]
+..
+.de proto_index_rows
+.  B ate index_rows \c
+.  I handle_name
+..
+.de proto_get_row_count
+.  B ate get_row_count \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_row_size
+.  B ate get_row_size \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_array_name
+.  B ate get_array_name \c
+.  I handle_name \c
+.  RI [\fB-v\ \fP value_name ]
+..
+.de proto_get_field_sizes
+.  B ate get_field_sizes \c
+.  I handle_name \c
+.  RI [\fB-a\ \fP array_name ]
+..
+.de proto_get_row
+.  B ate get_row \c
+.  I handle_name row_index \c
+.  RI [\fB-a\ \fP array_name ]
+..
+.de proto_put_row
+.  B ate put_row \c
+.  I handle_name row_index array_name
+..
+.de proto_resize_rows
+.  B ate resize_rows \c
+.  I handle_name new_row_size
+..
+.de proto_reindex_elements
+.  B ate reindex_elements \c
+.  I handle_name
+..
+.de proto_walk_rows
+.  B ate walk_rows \c
+.  I handle_name callback \c
+.  RI [\fB-s\ \fP starting_row ] \c
+.  RI " [\fB-c\ \fP" row_count ]
+..
+.de proto_sort
+.  B ate sort \c
+.  I handle_name comparison_function sorted_handle_name
+..
+.de proto_filter
+.  B ate filter \c
+.  I handle_name filter_function filtered_handle_name
+..
+.de proto_make_key
+.  B ate make_key \c
+.  I handle_name assign_function new_handle_name
+.  RB [ -i ]
+.  RI [\fB-c\ \fP column_index ]
+.  RI [\fB-f\ \fP set_key_function ]
+..
+.de proto_seek_key
+.  B ate seek_key \c
+.  I handle_name target_value
+.  RB [ -d "] [" -i "] [" -p "] [" -s ]
+.  RI [\fB-t\ \fP tally_value_name ]
+.  RI [\fB-v\ \fP value_name ]
+..
+.de arg_handle
+.   TP
+.   I handle_name
+the name of an initialized
+.   B ate
+handle
+..
+.de arg_return_value
+.   ie (\\n[.$]>0) .ds rname \\$1
+.   el            .ds rname result
+.   TP
+.   BI "-v " value_name
+the name of the variable in which the \\*[rname] will be returned.
+Without this option, the result will be returned in
+.   BR ATE_VALUE .
+..
+.de arg_return_array
+.   ie (\\n[.$]>0) .ds rname \\$1
+.   el            .ds rname result
+.   TP
+.   BI "-a " array_name
+the name of the array variable in which the \\*[rname] will be
+returned.
+Without this option, the result will be returned in
+.   BR ATE_ARRAY .
+..
