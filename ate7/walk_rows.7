@@ -1,0 +1,44 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH WALK_ROWS TO ITERATE OVER A TABLE
+.PP
+Use the
+.B walk_rows
+action to process a series of rows of a table.
+Unlike
+.BR get_row ,
+once initiated, the
+.B walk_rows
+action will call a script function for each eligible row in the table.
+
+.IP
+.EX
+row_step()
+{
+.in +4
+local -n rs_row=\(dq\(Do1\(dq
+local -i index=\(dq\(Do2\(dq
+local handle_name=\(dq\(Do3\(dq
+
+local -i row_count
+.invoke_ate get_row_count \(dq\(Dohandle_name\(dq -v row_count
+rs_row[\(Do(( row_count-1 ))]=\(dq\(Do{#rs_row[0]}\(dq
+.invoke_ate put_row \(dq\(Dohandle_name\(dq \(dq\(Doindex\(dq \(dq\(Do1\(dq
+.in -4
+}
+
+.invoke_ate declare pet_handle 2 pets
+echo \(dqThe table in original form:\(dq
+print_formatted_table pet_handle
+
+.invoke_ate resize_rows pet_handle 3
+.invoke_ate walk_rows pet_handle row_step
+
+echo
+echo \(dqThe table with additional field filled:\(dq
+print_formatted_table pet_handle
+
+
+.EE
