@@ -2,5 +2,6 @@ bash
 bash_src
 bash_includes
 enable_ate
+html
 *.o
 *.so
