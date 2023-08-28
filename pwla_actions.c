@@ -149,6 +149,12 @@ int pwla_append_data(ARG_LIST *alist)
       ptr = ptr->next;
    }
 
+   if (cptr > values)
+   {
+      ate_register_error("incomplete final row was ignored in append_data");
+      retval = EX_USAGE;
+   }
+
   early_exit:
    return retval;
 }
