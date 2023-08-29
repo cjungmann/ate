@@ -45,11 +45,14 @@ int debug_comp(const char *left, const char *right)
    ++pwla_comp_tally;
    int result = (*pwla_sort_func)(left, right);
    if (result < 0)
-      printf("%3d: %s is greater than pivot %s.\n", pwla_comp_tally, right, left);
+      printf("%3d: pivot '%s' is less than target, search to right.\n",
+             pwla_comp_tally, left);
    else if (result > 0)
-      printf("%3d: %s is less than pivot %s.\n", pwla_comp_tally, right, left);
+      printf("%3d: pivot '%s' is greater than target, search to left.\n",
+             pwla_comp_tally, left);
    else
-      printf("%3d: %s is equal to pivot %s.\n", pwla_comp_tally, right, left);
+      printf("%3d: pivot '%s' is equal to the target.\n",
+             pwla_comp_tally, left);
 
    return result;
 }
@@ -158,6 +161,7 @@ int pwla_seek_key(ARG_LIST *alist)
    {
       pwla_comp_tally = 0;
       pcomp = debug_comp;
+      printf("\nDebug search for first instance of '%s'\n", search_value);
    }
 
 
@@ -175,7 +179,7 @@ int pwla_seek_key(ARG_LIST *alist)
 
    ARRAY_ELEMENT **ael_ptr, **ael_end;
 
-   // Quick and dirty for sequential sort
+   // Quick and dirty for sequential sort, then skip to exit.
    if (sequential_search)
    {
       ael_ptr = ahead->rows;
@@ -189,19 +193,9 @@ int pwla_seek_key(ARG_LIST *alist)
       goto giving_up;
    }
 
-   // Make an untypeable value (so it can't ever match) that is
-   // less than the search string but for which no value can exist
-   // betwwen it and the search string.  This should guarantee that
-   // it will match the first instance of the search string in a
-   // sorted list.
-   int target_len = strlen(search_value);
-   char *target_value = (char*)(alloca(target_len+2));
-   memcpy(target_value, search_value, target_len);
-   // decrement last letter, append highest possible, untypeable char
-   --target_value[target_len-1];
-   target_value[target_len] = (char)255;
-   target_value[target_len+1] = '\0';
-
+   // Default search is binary search to a small range, then
+   // linear search to find key equal to or greater than the
+   // search value:
    while (1)
    {
       if (ndx_right - ndx_left <= linear_threshhold)
@@ -211,30 +205,54 @@ int pwla_seek_key(ARG_LIST *alist)
       {
          int mid = (ndx_left + ndx_right) / 2;
          ael_ptr = &ahead->rows[mid];
-         int comp = (*pcomp)((*ael_ptr)->value, target_value);
 
-         // We should NEVER match because we should have made
-         // an unmatchable value that is the last value before
-         // the search string...but in case I'm wrong:
-         assert(comp);
+         // NOTE: it would be more useful, in debug_mode, to show
+         //       the index of the pivot element.  I choose not to
+         //       do that because that would require a per-iteration
+         //       conditional.  I am using a function pointer for
+         //       the comparison expressly to avoid a per-iteration
+         //       condition test.  Using debug_mode is likely to be
+         //       rare, so having debug_mode available shouldn't
+         //       penalize typical use.
+         //
+         //       Other debug_mode output occurs once per call to
+         //       seek_key, so I'm leaving those in.
+         //
+         //       If we change our mind, uncomment this:
+         // if (debug_mode)
+         //    printf("key pivot index %d: ", mid);
 
-         if (comp > 0)        // target after node, search right
+         int comp = (*pcomp)((*ael_ptr)->value, search_value);
+         if (comp >= 0)
             ndx_right = mid;
-         else if (comp < 0)   // target before node, search left
+         else
             ndx_left = mid;
       }
       else // conduct linear search through remaining elements
       {
+         // After binary search finds last value smaller than the target,
+         // the next value should be row that is equal to or greater than
+         // the requested value
+
          ael_ptr = &ahead->rows[ndx_left];
          ael_end = &ahead->rows[ndx_right];
 
+         if (debug_flag)
+         {
+            // Remember that ael_end is the unused pointer PAST
+            // the last considered element.  If we want to show
+            // a limit, we need to back-off one element (ael_end-1).
+            printf("begin sequential search from '%s' to '%s'\n",
+                   (*ael_ptr)->value, (*(ael_end-1))->value);
+         }
+
          while (ael_ptr < ael_end)
          {
-            int comp = (*pcomp)((*ael_ptr)->value, target_value);
+            int comp = (*pcomp)((*ael_ptr)->value, search_value);
 
-            // Again, for the same reason describe above, we
-            // should never match:
-            assert(comp);
+            if (comp==0)
+               goto found_value;
+
 
             // First greater-than match should be the search_string
             // or a string just after it:
@@ -263,16 +281,35 @@ int pwla_seek_key(ARG_LIST *alist)
 
             goto found_value;
          }
-      }
+      } // end of linear search code block
    }
 
   giving_up:
+   if (debug_flag)
+      printf("\x1b[31;1mGave up searching\x1b[m for '%s'\n", search_value);
+
    ate_register_error("row not found");
    retval = EX_NOTFOUND;
    goto save_tally;
 
   found_value:
    {
+      if (debug_flag)
+      {
+         char *found_value = (*ael_ptr)->value;
+
+         int comp = strcmp(found_value, search_value);
+         if (comp < 0)
+            printf("\x1b[31;1mUnacceptable result, '%s' is not equal to or greater than '%s'.\n",
+                   found_value, search_value);
+         else
+         {
+            int color = ( comp == 0 ) ? 32 : 33;
+            printf("\x1b[%d;1mAccepting '%s' as acceptable result in search for '%s'\x1b[m\n",
+                   color, found_value, search_value);
+         }
+      }
+
       set_var_from_int(value_var, ael_ptr - ahead->rows);
       retval = EXECUTION_SUCCESS;
    }
