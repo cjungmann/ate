@@ -4,25 +4,59 @@
 .\}
 .SS MAKE_KEY
 .PP
+.proto_make_key
+.PP
 Create a new handle with a new array implementing a two-field table
 where the first field is the key value, the second field is the row
 index in the source table.
 The table is sorted in ascending lexical order of the key values.
 The new handle can be used to seek rows by key value and to iterate
 through a table in a given order.
-.PP
-.B ate make_key
-.I handle_name function_name new_handle_name
+.TP
+.B
+Choosing a sorting column
+By default, the new key will be made from the key column (column index 0)
+of the source table.
+An alternative column can be specified using the
+.B -c
+option.
+.TP
+.B Change to integer sorting
+The
+.B -i
+option informs
+.B make_key
+to sort the column's value in numeric rather than alphabetic order.
+.TP
+.B Create a custom sorting value
+Construct a custom key value using the
+.B -f
+option.
+Examples of custom keys might be combining multiple columns,
+changing the case of a column's contents (change to lower-case
+for case-insensitive matches), etc.
 .arg_handle
 .TP
-.I function_name
+.I new_handle_name
+name to use for the new key handle
+.TP
+.B -i
+enable integer sorting method
+.TP
+.BI "-c " column_index
+alternate table column to use for sorting the key.
+The default value, if no
+.B -c
+options is specified, is to use column index 0.
+.TP
+.BI "-f " set_key_function
 The function reads a row and computes and returns an appropriate
 value to use for the key.
 The value might simply be a field's value, but it might also be a
 field's case-conversion for case-insenstive searches, or even a
 computed key taken from one or more field values.
 The
-.I function_name
+.I set_key_function
 will be called for each row in the source table, and the function
 should return the desired key value for the record in the nameref
 first argument.
@@ -44,14 +78,10 @@ extra arguments submitted to the action
 T}
 .TE
 .RE
-.arg_return_value
 .PP
 Refer to the
 .B SEEK_KEY EXAMPLE
 below.
-.PP
-.B ate make_key
-.I handle_name function_name new_handle_name
 .PP
 See the
 .B SEEK_KEY
