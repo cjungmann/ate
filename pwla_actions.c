@@ -631,6 +631,12 @@ int pwla_resize_rows(ARG_LIST *alist)
    retval = EX_USAGE;
    AHEAD *ahead = ahead_cell(handle_var);
 
+   if (!new_row_size_str)
+   {
+      ate_register_error("missing row size argument for action 'resize_rows'");
+      goto early_exit;
+   }
+
    int new_row_size = 0;
    if (get_int_from_string(&new_row_size, new_row_size_str))
    {
