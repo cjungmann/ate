@@ -253,20 +253,15 @@ int pwla_seek_key(ARG_LIST *alist)
             if (comp==0)
                goto found_value;
 
-
             // First greater-than match should be the search_string
             // or a string just after it:
             if (comp > 0)
             {
                // test for exact match if necessary
-               if (!permissive_match)
-               {
-                  comp = (*pcomp)((*ael_ptr)->value, search_value);
-                  if (comp)
-                     goto giving_up;
-               }
-
-               goto found_value;
+               if (permissive_match)
+                  goto found_value;
+               else
+                  goto giving_up;
             }
 
             ++ael_ptr;
