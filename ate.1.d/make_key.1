@@ -28,6 +28,19 @@ The default value, if no
 options is specified, is to use column index 0.
 .TP
 .BI "-f " set_key_function
+is called by
+.B make_key
+for each row to get a computed key value.  See
+.B SET KEY FUNCTION
+below.
+.TP
+.RI [ ... ]
+optional extra arguments, as needed, to be transmitted to the
+.I set_key_function
+for each row.
+.PP
+.TP
+.B SET KEY FUNCTION
 tells
 .B make_key
 to call the script function named by the
@@ -71,11 +84,6 @@ set_key_function()
    sfk_keyval=\(dq\(Do{skf_row[0],,}\(dq
 }
 .EE
-.TP
-.RI [ ... ]
-optional extra arguments, as needed, to be transmitted to the
-.I set_key_function
-for each row.
 .PP
 Refer to the
 .B SEEK_KEY EXAMPLE
