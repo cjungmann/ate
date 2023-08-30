@@ -1,0 +1,68 @@
+# -*- mode: sh; sh-shell: bash -*-
+# shellcheck shell=bash
+
+is_root() { [ "$USER" == "root" ]; }
+
+exit_on_error()
+{
+    local -i exval="$?"
+    if [ "$exval" -ne 0 ]; then
+        printf $'ate command error %d: (\e[31;1m%s\e[m)\n' "$exval" "$ATE_ERROR"
+        exit 1
+    fi
+}
+
+
+
+print_formatted_table()
+{
+    local handle_name="$1"
+    local null_value="${2:-''}"
+
+    make_format_str()
+    {
+        local -n mfs_str="$1"
+        local -i min_size="${#null_value}"
+
+        local -a col_sizes
+        ate get_field_sizes "$handle_name" -a col_sizes
+        local -i row_size="${#col_sizes[*]}"
+
+        for (( ndx=0; ndx < row_size; ++ndx )); do
+            local -i col_size="${col_sizes[$ndx]}"
+            (( col_size = (col_size < min_size ? min_size : col_size) ))
+            col_sizes[$ndx]="%-${col_size}s"
+        done
+
+        local IFS=' '
+        mfs_str="${col_sizes[*]}\n"
+    }
+
+    replace_nulls()
+    {
+        local -n rn_row="$1"
+        local -i row_len="${#rn_row[*]}"
+        for (( ndx=0; ndx < row_len; ++ndx )); do
+            local val="${rn_row[$ndx]}"
+            if [ -z "$val" ]; then
+                rn_row[$ndx]="$null_value"
+            fi
+        done
+    }
+
+    print_line()
+    {
+        replace_nulls "$1"
+
+        local -n pl_row="$1"
+        local format_str="$4"
+
+        printf "$format_str" "${pl_row[@]}"
+        return 0
+    }
+
+    local fstr
+    make_format_str fstr
+
+    ate walk_rows "$handle_name" print_line "$fstr"
+}
