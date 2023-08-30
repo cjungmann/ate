@@ -23,7 +23,7 @@ will be terminated.
 .arg_handle
 .TP
 .I callback_name
-to a function that
+to a script function that
 .B ate
 will call with each indexed table row.
 .TP
@@ -35,6 +35,11 @@ row to be sent to the callback function.
 If specified (following the
 .IR starting_row ),
 this is the number of rows to send to the callback function.
+.TP
+.RI [ ... ]
+optional extra arguments, as needed, to be transmitted to the
+.I callback_name
+function for each row.
 .RE
 .PP
 The callback function will get the following arguments:
@@ -44,6 +49,7 @@ l l.
 \(Do1|the name of array containing a row's contents
 \(Do2|an integer value indicating the row index
 \(Do3|the name of the row's source \fBate\fP handle
+\&....|optional extra arguments passed to the \fBwalk_rows\fP action.
 .TE
 .PP
 Refer to

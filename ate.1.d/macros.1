@@ -94,14 +94,17 @@ ate
 .  I handle_name callback \c
 .  RI [\fB-s\ \fP starting_row ] \c
 .  RI " [\fB-c\ \fP" row_count ]
+.  RI [ ... ]
 ..
 .de proto_sort
 .  B ate sort \c
 .  I handle_name comparison_function sorted_handle_name
+.  RI [ ... ]
 ..
 .de proto_filter
 .  B ate filter \c
 .  I handle_name filter_function filtered_handle_name
+.  RI [ ... ]
 ..
 .de proto_make_key
 .  B ate make_key \c

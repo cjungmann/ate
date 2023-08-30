@@ -21,6 +21,11 @@ relative order of two given rows
 .TP
 .I sorted_handle_name
 the requested name for the new sorted handle
+.TP
+.RI [ ... ]
+optional extra arguments, as needed, to be transmitted to the
+.I comparison_function
+for each row.
 .RE
 .PP
 The callback
@@ -44,7 +49,9 @@ should be written
 T}
 \(Do2|name of the variable with contents of the left row
 \(Do3|name of the variable with contents of the right row
+\&....|optional extra arguments passed to the \fBsort\fP action.
 .TE
+
 Assuming a nameref variable for
 .B \(Do1
 named

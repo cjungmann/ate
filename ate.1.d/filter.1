@@ -22,6 +22,11 @@ Return 0 to keep the row, 1 (or other non-zero) to discard the row.
 .TP
 .I new_handle_name
 is the name to use for the new handle if the filtering succeeded.
+.TP
+.RI [ ... ]
+optional extra arguments, as needed, to be transmitted to the
+.I filter_function_name
+function for each row.
 .RE
 .PP
 The callback function will get the following arguments:
@@ -29,6 +34,7 @@ The callback function will get the following arguments:
 tab(|) center;
 l l.
 \(Do1|name of array with a row's contents
+\&....|extra arguments passed to the \fBfilter\fP action.
 .TE
 .PP
 Refer to the
