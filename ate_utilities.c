@@ -947,7 +947,7 @@ int create_special_var_by_name(SHELL_VAR **rvar, const char *name, const char *a
 
    if (name == NULL)
    {
-      ate_register_missing_argument("new_handle_name", "action");
+      ate_register_missing_argument("new_handle_name", action);
       goto early_exit;
    }
 
