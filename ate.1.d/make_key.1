@@ -6,35 +6,13 @@
 .PP
 .proto_make_key
 .PP
-Create a new handle with a new array implementing a two-field table
-where the first field is the key value, the second field is the row
-index in the source table.
-The table is sorted in ascending lexical order of the key values.
-The new handle can be used to seek rows by key value and to iterate
-through a table in a given order.
-.TP
-.B
-Choosing a sorting column
-By default, the new key will be made from the key column (column index 0)
-of the source table.
-An alternative column can be specified using the
-.B -c
-option.
-.TP
-.B Change to integer sorting
-The
-.B -i
-option informs
-.B make_key
-to sort the column's value in numeric rather than alphabetic order.
-.TP
-.B Create a custom sorting value
-Construct a custom key value using the
-.B -f
-option.
-Examples of custom keys might be combining multiple columns,
-changing the case of a column's contents (change to lower-case
-for case-insensitive matches), etc.
+Create a key table that contains sorted two-field rows of a key value
+and a row index to the source table from which the key is created.
+.PP
+The key table is intended for use by the
+.B seek_key
+action to conduct fast binary searches and enable ISAM (indexed
+sequential action method) access to the rows of the source table.
 .arg_handle
 .TP
 .I new_handle_name
@@ -50,16 +28,15 @@ The default value, if no
 options is specified, is to use column index 0.
 .TP
 .BI "-f " set_key_function
-The function reads a row and computes and returns an appropriate
-value to use for the key.
-The value might simply be a field's value, but it might also be a
-field's case-conversion for case-insenstive searches, or even a
-computed key taken from one or more field values.
-The
+tells
+.B make_key
+to call the script function named by the
 .I set_key_function
-will be called for each row in the source table, and the function
-should return the desired key value for the record in the nameref
-first argument.
+argument for each row of the source table to compute the key value
+to be used for the row.
+.IP
+The script function will receive the following arguments from
+.BR make_key :
 .IP
 The callback function will receive the following arguments:
 .RS 8
@@ -67,17 +44,38 @@ The callback function will receive the following arguments:
 tab(|);
 l lx.
 \(Do1|T{
-name of return variable to which the key value is written
+use with nameref variable to that will be used to return the
+computed key value for the row.
 T}
 \(Do2|T{
-name or return array variable containing a copy of the row
+use with nameref variable to access a copy of the current row from
+the source table.
 T}
-\(Do3 ...|T{
-extra arguments submitted to the action
+\&...|T{
+optional extra arguments submitted to the action
 .BR make_key .
 T}
 .TE
 .RE
+.IP
+Here is a simple example of a
+.IR set_key_function :
+
+.EX
+set_key_function()
+{
+   local -n skf_keyval=\(dq\(Do1\(dq
+   local -n skf_row=\(dq\(Do2\(dq
+
+   # make lower-case for case-insensitive searches
+   sfk_keyval=\(dq\(Do{skf_row[0],,}\(dq
+}
+.EE
+.TP
+.RI [ ... ]
+optional extra arguments, as needed, to be transmitted to the
+.I set_key_function
+for each row.
 .PP
 Refer to the
 .B SEEK_KEY EXAMPLE
