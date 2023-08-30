@@ -105,7 +105,7 @@ ate
 ..
 .de proto_make_key
 .  B ate make_key \c
-.  I handle_name assign_function new_handle_name
+.  I handle_name new_handle_name
 .  RB [ -i ]
 .  RI [\fB-c\ \fP column_index ]
 .  RI [\fB-f\ \fP set_key_function ]
@@ -113,7 +113,10 @@ ate
 .de proto_seek_key
 .  B ate seek_key \c
 .  I handle_name target_value
-.  RB [ -d "] [" -i "] [" -p "] [" -s ]
+.  RB [ -d ]
+.  RB [ -i ]
+.  RB [ -p ]
+.  RB [ -s ]
 .  RI [\fB-t\ \fP tally_value_name ]
 .  RI [\fB-v\ \fP value_name ]
 ..
