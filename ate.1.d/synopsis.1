@@ -2,50 +2,50 @@
 .  TH debug 1
 .  so macros.1
 .\}
+.\" chanageable intra-prototype spacing:
+.de  syn_int
+.  br
+..
 .SH SYNOPSIS
 .PP
 .B ate
-.I action_name handle_name
-.RB [ "-a " "\fIarray_name\fP" ]
-.RB [ "-v " "\fIvalue_name\fP" ]
-.RI [ "extra ..." ]
-.TP
+.print_prototype @action_name @handle_name ?-a:array_name ?-v:value_name "?@extra ..."
+.SS Usage help actions
 .proto_list_actions
-Show list of action names
-.TP
+.syn_int
 .proto_show_action
-Show details about
-.IR action_name .
-.PP
+.SS Table manipulation actions
+.syn_int
 .proto_declare
-.PP
+.syn_int
 .proto_append_data
-.PP
+.syn_int
 .proto_index_rows
-.PP
+.syn_int
 .proto_get_row_count
-.PP
+.syn_int
 .proto_get_row_size
-.PP
+.syn_int
 .proto_get_array_name
-.PP
+.syn_int
 .proto_get_field_sizes
-.PP
+.syn_int
 .proto_get_row
-.PP
+.syn_int
 .proto_put_row
-.PP
+.syn_int
 .proto_resize_rows
-.PP
+.syn_int
 .proto_reindex_elements
-.PP
-.proto_walk_rows
-.PP
-.proto_sort
-.PP
-.proto_filter
-.PP
-.proto_make_key
-.PP
+.syn_int
 .proto_seek_key
+.SS Actions invoking callback functions
+.syn_int
+.proto_walk_rows
+.syn_int
+.proto_sort
+.syn_int
+.proto_filter
+.syn_int
+.proto_make_key
 
