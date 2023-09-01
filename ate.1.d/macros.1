@@ -1,3 +1,71 @@
+.de print_arg
+.  ds arg \\$1
+.  ds char_one \\$1
+.  substring char_one 0 0
+.  ds end_arg \\$1
+.  substring end_arg 1
+.  ie |\\*[char_one].|\.| .nop \\*[arg] \\c
+.  el \{\
+.    ie |\\*[char_one]|!| .nop \\fB\\*[end_arg]\\fP \\c
+.    el \{\
+.      ie |\\*[char_one]|@| .nop \\fI\\*[end_arg]\\fP \\c
+.      el \{\
+.        ie |\\*[char_one]|-| \{\
+.          ds colon \\$1
+.          substring colon 2 2
+.          ie '\\*[colon]':' \{\
+.             ds opt \\$1
+.             substring opt 0 1
+.             ds optarg \\$1
+.             substring optarg 3
+.             \" print dash arg with colon:
+.             nop \\fB\\*[opt]\\fP\ \\fI\\*[optarg]\\fP \\c
+.          \}
+.          el \{\
+.             \" print dash arg without colon:
+.             nop \\fB\\$1\\fP \\c
+.          \}
+.        \}
+.        el .nop \\*[arg] \\c
+.      \}
+.    \}
+.  \}
+..
+
+.de print_prototype
+.  nr nindent \\n[.i]+\\n[.k]
+.  br
+.  sp -1
+.  in \\n[nindent]u
+.  nr oHY \\n[.hy]
+.  nr oAD \\n[.j]
+.  nr oFill \\n[.u]
+.  hy 0
+.  ad l  \" set adjustment mode to 'l' (left justified)
+.  while \\n(.$>0 \{\
+.    ds char_one \\$1
+.    substring char_one 0 0
+.    ie |\\*[char_one].|\.| .print_arg "\\$1"
+.    el \{\
+.      ie |\\*[char_one]|?| \{\
+.         ds subarg \\$1
+.         substring subarg 1
+[\\c
+.         print_arg "\\*[subarg]"\\c
+\h'-1m']
+.      \}
+.      el \{\
+.        print_arg "\\$1" \\c
+.      \}
+.    \}
+.    shift
+.  \}
+.  in
+.  ad \\n[oAD]
+.  hy \\n[oHY]
+.  br
+..
+
 \" Print ate command parameters aligned on horizontal position
 \" of the previous output line.
 .de ate_args
@@ -35,94 +103,72 @@ ate
 .  B ate list_actions
 ..
 .de proto_show_action
-.  B ate show_action \c
-.  RI [ action_name ]
+.  B ate show_action
+.  print_prototype ?@action_name
 ..
 .de proto_declare
-.  B ate declare \c
-.  I handle_name row_size \c
-.  RI [ array_name ]
+.  B ate declare
+.  print_prototype @action_name @row_size ?@array_name
 ..
 .de proto_append_data
-.  B ate append_data \c
-.  I handle_name \c
-.  RI [ value1 ", " value2 ", " ... ]
+.  B ate append_data
+.  print_prototype @handle_name "?@value1 value2 ..."
 ..
 .de proto_index_rows
-.  B ate index_rows \c
-.  I handle_name
+.  B ate index_rows
+.  print_prototype @handle_name
 ..
 .de proto_get_row_count
-.  B ate get_row_count \c
-.  I handle_name \c
-.  RI [\fB-v\ \fP value_name ]
+.  B ate get_row_count
+.  print_prototype @handle_name ?-v:value_name
 ..
 .de proto_get_row_size
-.  B ate get_row_size \c
-.  I handle_name \c
-.  RI [\fB-v\ \fP value_name ]
+.  B ate get_row_size
+.  print_prototype @handle_name ?-v:value_name
 ..
 .de proto_get_array_name
-.  B ate get_array_name \c
-.  I handle_name \c
-.  RI [\fB-v\ \fP value_name ]
+.  B ate get_array_name
+.  print_prototype @handle_name ?-v:value_name
 ..
 .de proto_get_field_sizes
-.  B ate get_field_sizes \c
-.  I handle_name \c
-.  RI [\fB-a\ \fP array_name ]
+.  B ate get_field_sizes
+.  print_prototype @handle_name ?-a:array_name
 ..
 .de proto_get_row
-.  B ate get_row \c
-.  I handle_name row_index \c
-.  RI [\fB-a\ \fP array_name ]
+.  B ate get_row
+.  print_prototype @handle_name @row_index ?-a:array_name
 ..
 .de proto_put_row
-.  B ate put_row \c
-.  I handle_name row_index array_name
+.  B ate put_row
+.  print_prototype @handle_name @row_index @array_name
 ..
 .de proto_resize_rows
-.  B ate resize_rows \c
-.  I handle_name new_row_size
+.  B ate resize_rows
+.  print_prototype @handle_name @new_row_size
 ..
 .de proto_reindex_elements
-.  B ate reindex_elements \c
-.  I handle_name
+.  B ate reindex_elements
+.  print_prototype @handle_name
 ..
 .de proto_walk_rows
-.  B ate walk_rows \c
-.  I handle_name callback \c
-.  RI [\fB-s\ \fP starting_row ] \c
-.  RI " [\fB-c\ \fP" row_count ]
-.  RI [ ... ]
+.  B ate walk_rows
+.  print_prototype @handle_name @callback ?-s:starting_row ?-c:row_count "?@extra ..."
 ..
 .de proto_sort
-.  B ate sort \c
-.  I handle_name comparison_function sorted_handle_name
-.  RI [ ... ]
+.  B ate sort
+.  print_prototype @handle_name @comparison_function @sorted_handle_name "?@extra ..."
 ..
 .de proto_filter
-.  B ate filter \c
-.  I handle_name filter_function filtered_handle_name
-.  RI [ ... ]
+.  B ate filter
+.  print_prototype @handle_name @filter_function @filtered_handle_name "?@extra ..."
 ..
 .de proto_make_key
-.  B ate make_key \c
-.  I handle_name new_handle_name
-.  RB [ -i ]
-.  RI [\fB-c\ \fP column_index ]
-.  RI [\fB-f\ \fP set_key_function ]
-.  RI [ ... ]
+.  B ate make_key
+.  print_prototype @handle_name @new_handle_name ?-i ?-c:column_index ?-f:set_key_function "?@extra ..."
 ..
 .de proto_seek_key
-.  B ate seek_key \c
-.  I handle_name target_value
-.  RB [ -d ]
-.  RB [ -i ]
-.  RB [ -p ]
-.  RB [ -s ]
-.  RI [\fB-t\ \fP tally_value_name ]
-.  RI [\fB-v\ \fP value_name ]
+.  B ate seek_key
+.  print_prototype @key_handle_name @target_value ?-d ?-i ?-p ?-s ?-t:tally_value_name ?-v:value_name
 ..
 .de arg_handle
 .   TP
