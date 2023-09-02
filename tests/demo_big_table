@@ -6,7 +6,7 @@ if ! enable -f ../ate.so ate; then
 fi
 
 # Include this for convient printing
-source print_formatted_table_with_nulls
+source utilities
 
 # SOURCE FOR THIS DATA, download basic data:
 declare data_source_url="https://simplemaps.com/data/us-counties"
@@ -201,7 +201,7 @@ demo_range_output()
         ate declare sub_handle 3 fi_array
         exit_on_error
 
-        print_formatted_table_with_nulls "sub_handle"
+        print_formatted_table "sub_handle"
         unset "sub_handle"
     else
         echo "Error seeking '$range_prefix', '$ATE_ERROR'"
@@ -213,12 +213,13 @@ exit_on_error "$?"
 
 fill_table "counties_handle"
 
-# print_formatted_table_with_nulls "counties_handle"
+# print_formatted_table "counties_handle"
 
-ate make_key "counties_handle" set_key_name "key_county_names"
+# ate make_key "counties_handle" "key_county_names" -f set_key_name
+ate make_key "counties_handle" "key_county_names" -c 1
 exit_on_error "$?"
 
-# print_formatted_table_with_nulls "key_county_names" | less
+print_formatted_table "key_county_names" | less
 
 # read -n1 -pPress\ any\ key\ to\ begin\ seek\ tests
 
