@@ -167,7 +167,7 @@ reconcile_by_codes()
     local -n rbc_value="$2"
 
     # Make a temporary key for speedy record search
-    ate make_key "rbc_catalog" cat_name_tagger cat_key_name
+    ate make_key "rbc_catalog" cat_key_name -f cat_name_tagger
 
     rbc_fixrow()
     {
