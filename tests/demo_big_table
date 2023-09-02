@@ -5,7 +5,7 @@ if ! enable -f ../ate.so ate; then
     exit 1
 fi
 
-# Include this for convient printing
+# Include this for convenient printing
 source utilities
 
 # SOURCE FOR THIS DATA, download basic data:
