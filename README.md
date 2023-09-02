@@ -4,31 +4,93 @@
 
 ## INTRODUCTION
 
-**ate** is a loadable builtin function for Bash that extends the
-Bash language with an API (application programming interface) that
-treats a Bash array as table with simple database-like functions.
+**ate** is a loadable builtin command for Bash that enhances Bash
+arrays with a table view, fast indexed access to virtual rows, and
+some database features through a simple API.
+
+Bash arrays are double-linked lists of string values with assigned
+rather than positional index values.  They are optimized for efficient
+appending and sequential reads (ie **for** loops), but are quite slow
+for indexed access, especially for large arrays.
 
 **ate** works with a custom Bash shell variable that catalogs the
 first array element of each virtual row in a C-langauge array that
 enables nearly instant indexed access to the virtual rows for
 reading and writing.
 
+## FEATURES
+
+- **Much faster than stanard Bash array**  
+  **ate** creates a C-language array index of pointers to the first
+  array element of a virtual row.  The index enables direct access
+  to a virtual row for both reading and writing.
+
+- **The table state persists between calls to the `ate` command**  
+  **ate** uses a custom Bash SHELL_VAR, accessed through the handle
+  name, to keep track of the table dimensions and row indexes.  This
+  permits Bash garbage collection to manage the memory while providing
+
+- **Can create alternate views to a table**  
+  Secondary handles can contain sorted or filtered views of a table
+
+- **Binary search action `seek_key` for ISAM access**  
+  Fast seek action enables efficient lookup tables for some
+  data processing tasks
+
+- **Can call Bash script functions to perform per-row actions**  
+  The ability of **ate** to access script functions enables flexible
+  programming techniques that are the reason one chooses a script
+  solution.  For example, **ate** exposes C library function `qsort`
+  to script-based comparison functions.
+
+## USAGE
+
 **ate** features are accessed through the **ate** command, followed
 by an `action` string and parameters that control the operation of
 the requested action.
 
-## USAGE
+### Basic Operation:
 
-~~~.sh
+<pre>
+# Making a 2-field table from an array with paired values:
+declare -a pets=(
+  dog     bark
+  cat     meow
+  chicken cluck
+  fish    splash
+)
+
+# Initialize the table
+ate <b>declare</b> pets_handle 2 pets
+
+# Read row #1 (index 0):
+ate <b>get_row</b> pets_handle 0
+echo "index 0 contains ${ATE_ARRAY[*]}"
+
+# Update pet row's sound
+ATE_ARRAY[1]="woof"
+ate <b>put_row</b> pets_handle 0 ATE_ARRAY
+</pre>
+
+### Getting help:
+
+<pre>
+# Bash builtin help system:
+help ate
+
+# ate Man pages:
+man 1 ate     # complete usage guide
+man 7 ate     # tutorials
+
+# ate actions that provide help:
+
 # display available ate actions:
-ate list_actions
+ate <b>list_actions</b>
 
 # display usage information about one or all ate actions:
-ate show_action declare    # display usage for declare action
-ate show_action            # display usage text for all actions
-~~~
-
-
+ate <b>show_action</b> declare    # display usage for declare action
+ate <b>show_action</b>            # display usage text for all actions
+</pre>
 
 ## SETUP
 
