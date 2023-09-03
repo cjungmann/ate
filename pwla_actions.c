@@ -697,10 +697,11 @@ int pwla_reindex_elements(ARG_LIST *alist)
       goto early_exit;
 
    AHEAD *ahead = ahead_cell(handle_var);
-   if ((retval = ate_check_head_integrity(ahead)))
-      goto early_exit;
 
-   retval = reindex_array_elements(ahead);
+   // Don't reindex if there are no rows to process,
+   // even if there are now elements.
+   if (ahead->row_count > 0)
+      retval = reindex_array_elements(ahead);
 
   early_exit:
    return retval;
