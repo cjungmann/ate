@@ -217,6 +217,11 @@ int reindex_array_elements(AHEAD *head)
    int retval = EXECUTION_SUCCESS;
 
    ARRAY *array = array_cell(head->array);
+
+   // Make sure there are elements to index before proceeding:
+   if (array->num_elements < head->row_size)
+      goto early_exit;
+
    ARRAY_ELEMENT **row = head->rows;
    ARRAY_ELEMENT **end_index = row + head->row_count;
 
@@ -266,7 +271,7 @@ int reindex_array_elements(AHEAD *head)
 
    array->max_index = end_of_last_row->ind;
 
-  // early_exit:
+  early_exit:
    return retval;
 }
 
@@ -313,7 +318,7 @@ int table_extend_rows(AHEAD *head, int new_columns)
    int el_count;
    int new_elements = 0;
 
-   ARRAY_ELEMENT *field, *after_row;
+   ARRAY_ELEMENT *field = NULL, *after_row = NULL;
 
    ARRAY_ELEMENT **row = row_start;
    while (row < end_index)
@@ -378,9 +383,31 @@ int table_extend_rows(AHEAD *head, int new_columns)
  */
 int table_contract_rows(AHEAD *head, int fields_to_remove)
 {
-   int retval = EXECUTION_SUCCESS;
+   int retval = EX_USAGE;
 
    ARRAY *array = array_cell(head->array);
+
+   // Test for dangerous errors
+   // Assert because this should be verified by pwla_resize_rows():
+   assert(fields_to_remove > 0);
+
+   if (fields_to_remove >= head->row_size)
+   {
+      ate_register_error("cannot remove more fields (%d) than exist (%d)",
+                         fields_to_remove,
+                         head->row_size);
+      goto early_exit;
+   }
+
+   retval = EXECUTION_SUCCESS;
+
+   // Only continue if there are enough elements to make a row
+   // with the new row size:
+   if (array->num_elements < head->row_size - fields_to_remove)
+   {
+      head->row_size -= fields_to_remove;
+      goto early_exit;
+   }
 
    // Row-looping variables
    ARRAY_ELEMENT **row_start = head->rows;
@@ -446,7 +473,7 @@ int table_contract_rows(AHEAD *head, int fields_to_remove)
    // additions will fail:
    retval = reindex_array_elements(head);
 
-  // early_exit:
+  early_exit:
    return retval;
 }
 
