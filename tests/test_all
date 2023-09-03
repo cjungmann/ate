@@ -119,7 +119,59 @@ test_three_parms()
         done
         unset handle
     fi
-    }
+}
+
+exit_on_error()
+{
+    local -i ecode="$?"
+    if [ "$ecode" -ne 0 ]; then
+        local -a pargs=(
+            $'ate failed (\e[31;1m%d\e[m) with \"\e[31;1m%s\e[m\"\n'
+            "$ecode"
+            "$ATE_ERROR"
+        )
+        printf "${pargs[@]}"
+        exit 1
+    fi
+}
+
+test_empty_resizes()
+{
+    echo "Declare an empty table"
+    ate declare bogus 1
+    exit_on_error
+    echo "About to get the row_size"
+    ate get_row_size bogus -v row_size
+    exit_on_error
+    echo "The row size is $row_size"
+    echo "Add fields to an empty table (row_size==0)"
+    ate resize_rows bogus 188
+    exit_on_error
+
+    echo
+    echo "Remove fields from an empty table"
+    ate declare bogus2 188
+    exit_on_error
+    ate get_row_size bogus2 -v row_size
+    exit_on_error
+    echo "The row size is $row_size"
+    ate resize_rows bogus2 2
+    exit_on_error
+    ate get_row_size bogus2 -v row_size
+    exit_on_error
+    echo "The row size is $row_size"
+    ate append_data bogus2 dog bark cat meow bird tweet bee buzz
+    exit_on_error
+    ate get_array_name bogus2 -v array_name
+    echo "bogus2 is using array '$array_name'"
+    local -n nrarr="$array_name"
+    echo "$array_name has elements '${nrarr[*]}'"
+    ate index_rows bogus2
+    exit_on_error
+    ate get_row_count bogus2 -v row_count
+    exit_on_error
+    echo "Now there are $row_count rows in the table."
+}
 
 test_actions_only
 
@@ -135,3 +187,6 @@ echo "${new_actions[*]}"
 
 prompt_continue
 test_three_parms "new_actions"
+
+prompt_continue
+test_empty_resizes
