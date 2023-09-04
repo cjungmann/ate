@@ -7,6 +7,8 @@ exit_on_error()
 {
     local -i exval="$?"
     if [ "$exval" -ne 0 ]; then
+        local -i lineno=$(( "${BASH_LINENO[0]}" - 1 ))
+        echo "? at line number $lineno?"
         printf $'ate command error %d: (\e[31;1m%s\e[m)\n' "$exval" "$ATE_ERROR"
         exit 1
     fi
