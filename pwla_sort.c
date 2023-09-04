@@ -65,7 +65,7 @@ int pwla_sort(ARG_LIST *alist)
    const char *callback_name = NULL;
    const char *new_handle_name = NULL;
 
-   ARG_TARGET template_targets[] = {
+   ARG_TARGET sort_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "callback_name", AL_ARG, &callback_name},
       { "new_handle_name", AL_ARG, &new_handle_name},
@@ -78,19 +78,19 @@ int pwla_sort(ARG_LIST *alist)
    // will be checked for non-NULL upon an early exit
    SHELL_VAR *return_var = NULL, *left_var = NULL, *right_var = NULL;
 
-   if ((retval = process_word_list_args(template_targets, alist, 0)))
+   if ((retval = process_word_list_args(sort_targets, alist, 0)))
        goto early_exit;
 
    SHELL_VAR *handle_var = NULL;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "template")))
+                                                "sort")))
       goto early_exit;
 
    SHELL_VAR *function_var = NULL;
    if ((retval = get_function_by_name_or_fail(&function_var,
                                               callback_name,
-                                              "template")))
+                                              "sort")))
       goto early_exit;
 
    if (new_handle_name == NULL)

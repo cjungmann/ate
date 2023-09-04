@@ -269,7 +269,7 @@ int pwla_get_row_size(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *value_name = NULL;
 
-   ARG_TARGET template_targets[] = {
+   ARG_TARGET get_row_size_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
       { NULL }
@@ -277,20 +277,20 @@ int pwla_get_row_size(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(template_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_row_size_targets, alist, 0)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "template")))
+                                                "get_row_size")))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "template")))
+                                                     "get_row_size")))
       goto early_exit;
 
    // The arguments are secured, execute the action:
@@ -315,7 +315,7 @@ int pwla_get_array_name(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *value_name = NULL;
 
-   ARG_TARGET template_targets[] = {
+   ARG_TARGET get_array_name_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
       { NULL }
@@ -323,20 +323,20 @@ int pwla_get_array_name(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(template_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_array_name_targets, alist, 0)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "template")))
+                                                "get_array_name")))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "template")))
+                                                     "get_array_name")))
       goto early_exit;
 
    // The arguments are secured, execute the action:
