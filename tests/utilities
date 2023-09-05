@@ -14,6 +14,38 @@ exit_on_error()
     fi
 }
 
+convert_float()
+{
+    local -n cf_int="$1"
+    local val="$2"
+    local -i precision="$3"
+
+    # split into whole and fraction parts
+    local IFS=$'.'
+    local -a parts=( $val )
+    if [ "${#parts[*]}" -eq 1 ]; then
+        parts[1]="0"
+    fi
+
+    # whole part
+    (( cf_int = "${parts[0]}" * (10 ** precision) ))
+
+    # 0-pad, then trim fraction part (extra digit for rounding)
+    printf -v frac "%-$((precision+1))s" "${parts[1]}"
+    frac="${frac// /0}"
+    frac="${frac:0:$(( precision+1 ))}"
+
+    # round fraction part
+    local -i last_num frac_int="1$frac"
+    (( frac_int -= (10 ** (precision+1)) ))
+    (( last_num = frac_int % 10 ))
+    (( frac_int /= 10 ))
+    if [ "$last_num" -ge 5 ]; then
+        (( ++frac_int ))
+    fi
+
+    (( cf_int = cf_int + frac_int ))
+}
 
 
 print_formatted_table()
