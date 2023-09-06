@@ -10,6 +10,13 @@
 
 typedef int(*comp_func)(const char*, const char*);
 
+comp_func reverse_base_func = NULL;
+
+int reverse_comp(const char* left, const char* right)
+{
+   return -(*reverse_base_func)(left,right);
+}
+
 typedef struct pwla_comparison_struct {
    comp_func func;
 } pwla_comp;
@@ -37,6 +44,7 @@ int pwla_make_key(ARG_LIST *alist)
    const char *column_index_string = NULL;
    const char *function_name = NULL;
    const char *int_sort_flag = NULL;
+   const char *reverse_sort_flag = NULL;
 
    ARG_TARGET walk_rows_targets[] = {
       { "handle_name",     AL_ARG,  &handle_name},
@@ -44,6 +52,7 @@ int pwla_make_key(ARG_LIST *alist)
       { "c",               AL_OPT,  &column_index_string},
       { "f",               AL_OPT,  &function_name},
       { "i",               AL_FLAG, &int_sort_flag},
+      { "r",               AL_FLAG, &reverse_sort_flag},
      { NULL }
    };
 
@@ -79,6 +88,12 @@ int pwla_make_key(ARG_LIST *alist)
    int (*sort_func)(const char*, const char*) = strcmp;
    if (int_sort_flag)
       sort_func = int_strcmp;
+
+   if (reverse_sort_flag)
+   {
+      reverse_base_func = sort_func;
+      sort_func = reverse_comp;
+   }
 
    // Variables use in either user-defined function or specific
    // column number method of making the key value.
@@ -230,5 +245,6 @@ int pwla_make_key(ARG_LIST *alist)
    }
 
   early_exit:
+   reverse_base_func = NULL;
    return retval;
 }
