@@ -87,7 +87,7 @@ int pwla_make_key(ARG_LIST *alist)
    // according to presence or absence of the -i flag.
    int (*sort_func)(const char*, const char*) = strcmp;
    if (int_sort_flag)
-      sort_func = int_strcmp;
+      sort_func = long_strcmp;
 
    if (reverse_sort_flag)
    {

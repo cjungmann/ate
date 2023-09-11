@@ -138,7 +138,7 @@ int pwla_seek_key(ARG_LIST *alist)
     */
 
    if (int_sort_flag)
-      pwla_sort_func = int_strcmp;
+      pwla_sort_func = long_strcmp;
    else
       pwla_sort_func = strcmp;
 
