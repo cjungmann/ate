@@ -23,9 +23,13 @@
 bool make_unique_name(char *buffer, int bufflen, const char *stem);
 
 bool get_int_from_string(int *result, const char *str);
+bool get_long_from_string(long *result, const char *str);
+
 int set_var_from_int(SHELL_VAR *result, int value);
+int set_var_from_long(SHELL_VAR *result, long value);
 
 int int_strcmp(const char *left, const char *right);
+int long_strcmp(const char *left, const char *right);
 
 
 void ate_dispose_variable_value(SHELL_VAR *var);

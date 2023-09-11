@@ -61,7 +61,27 @@ bool get_int_from_string(int *result, const char *str)
    long val = strtol(str, &end_str, 10);
    if (end_str > str)
    {
-      *result = (long)val;
+      *result = (int)val;
+      return True;
+   }
+
+   return False;
+}
+
+/**
+ * @brief Safely convert a string to an integer
+ * @param "result" [out]  pointer to where result should be set
+ * @param "str"    [in]   character string with possible numeric value
+ * @return True (!0) if successfully converted the string, False (0) if
+ *                   the string is not a number
+ */
+bool get_long_from_string(long *result, const char *str)
+{
+   char *end_str;
+   long val = strtol(str, &end_str, 10);
+   if (end_str > str)
+   {
+      *result = val;
       return True;
    }
 
@@ -75,6 +95,25 @@ bool get_int_from_string(int *result, const char *str)
  * @return EXECUTION_SUCCESS if successful
  */
 int set_var_from_int(SHELL_VAR *result, int value)
+{
+   char *intstr = itos(value);
+   if (intstr && intstr[0])
+   {
+      ate_dispose_variable_value(result);
+      result->value = intstr;
+      return EXECUTION_SUCCESS;
+   }
+
+   return EX_BADUSAGE;
+}
+
+/**
+ * @brief Replace SHELL_VAR value with string representing a long integer value.
+ * @param "result"   [in,out]  variable whose value is to be changed
+ * @param "value"    [in]      number to use for new value
+ * @return EXECUTION_SUCCESS if successful
+ */
+int set_var_from_long(SHELL_VAR *result, long value)
 {
    char *intstr = itos(value);
    if (intstr && intstr[0])
@@ -108,6 +147,44 @@ int int_strcmp(const char *left, const char *right)
    if (get_int_from_string(&ileft, left))
       if (get_int_from_string(&iright, right))
          return ileft - iright;
+
+   return 0;
+}
+
+
+/**
+ * @brief Converts arguments to integers and then compares as integers.
+ *
+ * This function returns `0` if either the @ref left or @ref right
+ * argument cannot be converted to a long integer.
+ *
+ * This function is used by @ref pwla_make_key and @ref pwla_seek_key
+ * to enable sorting rows by integer key values.
+ *
+ * @param "left"   left-side comparator
+ * @param "right"  right-side comparator
+ * @return <0 if left < right, >0 if left > right
+ *         0 ifleft==right OR if either @ref left or @ref right
+ *         cannot be converted to an integer.
+ */
+int long_strcmp(const char *left, const char *right)
+{
+   long ileft=0, iright=0;
+   if (get_long_from_string(&ileft, left))
+      if (get_long_from_string(&iright, right))
+      {
+         // The difference between ileft and iright might
+         // overflow an *int* return value, so I figure
+         // two comparisons is computationally cheaper than
+         // subtraction and division to fit a long into and int.
+         // comparing
+         if (ileft > iright)
+            return 1;
+         else if (ileft < iright)
+            return -1;
+         else
+            return 0;
+      }
 
    return 0;
 }
