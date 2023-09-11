@@ -88,50 +88,55 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
       const char *arg_val = arg_handle->next->value;
       if (arg_val[0] == '-')
       {
-         char cur_option = arg_val[1];
-
-         cur_target = pwla_find_option_target(target_head, cur_option);
-
-         if (cur_target == NULL)
+         const char *cur_option = &arg_val[1];
+         while (cur_option && *cur_option)
          {
-            // Update the handle without discarding the current argument
-            // (save it for follow-on processing):
-            arg_handle = arg_handle->next;
-            continue;
-         }
+            cur_target = pwla_find_option_target(target_head, *cur_option);
 
-         // Leave if last chance argument parsing and it's an
-         // unrecognized option
-         if (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN)
-         {
-            ate_register_unknown_option(cur_option);
-            return EX_USAGE;
-         }
-
-         // Branch processing based on argument or flag option type
-         if (cur_target->type == AL_FLAG)
-         {
-            // A flag-type value is set with the option argument to indicate a match
-            *(cur_target->value) = arg_val;
-         }
-         else if (cur_target->type == AL_OPT)
-         {
-            // Copy value to found target:
-            // the text following the option letter, if any,
-            if (arg_val[2])
-               *(cur_target->value) = &arg_val[2];
-            // or the text of the following argument (if any),xs
-            else if (arg_handle->next->next)
+            if (cur_target == NULL)
             {
-               *(cur_target->value) = arg_handle->next->next->value;
-               // discard the next argument since we're consuming two command line args
-               arg_handle->next = arg_handle->next->next;
+               // Update the handle without discarding the current argument
+               // (save it for follow-on processing):
+               arg_handle = arg_handle->next;
+               goto skip_argument_increment;
             }
 
-            if (*(cur_target->value) == NULL)
+            // Leave if last chance argument parsing and it's an
+            // unrecognized option
+            if (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN)
             {
-               ate_register_option_missing_argument(cur_option);
+               ate_register_unknown_option(*cur_option);
                return EX_USAGE;
+            }
+
+            // Branch processing based on argument or flag option type
+            if (cur_target->type == AL_FLAG)
+            {
+               // A flag-type value is set with the option argument to indicate a match
+               *(cur_target->value) = arg_val;
+               ++cur_option;
+               continue;
+            }
+            else if (cur_target->type == AL_OPT)
+            {
+               // Copy value to found target:
+               // the text following the option letter, if any,
+               if (*(cur_option+1))
+                  *(cur_target->value) = cur_option+1;
+               // or the text of the following argument (if any),
+               else if (arg_handle->next->next)
+               {
+                  *(cur_target->value) = arg_handle->next->next->value;
+                  // discard the next argument since we're consuming two command line args
+                  arg_handle->next = arg_handle->next->next;
+                  cur_option = NULL;
+               }
+
+               if (*(cur_target->value) == NULL)
+               {
+                  ate_register_option_missing_argument(*cur_option);
+                  return EX_USAGE;
+               }
             }
          }
       }
@@ -143,15 +148,17 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
             // Update the handle without discarding the current argument
             // (save it for follow-on processing):
             arg_handle = arg_handle->next;
-            continue;
+            goto skip_argument_increment;
          }
 
          // Copy value to found target
          *cur_target->value = arg_val;
       }
 
-      // discard consumed argument
       arg_handle->next = arg_handle->next->next;
+
+     skip_argument_increment:
+      continue;
    }
 
    return EXECUTION_SUCCESS;
