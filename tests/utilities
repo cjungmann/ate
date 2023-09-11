@@ -14,6 +14,54 @@ exit_on_error()
     fi
 }
 
+# Add commas and, if requested, a decimal point to an integer value.
+#
+# Args
+#    (name):     name of variable to which the resulting string is copied
+#    (integer):  value to be converted
+#    (integer):  BCD flag.  If 1, show cents with a period
+commaize_number()
+{
+    local -n return_var="$1"
+    local -i val="$2"
+    local -i bcd="$3"
+
+    local -i remains
+    local -a parts=()
+
+    looper()
+    {
+        local -i part=$(( remains % 1000 ))
+        (( remains /= 1000 ))
+        if [ "$remains" -gt 0 ]; then
+            looper
+            (( part += 1000 ))
+            parts+=( "${part:1}" )
+        else
+            parts+=( "$part" )
+        fi
+    }
+
+    local sign=""
+    if [ "$val" -lt 0 ]; then
+        sign="-"
+        (( remains = -val ))
+    else
+        (( remains = val ))
+    fi
+
+    local IFS=','
+    if [ "$bcd" -ne 0 ]; then
+        local -i cents=$(( (remains % 100) + 100 ))
+        (( remains /= 100 ))
+        looper
+        return_var="${sign}${parts[*]}.${cents:1}"
+    else
+        looper
+        return_var="${sign}${parts[*]}"
+    fi
+}
+
 convert_float()
 {
     local -n cf_int="$1"
