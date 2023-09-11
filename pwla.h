@@ -57,7 +57,7 @@ struct arg_values {
  * elements as they are consumed.  Having the elements in stack memory
  * prevents memory leaks.
  *
- * One important aspect of the generated list is the the first element
+ * One important aspect of the generated list is that the first element
  * of the ARG_LIST array is a non-data member that points to the first
  * element.  This is needed so we can discard the first element without
  * losing a handle on the memory.
