@@ -20,8 +20,7 @@ CFLAGS += -I/usr/include/bash -I/usr/include/bash/include
 # Build module list (info make -> "Functions" -> "File Name Functions")
 MODULES = $(addsuffix .o,$(basename $(wildcard $(SRC)/*.c)))
 
-# Libraries need header files.  Set the following accordingly:
-HEADERS =
+HEADERS = $(wildcard $(SRC)/*.h)
 
 # Declare non-filename targets
 .PHONY: all install uninstall clean help
@@ -35,7 +34,12 @@ $(ENABLER):
 	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
 	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
 
-%o : %c
+
+*.c: *.h
+	@echo "Forcing full recompile after any header file change"
+	touch *.c
+
+%o: %c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 install: $(ENABLER)
