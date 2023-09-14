@@ -1,0 +1,60 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.1
+.\}
+.SH SYNTAX
+.PP
+Use this
+.B
+ate
+command portayal to identify terms:
+.IP
+.B ate
+.I action_name
+.print_prototype \fB-a\fP\fIoption_arg\fP @action_arg -b:option_arg @action_arg @-ir
+.TP
+.B Command arguments
+are all arguments following the
+.BR "ate " command
+and consist of an
+.IR action_name ,
+.BR "action arguments" ,
+.BR "action options" ", and"
+.BR "option arguments" .
+.TP
+.B Action arguments
+like
+.I action_arg
+in the portrayal above are command arguments not associated with options.
+.IP
+Action arguments are matched in the order shown in the prototypes
+found in the
+.B SYNOPSIS
+section and at the beginning of each action's description below.
+.RS
+.TP
+.I action_name
+must be the first argument following the call to
+.BR ate .
+.RE
+.TP
+.B Action options
+are hyphen-prefixed characters that may stand alone or be grouped,
+and may also take an
+.IR "option argument" .
+.IP
+Action options may come anywhere after the
+.I action_name
+in the command.
+.IP
+Action options, like
+.BR -a " and " -b
+in the portrayal above, that take an argument may omit the space between
+the option and its argument like the
+.BR -a " and " -b
+options in the portrayal above.
+.IP
+Action options may be grouped together
+.RI ( "-i -r" " is the same as " -ir ).
+If a grouped set of options includes an option that takes an argument,
+the option with the argument must be the last in the group.
