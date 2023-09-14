@@ -24,9 +24,11 @@
 
 
 typedef enum {
-   AL_ARG = 1,    ///< positional string argument
-   AL_OPT,        ///< option that take an argument
-   AL_FLAG        ///< option that takes no argument
+   AL_CONSUMED = 0, ///< if target no longer eligible for selection
+   AL_ARG,          ///< positional string argument
+   AL_OPT,          ///< option that take an argument
+   AL_FLAG,         ///< option that takes no argument
+   AL_REUSE = 32    ///< set if the target can be matched mulitple times
 } AL_TYPE;
 
 typedef struct arg_target ARG_TARGET;

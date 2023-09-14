@@ -155,6 +155,11 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
          *cur_target->value = arg_val;
       }
 
+      // Take matched target out of circulation unless
+      // specifically indicated it can match again
+      if (!(cur_target->type & AL_REUSE))
+         cur_target->type = AL_CONSUMED;
+
       arg_handle->next = arg_handle->next->next;
 
      skip_argument_increment:
