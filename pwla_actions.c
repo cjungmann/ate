@@ -657,6 +657,9 @@ int pwla_resize_rows(ARG_LIST *alist)
    else if (new_row_size < ahead->row_size)
       retval = table_contract_rows(ahead, ahead->row_size - new_row_size);
 
+   if (retval == EXECUTION_SUCCESS && ahead->row_count)
+      retval = reindex_array_elements(ahead);
+
   early_exit:
    return retval;
 }
