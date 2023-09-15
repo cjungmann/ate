@@ -291,12 +291,9 @@ void survey_array(ARRAY *array)
  */
 int reindex_array_elements(AHEAD *head)
 {
-   int retval = EXECUTION_SUCCESS;
+   int retval = EX_USAGE;
 
    ARRAY *array = array_cell(head->array);
-
-   // Early exit for usage errors:
-   retval = EX_USAGE;
 
    // Confirm we're working with an indexed table
    if (head->row_count == 0)
@@ -312,6 +309,8 @@ int reindex_array_elements(AHEAD *head)
                          array->num_elements, head->row_size);
       goto early_exit;
    }
+
+   retval = EXECUTION_SUCCESS;
 
    ARRAY_ELEMENT **row = head->rows;
    ARRAY_ELEMENT **end_index = row + head->row_count;
@@ -454,10 +453,6 @@ int table_extend_rows(AHEAD *head, int new_columns)
    // head->row_size to process the elements.
    head->row_size += new_columns;
 
-   // Call to assign appropriate indexes, or future
-   // additions will fail:
-   retval = reindex_array_elements(head);
-
   // early_exit:
    return retval;
 }
@@ -559,10 +554,6 @@ int table_contract_rows(AHEAD *head, int fields_to_remove)
    // Update first because reindex_array_elements uses
    // head->row_size to process the elements.
    head->row_size -= fields_to_remove;
-
-   // Call to assign appropriate indexes, or future
-   // additions will fail:
-   retval = reindex_array_elements(head);
 
   early_exit:
    return retval;
