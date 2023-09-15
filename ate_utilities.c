@@ -295,9 +295,23 @@ int reindex_array_elements(AHEAD *head)
 
    ARRAY *array = array_cell(head->array);
 
+   // Early exit for usage errors:
+   retval = EX_USAGE;
+
+   // Confirm we're working with an indexed table
+   if (head->row_count == 0)
+   {
+      ate_register_error("unable to reindex an unindexed table");
+      goto early_exit;
+   }
+
    // Make sure there are elements to index before proceeding:
    if (array->num_elements < head->row_size)
+   {
+      ate_register_error("not enough elements (%d) to make a complete row (%d fields)",
+                         array->num_elements, head->row_size);
       goto early_exit;
+   }
 
    ARRAY_ELEMENT **row = head->rows;
    ARRAY_ELEMENT **end_index = row + head->row_count;
