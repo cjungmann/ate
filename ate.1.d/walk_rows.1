@@ -16,16 +16,25 @@ sent.
 If the callback function return non-0, the row walk
 will be terminated.
 .PP
-.B ate walk_rows
-.I handle_name callback_name
-.RI [ "\fB-s\fP\ starting_row" "] [" "\fB-c\fP\ row_count" ]
+.proto_walk_rows
 .RS 4
 .arg_handle
 .TP
-.I callback_name
+.I callback
 to a script function that
 .B ate
 will call with each indexed table row.
+.TP
+.BI "-k " sorting_key
+provides a key to use for ordering the rows.
+If
+.I sorting_key
+is  specified, the
+.IR starting_row " and " row_count
+options will refer to row indexes in the key table, usually as
+returned by a call to the
+.B seek_key
+action.
 .TP
 .BI "-s " starting_row
 If specified, this is the (0-based) row number of the first
