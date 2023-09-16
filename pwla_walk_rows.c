@@ -6,7 +6,10 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
+#include "pwla_walk_rows.h"
+
 #include "word_list_stack.h"
+
 
 /**
  * @brief Sends each row to a callback function
@@ -19,12 +22,14 @@ int pwla_walk_rows(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *function_name = NULL;
+   const char *key_handle_name = NULL;
    const char *start_ndx_str = NULL;
    const char *count_rows_str = NULL;
 
    ARG_TARGET walk_rows_targets[] = {
       { "handle_name",   AL_ARG, &handle_name},
       { "function_name", AL_ARG, &function_name},
+      { "k"            , AL_OPT, &key_handle_name},
       { "s"            , AL_OPT, &start_ndx_str},
       { "c"            , AL_OPT, &count_rows_str},
       { NULL }
@@ -35,13 +40,32 @@ int pwla_walk_rows(ARG_LIST *alist)
    if ((retval = process_word_list_args(walk_rows_targets, alist, 0)))
        goto early_exit;
 
-   SHELL_VAR *handle_var;
+   SHELL_VAR *handle_key_var = NULL;
+   SHELL_VAR *handle_var = NULL;
+
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
                                                 "walk_rows")))
       goto early_exit;
 
-   AHEAD *ahead = ahead_cell(handle_var);
+   if (key_handle_name)
+   {
+      if ((retval = get_handle_var_by_name_or_fail(&handle_key_var,
+                                                   key_handle_name,
+                                                   "walk_rows")))
+         goto early_exit;
+   }
+
+
+   AHEAD *walker_ahead = NULL, *data_ahead = NULL;
+
+   if (handle_key_var)
+   {
+      walker_ahead = ahead_cell(handle_key_var);
+      data_ahead = ahead_cell(handle_var);
+   }
+   else
+      walker_ahead = ahead_cell(handle_var);
 
    SHELL_VAR *function_var = NULL;
    if ((retval = get_function_by_name_or_fail(&function_var,
@@ -57,15 +81,16 @@ int pwla_walk_rows(ARG_LIST *alist)
    retval = EX_USAGE;
 
    int start_ndx = 0;
-   int count_rows = ahead->row_count;
+   int count_rows = walker_ahead->row_count;
 
+   // Sanity checks
    if (start_ndx_str)
    {
       if (get_int_from_string(&start_ndx, start_ndx_str))
       {
-         if (start_ndx < 0 || start_ndx >= ahead->row_count)
+         if (start_ndx < 0 || start_ndx >= walker_ahead->row_count)
          {
-            ate_register_invalid_row_index(start_ndx, ahead->row_count);
+            ate_register_invalid_row_index(start_ndx, walker_ahead->row_count);
             goto early_exit;
          }
       }
@@ -86,8 +111,8 @@ int pwla_walk_rows(ARG_LIST *alist)
    }
 
    // Fix overreach
-   if (start_ndx + count_rows > ahead->row_count)
-      count_rows = ahead->row_count - start_ndx;
+   if (start_ndx + count_rows > walker_ahead->row_count)
+      count_rows = walker_ahead->row_count - start_ndx;
 
    /***  Make a reusable WORD_LIST for calling the callback function ***/
 
@@ -110,19 +135,40 @@ int pwla_walk_rows(ARG_LIST *alist)
       extra = extra->next;
    }
 
-   ARRAY_ELEMENT **ae_ptr = &ahead->rows[start_ndx];
+   ARRAY_ELEMENT **ae_ptr = &walker_ahead->rows[start_ndx];
    ARRAY_ELEMENT **ae_end = ae_ptr + count_rows;
 
    // Track current row index for callback parameter
-   int cur_ndx = start_ndx;
+   int row_ndx, cur_ndx = start_ndx;
+   ARRAY_ELEMENT *ae_row;
+
+   int data_row_size = data_ahead ? data_ahead->row_size : walker_ahead->row_size;
 
    while (ae_ptr < ae_end)
    {
+      if (data_ahead)
+      {
+         const char *ndx_str = (*ae_ptr)->next->value;
+
+         if (!get_int_from_string(&row_ndx, ndx_str))
+         {
+            ate_register_error("field value '%s' in table '%s' is not a key row index in walk_rows",
+                               ndx_str, key_handle_name);
+            goto early_exit;
+         }
+         ae_row = data_ahead->rows[row_ndx];
+      }
+      else
+      {
+         ae_row = *ae_ptr;
+         row_ndx = cur_ndx++;
+      }
+
       // Setup row_index WORD_DESC value for this iteration
-      snprintf(row_number_buffer, sizeof(row_number_buffer), "%d", cur_ndx++);
+      snprintf(row_number_buffer, sizeof(row_number_buffer), "%d", row_ndx);
 
       // Fill the target row with current row contents
-      if ((retval = update_row_array(array_var, *ae_ptr, ahead->row_size)))
+      if ((retval = update_row_array(array_var, ae_row, data_row_size)))
          goto early_exit;
 
       // Prepare and call the callback
