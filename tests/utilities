@@ -3,12 +3,22 @@
 
 is_root() { [ "$USER" == "root" ]; }
 
+# char_from_val "result_name" "$integer_value"
+char_from_val()
+{
+    printf -v "str" "\\%03o" "$2"
+    printf -v "$1" "$str"
+}
+
+# val_from_char "result_name" "$character"
+val_from_char() { LC_CTYPE=C; printf -v "$1" '%d' "'$2"; }
+
 exit_on_error()
 {
     local -i exval="$?"
     if [ "$exval" -ne 0 ]; then
         local -i lineno=$(( "${BASH_LINENO[0]}" - 1 ))
-        echo "? at line number $lineno?"
+        echo "->at line number $lineno"
         printf $'ate command error %d: (\e[31;1m%s\e[m)\n' "$exval" "$ATE_ERROR"
         exit 1
     fi
@@ -99,7 +109,8 @@ convert_float()
 print_formatted_table()
 {
     local handle_name="$1"
-    local null_value="${2:-''}"
+    local key_handle="$2"
+    local null_value="${NULL_VALUE:-''}"
 
     make_format_str()
     {
@@ -146,5 +157,15 @@ print_formatted_table()
     local fstr
     make_format_str fstr
 
-    ate walk_rows "$handle_name" print_line "$fstr"
+    local -a wr_args=(
+        "$handle_name"
+        print_line
+        "$fstr"
+    )
+
+    if [ -n "$key_handle" ]; then
+        wr_args+=( "-k" "$key_handle" )
+    fi
+
+    ate walk_rows "${wr_args[@]}"
 }
