@@ -4,12 +4,35 @@
 .\}
 .SH DESCRIPTION
 .PP
-Standard Bash arrays are one-dimensional and sequential (slow) access.
+The
 .B ate
-manages an index to virtual row heads for a two-dimensional aspect
-with fast random access.
+command creates a persistent array enhancement that presents the Bash
+array data as a table of rows and columns with very fast random access
+for reading and writing rows in large datasets.
 .PP
-Implemented as a builtin, it uses Bash primitive variables, it can
-call Bash script functions, and it runs in the same process as the
-shell script for improved performance.
+Table rows can be directly accessed by row index for reading or
+writing.
+Tables can be filtered, sorted, indexed, and searched.
+.B ate
+can also use script callback functions to sequentially access all
+rows in natural or indexed order in the manner of the Bash
+.B for...in
+construct.
+.PP
+Implemented as a builtin,
+.B ate
+runs in the same process as the script from which it is called.
+This delivers a significant performance benefit and makes it possible
+for
+.B ate
+to access script callback functions.
+Callback functions enable custom comparisons for sorting and are used
+by the
+.B walk_rows
+action to feed out rows in natural or indexed order to mimic the
+function of the Bash
+.B for...in
+construt.
+
+
 

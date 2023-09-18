@@ -4,57 +4,38 @@
 .\}
 .SH SYNTAX
 .PP
-Use this
-.B
-ate
-command portayal to identify terms:
-.IP
-.B ate
-.I action_name
-.print_prototype \fB-a\fP\fIoption_arg\fP @action_arg -b:option_arg @action_arg @-ir
+General command syntax follows Unix Utility conventions.
+Action-specific syntax is show as command prototypes in the
+.B SYNOPSIS
+section above and in each action description below.
 .TP
 .B Command arguments
-are all arguments following the
-.BR "ate " command
-and consist of an
-.IR action_name ,
-.BR "action arguments" ,
-.BR "action options" ", and"
-.BR "option arguments" .
+are all the strings that follow the
+.B ate
+command and consist of
+.BR operands ", " options ", and " "option arguments" .
 .TP
-.B Action arguments
-like
-.I action_arg
-in the portrayal above are command arguments not associated with options.
-.IP
-Action arguments are matched in the order shown in the prototypes
-found in the
-.B SYNOPSIS
-section and at the beginning of each action's description below.
-.RS
+.B Operands
+are undecorated strings that are read in order, the first
+of which must be the.
+.IR action_name .
 .TP
+.BR Options " and " "option arguments"
+letters with a hyphen prefix,
+can follow the
 .I action_name
-must be the first argument following the call to
-.BR ate .
-.RE
-.TP
-.B Action options
-are hyphen-prefixed characters that may stand alone or be grouped,
-and may also take an
-.IR "option argument" .
+in any order, before, after, or between any operands.
 .IP
-Action options may come anywhere after the
-.I action_name
-in the command.
+Options without arguments can be grouped into a single string,
+.IR "-ir" " is the same as " "-i -r" .
 .IP
-Action options, like
-.BR -a " and " -b
-in the portrayal above, that take an argument may omit the space between
-the option and its argument like the
-.BR -a " and " -b
-options in the portrayal above.
+If an option takes an argument, the option letter must be the last
+letter before the option argument, especially if the options are
+grouped.
 .IP
-Action options may be grouped together
-.RI ( "-i -r" " is the same as " -ir ).
-If a grouped set of options includes an option that takes an argument,
-the option with the argument must be the last in the group.
+The space between an option and its argument is optional.
+That means that
+.BI "-s " starting_index
+is the same as
+.BI -s starting_index \c
+\&.

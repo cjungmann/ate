@@ -4,6 +4,24 @@
 .\}
 .SH RETURN VALUE
 .PP
-The exit value of the
+The
 .B ate
-command is 0 if successful or non-zero for any failure.
+command returns an exit code that indicates the result of the
+call.
+Following Linux custom, an exit code of zero
+.RI ( 0 )
+indicates success and will be interpreted as
+.B true
+by Bash in
+.BR if " and " while
+statements.
+.PP
+Errors are indicated by non-zero exit codes, with the exception of the
+.B seek_key
+action that differentiates between an exact or approximate match as
+well as an error condition.
+.PP
+When the exit code is not zero, the
+.B ATE_RESULT
+variable will contain an explanation of the error.
+

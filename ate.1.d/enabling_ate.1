@@ -3,27 +3,40 @@
 .  so macros.1
 .\}
 .SH ENABLING ATE
-.PP
+.EE
 The
 .B ate
-loadable builtin must be enabled before it can be used.
-A script,
-.BR enable_ate ,
-is installed that provides the non-trivial arguments needed to enable
-the builtin.
-Enable the builtin with the following statement, in a shell, in a
-.B ~/.bashrc
-file, or in a script using
-.BR ate :
-.IP
-.EX
-enable $( enable_ate )
-.EE
+loadable builtin must be enabled before its features can be used.
+The
+.B enable
+command must be included in any script that wants to use
+.BR ate ,
+or it can be included in the
+.B .bashrc
+file for universal access.
 .PP
-Without the
-.B enable_ate
-script, the syntax to enable a loadable builtin is:
+Use the
+.B enable
+command to prepare
+.B ate
+for use:
 .IP
 .EX
 enable -f /path/to/ate.so ate
+.EE
+.PP
+.PP
+If
+.B ate
+has been installed using
+.BR "sudo make install" ,
+there will be a script that makes enabling
+.B ate
+much easier.
+Put the following statement in your script or your
+.B .bashrc
+file.
+.IP
+.EX
+enable $( enable_ate )
 .EE
