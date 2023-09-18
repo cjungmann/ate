@@ -2,7 +2,7 @@
 .  TH debug 1
 .  so macros.1
 .\}
-.SH RETURN VALUE
+.SH RETURN VALUES
 .PP
 The
 .B ate
@@ -24,4 +24,21 @@ well as an error condition.
 When the exit code is not zero, the
 .B ATE_RESULT
 variable will contain an explanation of the error.
-
+.SS SPECIAL RESULT VARIABLES
+.PP
+Certain actions produce results that must be examined.
+.BR ATE_VALUE " and " ATE_ARRAY
+are the default result variable names for simple values and array
+values, respectively.
+Actions
+.BR get_row_count ", " get_row_size ", and " get_array_name
+each report simple results and
+.BR get_field_sizes " and " get_row
+report array results.
+.PP
+The default result variable can be changed by naming an alternative
+variable name using
+.B -v
+for simple simple values and
+.B -a
+for array values.
