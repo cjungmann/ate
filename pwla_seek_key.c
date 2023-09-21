@@ -84,6 +84,7 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *search_value = NULL;
    const char *value_name = NULL;
    const char *comp_tally_name = NULL;
+   const char *outcome_name = NULL;
    const char *debug_flag = NULL;
    const char *int_sort_flag = NULL;
    const char *permissive_flag = NULL;
@@ -93,7 +94,8 @@ int pwla_seek_key(ARG_LIST *alist)
       { "handle_name",  AL_ARG, &handle_name },
       { "search_value", AL_ARG, &search_value },
       { "v",            AL_OPT, &value_name},
-      { "t",            AL_OPT, &comp_tally_name },
+      { "t",            AL_OPT, &comp_tally_name},
+      { "o",            AL_OPT, &outcome_name},
       { "d",            AL_FLAG, &debug_flag},
       { "i",            AL_FLAG, &int_sort_flag},
       { "p",            AL_FLAG, &permissive_flag},
@@ -115,6 +117,13 @@ int pwla_seek_key(ARG_LIST *alist)
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
+                                                     "seek_key")))
+      goto early_exit;
+
+   SHELL_VAR *outcome_var;
+   if ((retval = create_var_by_given_or_default_name(&outcome_var,
+                                                     outcome_name,
+                                                     DEFAULT_OUTCOME_NAME,
                                                      "seek_key")))
       goto early_exit;
 
@@ -164,7 +173,9 @@ int pwla_seek_key(ARG_LIST *alist)
       printf("\nDebug search for first instance of '%s'\n", search_value);
    }
 
-
+   // Ruled-out usage errors by now, any outcome should be considered
+   // a statement success even if it might be a search failure.
+   retval = EXECUTION_SUCCESS;
 
    int permissive_match = permissive_flag==NULL ? 0 : 1;
    int sequential_search = sequential_flag==NULL ? 0 : 1;
@@ -283,30 +294,30 @@ int pwla_seek_key(ARG_LIST *alist)
    if (debug_flag)
       printf("\x1b[31;1mGave up searching\x1b[m for '%s'\n", search_value);
 
-   ate_register_error("row not found");
-   retval = EX_NOTFOUND;
+   set_var_from_int(outcome_var, 0);
+   // jump around found_value:
    goto save_tally;
 
   found_value:
    {
+      char *found_value = (*ael_ptr)->value;
+      int comp = strcmp(found_value, search_value);
+
       if (debug_flag)
       {
-         char *found_value = (*ael_ptr)->value;
-
-         int comp = strcmp(found_value, search_value);
          if (comp < 0)
-            printf("\x1b[31;1mUnacceptable result, '%s' is not equal to or greater than '%s'.\n",
+            printf("\x1b[31;1mUnacceptable match, '%s' is not equal to or greater than '%s'.\n",
                    found_value, search_value);
          else
          {
             int color = ( comp == 0 ) ? 32 : 33;
-            printf("\x1b[%d;1mAccepting '%s' as acceptable result in search for '%s'\x1b[m\n",
+            printf("\x1b[%d;1mAccepting '%s' as acceptable match in search for '%s'\x1b[m\n",
                    color, found_value, search_value);
          }
       }
 
       set_var_from_int(value_var, ael_ptr - ahead->rows);
-      retval = EXECUTION_SUCCESS;
+      set_var_from_int(outcome_var, (comp==0?1:2));
    }
 
   save_tally:
