@@ -15,6 +15,7 @@
 
 #define DEFAULT_VALUE_NAME "ATE_VALUE"
 #define DEFAULT_ARRAY_NAME "ATE_ARRAY"
+#define DEFAULT_OUTCOME_NAME "ATE_SEEK_OUTCOME"
 
 /**
  * @defgroup PWLA PWLA Data and Function Definitions
