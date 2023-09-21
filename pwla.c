@@ -119,6 +119,8 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
             }
             else if (cur_target->type == AL_OPT)
             {
+               // We're processing an option that takes an option.
+
                // Copy value to found target:
                // the text following the option letter, if any,
                if (*(cur_option+1))
@@ -137,6 +139,9 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
                   ate_register_option_missing_argument(*cur_option);
                   return EX_USAGE;
                }
+
+               // signal we're done with this argument filled with options
+               cur_option = NULL;
             }
          }
       }
