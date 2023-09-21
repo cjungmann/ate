@@ -8,7 +8,7 @@
 .PP
 Updates a table row with the contents of a source array.
 Presumably, the source comes from a previous
-.B get_row
+.BR get_row " or " walk_rows
 action.
 The
 .I array_name
@@ -21,15 +21,11 @@ Extra source elements will be ignored, and blank values will be
 saved to the elements of the target array for any missing source
 elements.
 .PP
-Typically, one retrieves a row with the
-.B get_row
-action, makes changes to the returned row, then calls
-.B put_row
-to update the record.
-.PP
 This action will not add new rows, use the
 .B append_data
-action to add rows to the table.
+action, followed by
+.B index_rows
+to add rows to the table.
 .RS 4
 .arg_handle
 .TP
