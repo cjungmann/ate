@@ -6,9 +6,9 @@
 .PP
 The
 .B ate
-command returns an exit code that indicates the result of the
+command returns an exit status that indicates the result of the
 call.
-Following Linux custom, an exit code of zero
+Following Linux custom, an exit status of zero
 .RI ( 0 )
 indicates success and will be interpreted as
 .B true
@@ -16,12 +16,12 @@ by Bash in
 .BR if " and " while
 statements.
 .PP
-Errors are indicated by non-zero exit codes, with the exception of the
+Errors are indicated by non-zero exit status, with the exception of the
 .B seek_key
 action that differentiates between an exact or approximate match as
 well as an error condition.
 .PP
-When the exit code is not zero, the
+When the exit status is not zero, the
 .B ATE_RESULT
 variable will contain an explanation of the error.
 .SS SPECIAL RESULT VARIABLES
@@ -31,7 +31,7 @@ Certain actions produce results that must be examined.
 are the default result variable names for simple values and array
 values, respectively.
 Actions
-.BR get_row_count ", " get_row_size ", and " get_array_name
+.BR get_row_count ", " get_row_size ", " get_array_name ", " seek_key
 each report simple results and
 .BR get_field_sizes " and " get_row
 report array results.
