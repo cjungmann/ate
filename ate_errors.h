@@ -24,6 +24,7 @@ void ate_register_corrupt_table(void);
 void ate_register_not_an_int(const char *str, const char *action);
 void ate_register_invalid_row_index(int requested, int available);
 void ate_register_invalid_row_size(int row_size, int el_count);
+void ate_register_wrong_report_type(char option, const char *action);
 void ate_register_missing_argument(const char *name, const char *action);
 void ate_register_failed_to_create(const char *name);
 void ate_register_unexpected_error(const char *doing);

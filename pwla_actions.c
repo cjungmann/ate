@@ -227,10 +227,12 @@ int pwla_get_row_count(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *value_name = NULL;
+   const char *wrong_type = NULL;
 
    ARG_TARGET get_row_count_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
+      { "a",           AL_OPT, &wrong_type},
       { NULL }
    };
 
@@ -238,6 +240,13 @@ int pwla_get_row_count(ARG_LIST *alist)
 
    if ((retval = process_word_list_args(get_row_count_targets, alist, 0)))
        goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('a', "get_row_count");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
@@ -268,10 +277,12 @@ int pwla_get_row_size(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *value_name = NULL;
+   const char *wrong_type = NULL;
 
    ARG_TARGET get_row_size_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
+      { "a",           AL_OPT, &wrong_type},
       { NULL }
    };
 
@@ -279,6 +290,13 @@ int pwla_get_row_size(ARG_LIST *alist)
 
    if ((retval = process_word_list_args(get_row_size_targets, alist, 0)))
        goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('a', "get_row_size");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
@@ -314,10 +332,12 @@ int pwla_get_array_name(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *value_name = NULL;
+   const char *wrong_type = NULL;
 
    ARG_TARGET get_array_name_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "v",           AL_OPT, &value_name},
+      { "a",           AL_OPT, &wrong_type},
       { NULL }
    };
 
@@ -325,6 +345,13 @@ int pwla_get_array_name(ARG_LIST *alist)
 
    if ((retval = process_word_list_args(get_array_name_targets, alist, 0)))
        goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('a', "get_array_name");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
@@ -360,10 +387,12 @@ int pwla_get_field_sizes(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *array_name = NULL;
+   const char *wrong_type = NULL;
 
    ARG_TARGET get_field_sizes_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "a",           AL_OPT, &array_name},
+      { "v",           AL_OPT, &wrong_type},
       { NULL }
    };
 
@@ -371,6 +400,13 @@ int pwla_get_field_sizes(ARG_LIST *alist)
 
    if ((retval = process_word_list_args(get_field_sizes_targets, alist, 0)))
        goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('v', "get_field_sizes");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
@@ -436,11 +472,13 @@ int pwla_get_row(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *array_name = NULL;
    const char *row_index_str = NULL;
+   const char *wrong_type = NULL;
 
    ARG_TARGET get_row_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "a",           AL_OPT, &array_name},
-      { "row_index  ", AL_ARG, &row_index_str},
+      { "v",           AL_OPT, &wrong_type},
+      { "row_index",   AL_ARG, &row_index_str},
       { NULL }
    };
 
@@ -448,6 +486,13 @@ int pwla_get_row(ARG_LIST *alist)
 
    if ((retval = process_word_list_args(get_row_targets, alist, 0)))
        goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('v', "get_row");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
@@ -462,7 +507,6 @@ int pwla_get_row(ARG_LIST *alist)
                                                            "get_row")))
       goto early_exit;
 
-   retval = EX_USAGE;
    AHEAD *ahead = ahead_cell(handle_var);
    int row_index = -1;
    if (row_index_str && get_int_from_string(&row_index, row_index_str))

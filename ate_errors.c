@@ -58,6 +58,11 @@ void ate_register_unknown_option(char option)
    ate_register_error("option '-%c' is not recognized", option);
 }
 
+void ate_register_wrong_report_type(char option, const char *action)
+{
+   ate_register_error("option -%c not supported by action '%s'", option, action);
+}
+
 void ate_register_option_missing_argument(char option)
 {
    ate_register_error("option '-%c' must be followed by a non-option argument", option);

@@ -83,6 +83,7 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *handle_name = NULL;
    const char *search_value = NULL;
    const char *value_name = NULL;
+   const char *wrong_type = NULL;
    const char *comp_tally_name = NULL;
    const char *outcome_name = NULL;
    const char *debug_flag = NULL;
@@ -94,6 +95,7 @@ int pwla_seek_key(ARG_LIST *alist)
       { "handle_name",  AL_ARG, &handle_name },
       { "search_value", AL_ARG, &search_value },
       { "v",            AL_OPT, &value_name},
+      { "a",            AL_OPT, &wrong_type},
       { "t",            AL_OPT, &comp_tally_name},
       { "o",            AL_OPT, &outcome_name},
       { "d",            AL_FLAG, &debug_flag},
@@ -106,6 +108,13 @@ int pwla_seek_key(ARG_LIST *alist)
    int retval = process_word_list_args(append_data_targets, alist, 0);
    if (retval)
       goto early_exit;
+
+   if (wrong_type)
+   {
+      ate_register_wrong_report_type('a', "seek_key");
+      retval = EX_USAGE;
+      goto early_exit;
+   }
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
