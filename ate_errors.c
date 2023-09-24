@@ -60,7 +60,7 @@ void ate_register_unknown_option(char option)
 
 void ate_register_wrong_report_type(char option, const char *action)
 {
-   ate_register_error("option -%c not supported by action '%s'", option, action);
+   ate_register_error("reporting option -%c not supported by action '%s'", option, action);
 }
 
 void ate_register_option_missing_argument(char option)
