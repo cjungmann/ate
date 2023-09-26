@@ -125,19 +125,6 @@ declare -a array_animals=(
 )
 
 
-test_with_handle()
-{
-    local array_name="$1"
-    local msg="$1"
-    local handle_name="$4"
-
-    if make_table "$handle_name" "$array_name"; then
-        shift
-        test_params "$@"
-        unset "$handle_name"
-    fi
-}
-
 ##
 # @brief Query the user for 'y' to continue, 's' to skip, or 'q' to quit
 ##
