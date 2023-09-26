@@ -1,0 +1,19 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH TABLE INFORMATION
+.PP
+.EX
+ate declare pet_table 3 pets_array
+exit_on_error
+
+ate get_row_size pet_table -v row_size
+exit_on_error
+ate get_row_count pet_table -v row_count
+exit_on_error
+ate get_array_name pet_table -v array_name
+exit_on_error
+
+echo \(dqThere are \(Dorow_count rows of \(Dorow_size fields.\(dq
+echo \(dqThe name of the hosted array is \(rs\(dq\(Doarray_name\(rs\(dq.\(dq

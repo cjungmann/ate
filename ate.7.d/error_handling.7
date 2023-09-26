@@ -1,0 +1,83 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH ERROR HANDLING
+.PP
+Like most command-line commands on Unix-like systems,
+.B ate
+sets an exit code when finished with a task.
+.B ate
+sets the exit code to 0 for success and to a non-zero number for a
+failure.
+.PP
+Every error should be a usage error, caused by missing arguments
+or predictable and thus avoidable data mistakes.
+Every error should set the
+.B ATE_ERROR
+variable with a description of the error to help debugging.
+.PP
+(I'm saying
+.I should
+right now due to this being a new utility and I may have missed
+some error situations.)
+
+.SS ERROR-REPORTING FUNCTION
+.PP
+Generally,
+.B ate
+actions depend on the success of previous
+.B ate
+actions.
+.PP
+Rather than write code with nested
+.B if
+statements to prevent follow-on errors, examples in this tutorial
+will invoke an error-reporting function after most
+.B ate
+actions that will terminate the script after announcing the error and
+its location.
+.PP
+The code for the error function follows.  It is found in the
+.B ex_basic
+script to be shown in isolation and in the
+.B utilities
+script with many other functions.
+.IP
+.EX
+exit_on_error()
+{
+   local -i exval=\(dq\(Do?\(dq
+   if [ \(dq\(Doexval\(dq -ne 0 ]; then
+       printf \(Do\(aqate error at line %d of script %s:\(rsn\(aq \(rs
+              \(Do(( \(dq\(Do{BASH_LINENO[0]}\(dq - 1 )) \(rs
+              \(dq\(Do{BASH_SOURCE[1]}\(dq
+       printf \(Do\(aq   \(rse[31;1m%s\(rse[m\(rsn\(aq \(dq\(DoATE_ERROR\(dq
+       exit 1
+   fi
+}
+.EE
+.PP
+This printout of hypothetical script
+.B ex_bad_cmd
+includes a deliberate error to trigger the error reporting:
+.IP
+.EX
+#!/usr/bin/env bash
+enable $(enable_ate)
+source utilities  # where exit_on_error resides
+
+ate declare my_table
+exit_on_error
+.EE
+.PP
+Calling the script will produce the following:
+.IP
+.EX
+user@workstation: ~ $ ./ex_bad_cmd
+ate error at line 5 of script ./ex_bad_cmd
+.B \ \ \ invalid or missing row_size value
+user@workstation: ~ $ 
+.EE
+
+

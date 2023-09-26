@@ -1,0 +1,65 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH MAKING TABLES
+.PP
+Bash arrays are the heart of
+.B ate
+tables.
+.SS DEMO DATA
+.PP
+For many examples in this tutorial, we will be starting with the data
+in the following array describing a three-column table:
+.IP
+.EX
+declare -a pets_array=(
+    Nemo    fish    2010-06-06
+    Spot    dog     2014-08-06
+    Fluffy  cat     2015-07-21
+    Polly   parrot  1978-01-17
+)
+.EE
+.SS TABLE-MAKING OPTIONS
+There are two ways to make an
+.B ate
+table from the data, embedding the array in the
+.B ate
+handle, or by making an empty table and adding the data through the
+.BR append_data " and " index_rows
+actions.
+.TP
+.B Embedded array method:
+.EX
+ate declare pet_table 3 pets_array
+exit_on_error
+.EE
+.TP
+.B Fill empty table method:
+.EX
+ate declare pet_table 3
+exit_on_error
+
+ate append_data pet_table \(dq\(Do{pets_array[@]}\(dq
+exit_on_error
+
+ate index_rows pet_table
+exit_on_error
+.EE
+.SS MISSING VALUES
+In order to work, the elements of the array must line up with virtual
+rows of the table.
+That means that missing row values must be represented by an empty
+string to maintain position of any following array elements.
+.PP
+If we were to add an alien pet of unknown species, we would include
+an empty string to keep the place of the missing species value:
+.IP
+.EE
+Gizmo  \(dq\(dq  1066-10-14
+.EX
+.PP
+That line could either be included in the data array or used
+as arguments for a call to
+.B append_data
+to add the line to an existing table.

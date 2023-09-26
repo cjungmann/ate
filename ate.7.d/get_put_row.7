@@ -1,0 +1,39 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH GET_ROW and PUT_ROW
+.IP
+.EX
+declare -a pets_array=(
+    Nemo    fish    2010-06-06
+    Spot    dog     2014-08-06
+    Fluffy  cat     2015-07-21
+    Polly   parrot  1978-01-17
+    Gizmo   ""      1066-10-14
+)
+.EE
+
+ate declare pet_table 3 pets_array
+exit_on_error
+
+# Read the last row of the table, to set Gizmo's species field
+ate get_row_count pet_table -v row_count
+exit_on_error
+ate get_row pet_table $(( row_count - 1 )) -a row_copy
+exit_on_error
+
+if [[ "${row_copy[0]}" == "Gizmo" ]]; then
+   if [ -z "${row_copy[1]}" ]; then
+      echo "Setting species value to 'martian'"
+      row_copy[1]="martian"
+      ate put_row pet_table $(( row_count - 1 )) row_copy
+   else
+      echo "The species field for ${row_copy[0]} is already to set ${row_copy[1]}"
+   fi
+fixo
+
+
+
+
+
