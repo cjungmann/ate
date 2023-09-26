@@ -1,20 +1,17 @@
 .if \n[include_flag]==0 .TH debug 1
 .SH DESCRIPTION
 .PP
-The name
+This document contains advice and examples for effective use of the
 .B ate
-stands for
-.IR "Array Table Extension" .
-The
+API.
+It covers how
 .B ate
-command exposes an API (Application Programming Interface) for
-manipulating a Bash array as a table.
+actions work together and other topics that don't easily fit into
+an item-by-item list of features.
 .PP
-Once a script declares sn
-.B ate
-handle, the handle can then be used to add rows, read or write
-specific rows, change the row size, sort, filter, and create and
-search a keyed index for sequential access by a user-defined key.
+Please refer to
+.BR ate (1)
+for usage documentation.
 .SS ARRAY AS TABLE
 .PP
 The following two statements declare the same two-column table
