@@ -31,7 +31,7 @@ int pwla_declare(ARG_LIST *alist)
       { NULL }
    };
 
-   int retval = process_word_list_args(declare_targets, alist, 0);
+   int retval = process_word_list_args(declare_targets, alist, AL_NO_OPTIONS);
    // dump_targets(declare_targets, "declare");
 
    if (retval != EXECUTION_SUCCESS)
@@ -111,7 +111,7 @@ int pwla_append_data(ARG_LIST *alist)
       { NULL }
    };
 
-   int retval = process_word_list_args(append_data_targets, alist, 0);
+   int retval = process_word_list_args(append_data_targets, alist, AL_NO_OPTIONS);
    if (retval)
       goto early_exit;
 
@@ -183,7 +183,7 @@ int pwla_index_rows(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(index_rows_targets, alist, 0)))
+   if ((retval = process_word_list_args(index_rows_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
@@ -572,7 +572,7 @@ int pwla_put_row(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(put_row_targets, alist, 0)))
+   if ((retval = process_word_list_args(put_row_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
@@ -663,7 +663,7 @@ int pwla_resize_rows(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(resize_rows_targets, alist, 0)))
+   if ((retval = process_word_list_args(resize_rows_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
@@ -734,7 +734,7 @@ int pwla_reindex_elements(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(resize_rows_targets, alist, 0)))
+   if ((retval = process_word_list_args(resize_rows_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;

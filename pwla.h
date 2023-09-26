@@ -84,6 +84,7 @@ typedef enum {
    AL_NONE = 0,         ///< no flags
    AL_NOTIFY_MISSING,   ///< notify for any missing arguments
    AL_NOTIFY_UNKNOWN,   ///< notify for unknown options
+   AL_NO_OPTIONS,       ///< treat options as regular arguments
    AL_END               ///< bounds-confirming value
 } AL_FLAGS;
 

@@ -83,12 +83,26 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
 
    ARG_LIST *arg_handle = args_handle;
 
+   int cease_options = (flags & AL_NO_OPTIONS ? 1 : 0);
+
    while (arg_handle->next)
    {
       const char *arg_val = arg_handle->next->value;
-      if (arg_val[0] == '-' && arg_val[1])
+      if (cease_options == 0 && arg_val[0] == '-' && arg_val[1])
       {
          const char *cur_option = &arg_val[1];
+
+         // Recognize '--' as sign to treat subsequent options
+         // as regular arguments:
+         if (arg_val[1] == '-')
+         {
+            cease_options = 1;
+
+            // discard this argument after setting the flag:
+            arg_handle->next = arg_handle->next->next;
+            goto skip_argument_increment;
+         }
+
          while (cur_option && *cur_option)
          {
             cur_target = pwla_find_option_target(target_head, *cur_option);

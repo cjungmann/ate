@@ -78,7 +78,7 @@ int pwla_sort(ARG_LIST *alist)
    // will be checked for non-NULL upon an early exit
    SHELL_VAR *return_var = NULL, *left_var = NULL, *right_var = NULL;
 
-   if ((retval = process_word_list_args(sort_targets, alist, 0)))
+   if ((retval = process_word_list_args(sort_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var = NULL;

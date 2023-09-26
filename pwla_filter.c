@@ -32,7 +32,7 @@ int pwla_filter(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(filter_targets, alist, 0)))
+   if ((retval = process_word_list_args(filter_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
