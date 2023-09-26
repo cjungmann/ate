@@ -149,7 +149,7 @@ print_formatted_table()
         replace_nulls "$1"
 
         local -n pl_row="$1"
-        local format_str="$4"
+        local format_str="$5"
 
         printf "$format_str" "${pl_row[@]}"
         return 0
