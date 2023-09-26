@@ -15,13 +15,14 @@ val_from_char() { LC_CTYPE=C; printf -v "$1" '%d' "'$2"; }
 
 exit_on_error()
 {
-    local -i exval="$?"
-    if [ "$exval" -ne 0 ]; then
-        local -i lineno=$(( "${BASH_LINENO[0]}" - 1 ))
-        echo "->at line number $lineno"
-        printf $'ate command error %d: (\e[31;1m%s\e[m)\n' "$exval" "$ATE_ERROR"
-        exit 1
-    fi
+   local -i exval="$?"
+   if [ "$exval" -ne 0 ]; then
+       printf $'ate error at line %d of script %s:\n' \
+              $(( "${BASH_LINENO[0]}" - 1 )) \
+              "${BASH_SOURCE[1]}"
+       printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+       exit 1
+   fi
 }
 
 # Add commas and, if requested, a decimal point to an integer value.
