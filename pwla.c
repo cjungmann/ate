@@ -86,7 +86,7 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
    while (arg_handle->next)
    {
       const char *arg_val = arg_handle->next->value;
-      if (arg_val[0] == '-')
+      if (arg_val[0] == '-' && arg_val[1])
       {
          const char *cur_option = &arg_val[1];
          while (cur_option && *cur_option)
