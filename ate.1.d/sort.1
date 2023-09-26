@@ -12,7 +12,7 @@ function for use in a Bash script.
 .PP
 .B ate sort
 .I handle_name comparison_function sorted_handle_name
-.RS 4
+.RS 7
 .arg_handle
 .TP
 .I comparison_function
@@ -28,28 +28,37 @@ optional extra arguments, as needed, to be transmitted to the
 for each row.
 .RE
 .PP
+.B Comparison Callback Function
+.RS 7
+.PP
 The callback
-.I campare_function
-will get three SHELL_VAR names, the first of the variable in
-which the comparison result will be returned, the second is the
-left-hand row, and the third argument is the name of the right-hand
-row.
-.PP
-The three arguments should be assigned to
-.B name_ref
-variables.
-.PP
-The callback function will get the following arguments:
+.I comparison_function
+ranks two rows according to which should go first.
+It will get three variable name arguments with which it will make
+local nameref variables to access their contents and to return the
+comparison.
 .TS
-tab(|) center;
-l l.
+tab(|);
+l lx.
 \(Do1|T{
-the name of the variable to which the comparison result
-should be written
+.B comparison result
+variable name to which the result of the comparison between the left
+and right row is to be written
 T}
-\(Do2|name of the variable with contents of the left row
-\(Do3|name of the variable with contents of the right row
-\&....|optional extra arguments passed to the \fBsort\fP action.
+\(Do2|T{
+.B left row
+array name of the current comparison
+T}
+\(Do3|T{
+.B right row
+array name of the current comparison
+T}
+\&...|T{
+.B extra arguments
+that can be optionally passed to the
+.B sort
+action
+T}
 .TE
 
 Assuming a nameref variable for
@@ -61,13 +70,10 @@ set
 to an integer value based on how the left and right rows should be
 ordered.
 .TS
-tab(|) center;
+tab(|);
 l l.
 left before right|set comp_result to a negative integer
 right before left|set comp_result to a positive integer
 left equals right|set comp_result to 0
 .TE
-.PP
-Refer to
-.B SORT EXAMPLE
-below.
+.RE

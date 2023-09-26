@@ -17,7 +17,7 @@ If the callback function return non-0, the row walk
 will be terminated.
 .PP
 .proto_walk_rows
-.RS 4
+.RS 7
 .arg_handle
 .TP
 .I callback
@@ -50,18 +50,45 @@ optional extra arguments, as needed, to be transmitted to the
 .I callback_name
 function for each row.
 .RE
+.TP
+.B Callback Function
+.RS 7
 .PP
 The callback function will get the following arguments:
 .TS
 tab(|) center;
-l l.
-\(Do1|the name of array containing a row's contents
-\(Do2|integer row index in source table
-\(Do3|the name of the row's source \fBate\fP handle
-\(Do4|integer row index in sorting table
-\&....|optional extra arguments passed to the \fBwalk_rows\fP action.
+l lx.
+\(Do1|T{
+.B row array name
+of the array containing a copy of the row's contents as found
+in the source table
+T}
+\(Do2|T{
+.B row index
+of the data in the source table
+T}
+\(Do3|T{
+.B table name
+where the row data was taken
+T}
+\(Do4|T{
+.BR "sorted index" ,
+the index of the row in the sorting key
+T}
+\&...|T{
+optional
+.B extra arguments
+passed to the \fBwalk_rows\fP action.
+T}
 .TE
 .PP
-Refer to
-.BR "WALK_ROWS EXAMPLES " and " FORMATTED TABLE EXAMPLE"
-below.
+The first three arguments provide the information needed to call the
+.B put_row
+action to update the source table with changed row contents.
+.PP
+The fourth argument is the index value of the row in the sorted order,
+which may be different from the source table order if the
+.B -k
+option is used.
+.PP
+.RE
