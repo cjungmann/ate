@@ -117,16 +117,24 @@ int pwla_walk_rows(ARG_LIST *alist)
    /***  Make a reusable WORD_LIST for calling the callback function ***/
 
    WORD_LIST *cb_args = NULL, *cb_tail = NULL;
-   // first argument is the array name
+   // #1 argument is the array name
    WL_APPEND(cb_tail, array_var->name);
    cb_args = cb_tail;
-   // second argument is row_index
+
+   // #2 argument is row_index
    // setup row_index WORD_DESC with a buffer we can change each iteration:
    char row_number_buffer[32];
    WL_APPEND(cb_tail, "");
    cb_tail->word->word = row_number_buffer;
-   // third argument is the source handle's name
+
+   // #3 argument is the source handle's name
    WL_APPEND(cb_tail, handle_name);
+
+   // #4 argument is order index, may be same as row_index:
+   char order_number_buffer[32];
+   WL_APPEND(cb_tail, "");
+   cb_tail->word->word = order_number_buffer;
+
    // add extra parameters:
    ARG_LIST *extra = alist->next;
    while(extra)
@@ -139,7 +147,7 @@ int pwla_walk_rows(ARG_LIST *alist)
    ARRAY_ELEMENT **ae_end = ae_ptr + count_rows;
 
    // Track current row index for callback parameter
-   int row_ndx, cur_ndx = start_ndx;
+   int row_ndx, order_ndx, cur_ndx = start_ndx;
    ARRAY_ELEMENT *ae_row;
 
    int data_row_size = data_ahead ? data_ahead->row_size : walker_ahead->row_size;
@@ -150,6 +158,9 @@ int pwla_walk_rows(ARG_LIST *alist)
       {
          const char *ndx_str = (*ae_ptr)->next->value;
 
+         // In ordered-walk, we'll need to
+         // set both indexes individually:
+         order_ndx = cur_ndx;
          if (!get_int_from_string(&row_ndx, ndx_str))
          {
             ate_register_error("field value '%s' in table '%s' is not a key row index in walk_rows",
@@ -161,11 +172,16 @@ int pwla_walk_rows(ARG_LIST *alist)
       else
       {
          ae_row = *ae_ptr;
-         row_ndx = cur_ndx++;
+         // natural order-walk, order and row index the same:
+         order_ndx = row_ndx = cur_ndx;
       }
 
-      // Setup row_index WORD_DESC value for this iteration
+      // For next iteration
+      ++cur_ndx;
+
+      // Setup row_index and order_index WORD_DESC values for this iteration
       snprintf(row_number_buffer, sizeof(row_number_buffer), "%d", row_ndx);
+      snprintf(order_number_buffer, sizeof(order_number_buffer), "%d", order_ndx);
 
       // Fill the target row with current row contents
       if ((retval = update_row_array(array_var, ae_row, data_row_size)))
