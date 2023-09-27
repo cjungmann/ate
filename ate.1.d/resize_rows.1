@@ -16,3 +16,13 @@ A row size of zero or less will not be honored.
 .TP
 .I new_row_size
 is the requested new row size
+.TP
+.B WARNING
+Be aware that this function modifies the underlying array.
+It may be best to avoid the single-step table creation when the
+table may be resized.
+Use the
+.BR append_data " and " index_rows
+after creating an empty table with
+.BR declare .
+
