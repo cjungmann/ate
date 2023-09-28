@@ -41,8 +41,12 @@ int pwla_sort_qsort_callback(const void *left, const void *right, void *arg)
    // Prepre the rows for comparison
    ARRAY_ELEMENT *left_el = *(ARRAY_ELEMENT**)left;
    ARRAY_ELEMENT *right_el = *(ARRAY_ELEMENT**)right;
-   assert(EXECUTION_SUCCESS == update_row_array(data->left_var, left_el, data->row_size));
-   assert(EXECUTION_SUCCESS == update_row_array(data->right_var, right_el, data->row_size));
+
+   int rval;
+
+   if ((rval=update_row_array(data->left_var, left_el, data->row_size))
+       || (rval=update_row_array(data->right_var, right_el, data->row_size)))
+      assert(rval==EXECUTION_SUCCESS);
 
    invoke_shell_function_word_list(data->func_var, data->args);
 
@@ -95,7 +99,7 @@ int pwla_sort(ARG_LIST *alist)
 
    if (new_handle_name == NULL)
    {
-      ate_register_error("no handle name provided for sort result in 'sort'");
+      ate_register_missing_argument("new handle name", "sort");
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -132,6 +136,8 @@ int pwla_sort(ARG_LIST *alist)
       cb_args
    };
 
+   retval = EXECUTION_FAILURE;
+
    AHEAD *newhead = NULL;
    if (ate_create_indexed_head(&newhead, source_head->array, source_head->row_size))
    {
@@ -142,17 +148,15 @@ int pwla_sort(ARG_LIST *alist)
               (void*)&pkg);
 
       SHELL_VAR *new_handle_var = NULL;
-      if ((retval = create_handle_by_name_or_fail(&new_handle_var,
-                                                   new_handle_name,
-                                                   newhead,
-                                                   "sort")))
+      if (ate_install_head_in_handle(&new_handle_var,
+                                     new_handle_name,
+                                     newhead))
+         retval = EXECUTION_SUCCESS;
+      else
          xfree(newhead);
    }
    else
-   {
       ate_register_error("failed to create indexed head for handle '%s'", new_handle_name);
-      retval = EXECUTION_FAILURE;
-   }
 
   early_exit:
    if (return_var)
