@@ -139,7 +139,7 @@ int pwla_sort(ARG_LIST *alist)
    retval = EXECUTION_FAILURE;
 
    AHEAD *newhead = NULL;
-   if (ate_create_indexed_head(&newhead, source_head->array, source_head->row_size))
+   if (ate_copy_indexed_head(&newhead, source_head))
    {
       qsort_r(&newhead->rows,
               newhead->row_count,
