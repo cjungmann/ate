@@ -188,6 +188,46 @@ bool ate_create_indexed_head(AHEAD **head, SHELL_VAR *array, int row_size)
 }
 
 /**
+ * @brief Make copy of existing head, especially for sort and make_key
+ *        actions.
+ *
+ * @param "target"  pointer-pointer to which a new AHEAD will be installed
+ * @param "source"  pointer to AHEAD from which we'll copy
+ * @return True: should always work except for a memory error
+ */
+bool ate_copy_indexed_head(AHEAD **target, const AHEAD *source)
+{
+   // Get block memory to hold AHEAD and calculated number
+   // of pointers to ARRAY_ELEMENT for indexed access
+   size_t mem_required = ate_calculate_head_size(source->row_count);
+   AHEAD *temp_head = (AHEAD*)xmalloc(mem_required);
+
+   if (temp_head)
+   {
+      memcpy(temp_head, source, sizeof(AHEAD));
+
+      ARRAY_ELEMENT **e_target = temp_head->rows;
+      ARRAY_ELEMENT* const *e_source = source->rows;
+
+      ARRAY_ELEMENT **end_target = e_target + source->row_count;
+
+      while (e_target < end_target)
+      {
+         *e_target = (ARRAY_ELEMENT *)*e_source;
+
+         ++e_target;
+         ++e_source;
+      }
+
+      *target = temp_head;
+
+      return True;
+   }
+
+   return False;
+}
+
+/**
  * @brief Create new head from dimensions and row heads.
  *
  * This should replace @ref ate_create_head_from_list in order
