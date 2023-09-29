@@ -8,6 +8,8 @@
 #include <shell.h>
 #endif
 
+#define AHEAD_ID "ATE_HANDLE"
+
 /**
  * @defgroup HANDLE_Resources AHEAD and ATE Handle Resources
  *
@@ -35,11 +37,12 @@ typedef enum {
  * block using this signature.
  */
 typedef struct ate_head {
-   const char *typeid;     ///< pointer to string array for confirming att_special type
-   SHELL_VAR *array;       ///< array to which @p row elements will point
-   int row_size;           ///< number of elements in a row
-   int row_count;          ///< number of @p rows elements in structure
-   ARRAY_ELEMENT *rows[];  ///< beginning of array of pointers
+   const char
+      typeid[sizeof(AHEAD_ID)]; ///< embed a string for identity when misused
+   SHELL_VAR *array;            ///< array to which @p row elements will point
+   int row_size;                ///< number of elements in a row
+   int row_count;               ///< number of @p rows elements in structure
+   ARRAY_ELEMENT *rows[];       ///< beginning of array of pointers
 } AHEAD;
 
 /**

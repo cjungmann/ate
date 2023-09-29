@@ -8,8 +8,6 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
-static const char AHEAD_ID[] = "ATE_HANDLE";
-
 /**
  * @brief Identify AHEAD SHELL_VAR
  * @param "var"   SHELL_VAR to be identified
@@ -22,7 +20,7 @@ static const char AHEAD_ID[] = "ATE_HANDLE";
 bool ahead_p(const SHELL_VAR *var)
 {
    if (specialvar_p(var))
-      return (ahead_cell(var))->typeid == AHEAD_ID;
+      return 0==strcmp((ahead_cell(var))->typeid, AHEAD_ID);
 
    return False;
 }
@@ -73,7 +71,7 @@ bool ate_initialize_head(AHEAD *head, SHELL_VAR *array, int row_size)
    {
       ARRAY *parray = array_cell(array);
       memset(head, 0, sizeof(struct ate_head));
-      head->typeid = AHEAD_ID;
+      strcpy((char*)head->typeid, AHEAD_ID);
       head->array = array;
       if (row_size > 0)
       {
@@ -418,7 +416,7 @@ int ate_check_head_integrity(AHEAD *head)
    int retval = EXECUTION_SUCCESS;
 
    // Ensure self-identifies as a AHEAD
-   if (head->typeid != AHEAD_ID)
+   if (0==strcmp(head->typeid, AHEAD_ID))
    {
       ate_register_error("head does not self-identify as ate handle");
       retval = EX_NOTFOUND;
