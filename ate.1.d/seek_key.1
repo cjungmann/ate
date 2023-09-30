@@ -45,6 +45,17 @@ with the
 .B -i
 option.
 .TP
+.B -n
+conduct case-insensitive search by converting search value to
+lower-case.
+This assumes that the key table created by the
+.B make_key
+action contains lower-case key values, presumably by similarly
+including the
+.B -n
+option when running
+.BR make_key .
+.TP
 .B -p
 run search in
 .BR "permissive mode" ,
