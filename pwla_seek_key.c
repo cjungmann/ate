@@ -88,6 +88,7 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *outcome_name = NULL;
    const char *debug_flag = NULL;
    const char *int_sort_flag = NULL;
+   const char *lower_case_flag = NULL;
    const char *permissive_flag = NULL;
    const char *sequential_flag = NULL;
 
@@ -100,6 +101,7 @@ int pwla_seek_key(ARG_LIST *alist)
       { "o",            AL_OPT, &outcome_name},
       { "d",            AL_FLAG, &debug_flag},
       { "i",            AL_FLAG, &int_sort_flag},
+      { "n",            AL_FLAG, &lower_case_flag},
       { "p",            AL_FLAG, &permissive_flag},
       { "s",            AL_FLAG, &sequential_flag },
       { NULL }
@@ -142,6 +144,12 @@ int pwla_seek_key(ARG_LIST *alist)
       retval = EX_USAGE;
       goto early_exit;
    }
+
+   // Const was to protect again overwriting bounds,
+   // changing case preserves char array boundaries, so
+   // for that purpose, I'm casting-away constness.
+   if (lower_case_flag)
+      str_to_lower((char*)search_value);
 
    /**
     * @brief int_sort_flag must be determined before comp_tally_name test

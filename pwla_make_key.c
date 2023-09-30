@@ -44,6 +44,7 @@ int pwla_make_key(ARG_LIST *alist)
    const char *column_index_string = NULL;
    const char *function_name = NULL;
    const char *int_sort_flag = NULL;
+   const char *lower_case_flag = NULL;
    const char *reverse_sort_flag = NULL;
 
    ARG_TARGET walk_rows_targets[] = {
@@ -52,6 +53,7 @@ int pwla_make_key(ARG_LIST *alist)
       { "c",               AL_OPT,  &column_index_string},
       { "f",               AL_OPT,  &function_name},
       { "i",               AL_FLAG, &int_sort_flag},
+      { "n",               AL_FLAG, &lower_case_flag},
       { "r",               AL_FLAG, &reverse_sort_flag},
      { NULL }
    };
@@ -200,6 +202,8 @@ int pwla_make_key(ARG_LIST *alist)
       int row_index = 0;
       int array_index = 0;
 
+      ARRAY_ELEMENT *cur_key = NULL;
+
       while (ae_source < ae_end)
       {
          // Get specified field
@@ -213,7 +217,15 @@ int pwla_make_key(ARG_LIST *alist)
 
          // Write the user's info to the new array:
          snprintf(number_buffer, sizeof(number_buffer), "%d", row_index);
+
+         // Insert key value, convert to lower-case if requested
          array_insert(target_array, array_index++, col->value);
+         if (lower_case_flag)
+         {
+            cur_key = target_array->lastref;
+            str_to_lower(cur_key->value);
+         }
+         // Insert the source table row number:
          array_insert(target_array, array_index++, number_buffer);
 
          ++row_index;
