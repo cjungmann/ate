@@ -25,6 +25,8 @@ bool make_unique_name(char *buffer, int bufflen, const char *stem);
 bool get_int_from_string(int *result, const char *str);
 bool get_long_from_string(long *result, const char *str);
 
+void str_to_lower(char *str);
+
 int set_var_from_int(SHELL_VAR *result, int value);
 int set_var_from_long(SHELL_VAR *result, long value);
 

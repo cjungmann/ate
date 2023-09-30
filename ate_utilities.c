@@ -12,6 +12,7 @@
 extern int execute_command PARAMS((COMMAND *));
 
 #include <stdio.h>
+#include <ctype.h>   // for to_lower
 #include <stdarg.h>
 #include <assert.h>
 
@@ -86,6 +87,19 @@ bool get_long_from_string(long *result, const char *str)
    }
 
    return False;
+}
+
+/**
+ * @brief Simple function to convert string to lower-case
+ * @param "str"   string to be converted
+ */
+void str_to_lower(char *str)
+{
+   while (*str)
+   {
+      *str = tolower(*str);
+      ++str;
+   }
 }
 
 /**
