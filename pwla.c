@@ -107,17 +107,9 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
          {
             cur_target = pwla_find_option_target(target_head, *cur_option);
 
-            if (cur_target == NULL)
-            {
-               // Update the handle without discarding the current argument
-               // (save it for follow-on processing):
-               arg_handle = arg_handle->next;
-               goto skip_argument_increment;
-            }
-
             // Leave if last chance argument parsing and it's an
             // unrecognized option
-            if (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN)
+            if (cur_target == NULL || (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN))
             {
                ate_register_unknown_option(*cur_option);
                return EX_USAGE;
