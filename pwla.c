@@ -73,10 +73,14 @@ ARG_TARGET *pwla_next_arg_target(ARG_TARGET *targets)
  *
  * @param "targets"      array of argument targets
  * @param "args_handle"  simple stack-based linked list of command line arguments
+ * @param "action"       name of current action
  * @param "flags"        for future use, may modify how arguments are discarded
  * @return EXECUTION_SUCCESS if everything went OK, non-zero for any failure.
  */
-int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS flags)
+int process_word_list_args(ARG_TARGET *targets,
+                           ARG_LIST *args_handle,
+                           const char *action,
+                           AL_FLAGS flags)
 {
    ARG_TARGET *target_head = targets;
    ARG_TARGET *cur_target;
@@ -111,7 +115,7 @@ int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS 
             // unrecognized option
             if (cur_target == NULL || (cur_target->type == AL_ARG && flags & AL_NOTIFY_UNKNOWN))
             {
-               ate_register_unknown_option(*cur_option);
+               ate_register_unknown_option(*cur_option, action);
                return EX_USAGE;
             }
 

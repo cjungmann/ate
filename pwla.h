@@ -106,7 +106,10 @@ struct pwla_action_def {
  */
 ARG_TARGET *pwla_find_option_target(ARG_TARGET *targets, char option);
 ARG_TARGET *pwla_next_arg_target(ARG_TARGET *targets);
-int process_word_list_args(ARG_TARGET *targets, ARG_LIST *args_handle, AL_FLAGS flags);
+int process_word_list_args(ARG_TARGET *targets,
+                           ARG_LIST *args_handle,
+                           const char *action,
+                           AL_FLAGS flags);
 
 void dump_targets(ARG_TARGET *targets, const char *action);
 /** @} */
