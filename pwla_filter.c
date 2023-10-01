@@ -19,6 +19,7 @@
  */
 int pwla_filter(ARG_LIST *alist)
 {
+   const char *action_name = "filter";
    const char *handle_name = NULL;
    const char *function_name = NULL;
    const char *new_handle_name = NULL;
@@ -32,26 +33,26 @@ int pwla_filter(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(filter_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(filter_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "filter")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *callback_var;
    if ((retval = get_function_by_name_or_fail(&callback_var,
                                               function_name,
-                                              "filter")))
+                                              action_name)))
       goto early_exit;
 
    retval = EX_USAGE;
 
    if (new_handle_name == NULL)
    {
-      ate_register_missing_argument("new handle name", "filter");
+      ate_register_missing_argument("new handle name", action_name);
       goto early_exit;
    }
 

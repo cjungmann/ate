@@ -20,6 +20,7 @@
  */
 int pwla_walk_rows(ARG_LIST *alist)
 {
+   const char *action_name = "walk_rows";
    const char *handle_name = NULL;
    const char *function_name = NULL;
    const char *key_handle_name = NULL;
@@ -37,7 +38,7 @@ int pwla_walk_rows(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(walk_rows_targets, alist, 0)))
+   if ((retval = process_word_list_args(walk_rows_targets, alist, action_name, 0)))
        goto early_exit;
 
    SHELL_VAR *handle_key_var = NULL;
@@ -45,14 +46,14 @@ int pwla_walk_rows(ARG_LIST *alist)
 
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "walk_rows")))
+                                                action_name)))
       goto early_exit;
 
    if (key_handle_name)
    {
       if ((retval = get_handle_var_by_name_or_fail(&handle_key_var,
                                                    key_handle_name,
-                                                   "walk_rows")))
+                                                   action_name)))
          goto early_exit;
    }
 
@@ -70,12 +71,12 @@ int pwla_walk_rows(ARG_LIST *alist)
    SHELL_VAR *function_var = NULL;
    if ((retval = get_function_by_name_or_fail(&function_var,
                                               function_name,
-                                              "walk_rows")))
+                                              action_name)))
       goto early_exit;
 
    // Array to pass to callback
    SHELL_VAR *array_var;
-   if ((retval = create_array_var_by_stem(&array_var, "ATE_WALKING_ROW_", "walk_rows")))
+   if ((retval = create_array_var_by_stem(&array_var, "ATE_WALKING_ROW_", action_name)))
       goto early_exit;
 
    retval = EX_USAGE;
@@ -96,7 +97,7 @@ int pwla_walk_rows(ARG_LIST *alist)
       }
       else
       {
-         ate_register_not_an_int(start_ndx_str, "walk_rows");
+         ate_register_not_an_int(start_ndx_str, action_name);
          goto early_exit;
       }
    }
@@ -105,7 +106,7 @@ int pwla_walk_rows(ARG_LIST *alist)
    {
       if (! get_int_from_string(&count_rows, count_rows_str))
       {
-         ate_register_not_an_int(start_ndx_str, "walk_rows");
+         ate_register_not_an_int(start_ndx_str, action_name);
          goto early_exit;
       }
    }
@@ -163,8 +164,8 @@ int pwla_walk_rows(ARG_LIST *alist)
          order_ndx = cur_ndx;
          if (!get_int_from_string(&row_ndx, ndx_str))
          {
-            ate_register_error("field value '%s' in table '%s' is not a key row index in walk_rows",
-                               ndx_str, key_handle_name);
+            ate_register_error("field value '%s' in table '%s' is not a key row index in %s",
+                               ndx_str, key_handle_name, action_name);
             goto early_exit;
          }
          ae_row = data_ahead->rows[row_ndx];

@@ -20,6 +20,7 @@
  */
 int pwla_declare(ARG_LIST *alist)
 {
+   const char *action_name = "declare";
    const char *handle_name = NULL;
    const char *row_size_name = NULL;
    const char *array_name = NULL;
@@ -31,7 +32,7 @@ int pwla_declare(ARG_LIST *alist)
       { NULL }
    };
 
-   int retval = process_word_list_args(declare_targets, alist, AL_NO_OPTIONS);
+   int retval = process_word_list_args(declare_targets, alist, action_name, AL_NO_OPTIONS);
    // dump_targets(declare_targets, "declare");
 
    if (retval != EXECUTION_SUCCESS)
@@ -58,7 +59,7 @@ int pwla_declare(ARG_LIST *alist)
 
    if (array_name)
    {
-      retval = get_array_var_by_name_or_fail(&array_var, array_name, "declare");
+      retval = get_array_var_by_name_or_fail(&array_var, array_name, action_name);
       if (retval)
          goto early_exit;
 
@@ -72,7 +73,7 @@ int pwla_declare(ARG_LIST *alist)
    }
    else
    {
-      retval = create_array_var_by_stem(&new_array, "ATE_HOSTED_ARRAY_", "declare");
+      retval = create_array_var_by_stem(&new_array, "ATE_HOSTED_ARRAY_", action_name);
       if (retval)
          goto early_exit;
       else
@@ -85,7 +86,7 @@ int pwla_declare(ARG_LIST *alist)
    else
    {
       retval = EXECUTION_FAILURE;
-      ate_register_error("failed to create handle in action 'declare'");
+      ate_register_error("failed to create handle in action '%s'", action_name);
       if (new_array)
          dispose_variable(new_array);
    }
@@ -105,20 +106,21 @@ int pwla_declare(ARG_LIST *alist)
  */
 int pwla_append_data(ARG_LIST *alist)
 {
+   const char *action_name = "append_data";
    const char *handle_name = NULL;
    ARG_TARGET append_data_targets[] = {
       { "handle_name", AL_ARG, &handle_name },
       { NULL }
    };
 
-   int retval = process_word_list_args(append_data_targets, alist, AL_NO_OPTIONS);
+   int retval = process_word_list_args(append_data_targets, alist, action_name, AL_NO_OPTIONS);
    if (retval)
       goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "append_data")))
+                                                action_name)))
       goto early_exit;
 
    AHEAD *ahead = ahead_cell(handle_var);
@@ -151,7 +153,7 @@ int pwla_append_data(ARG_LIST *alist)
 
    if (cptr > values)
    {
-      ate_register_error("incomplete final row was ignored in append_data");
+      ate_register_error("incomplete final row was ignored in '%s'", action_name);
       retval = EX_USAGE;
    }
 
@@ -175,6 +177,7 @@ int pwla_append_data(ARG_LIST *alist)
  */
 int pwla_index_rows(ARG_LIST *alist)
 {
+   const char *action_name = "index_rows";
    const char *handle_name = NULL;
    ARG_TARGET index_rows_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
@@ -183,13 +186,13 @@ int pwla_index_rows(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(index_rows_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(index_rows_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "index_rows")))
+                                                action_name)))
       goto early_exit;
 
    // Do the job
@@ -203,7 +206,7 @@ int pwla_index_rows(ARG_LIST *alist)
    }
    else
    {
-      ate_register_error("unexpected error in action 'index_rows'");
+      ate_register_error("unexpected error in action '%s'", action_name);
       retval = EXECUTION_FAILURE;
    }
 
@@ -225,6 +228,7 @@ int pwla_index_rows(ARG_LIST *alist)
  */
 int pwla_get_row_count(ARG_LIST *alist)
 {
+   const char *action_name = "get_row_count";
    const char *handle_name = NULL;
    const char *value_name = NULL;
    const char *wrong_type = NULL;
@@ -238,12 +242,12 @@ int pwla_get_row_count(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(get_row_count_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_row_count_targets, alist, action_name, 0)))
        goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('a', "get_row_count");
+      ate_register_wrong_report_type('a', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -251,14 +255,14 @@ int pwla_get_row_count(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "get_row_count")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "get_row_count")))
+                                                     action_name)))
       goto early_exit;
 
    // The arguments are secured, execute the action:
@@ -275,6 +279,7 @@ int pwla_get_row_count(ARG_LIST *alist)
  */
 int pwla_get_row_size(ARG_LIST *alist)
 {
+   const char *action_name = "get_row_size";
    const char *handle_name = NULL;
    const char *value_name = NULL;
    const char *wrong_type = NULL;
@@ -288,12 +293,12 @@ int pwla_get_row_size(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(get_row_size_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_row_size_targets, alist, action_name, 0)))
        goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('a', "get_row_size");
+      ate_register_wrong_report_type('a', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -301,14 +306,14 @@ int pwla_get_row_size(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "get_row_size")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "get_row_size")))
+                                                     action_name)))
       goto early_exit;
 
    // The arguments are secured, execute the action:
@@ -330,6 +335,7 @@ int pwla_get_row_size(ARG_LIST *alist)
  */
 int pwla_get_array_name(ARG_LIST *alist)
 {
+   const char *action_name = "get_array_name";
    const char *handle_name = NULL;
    const char *value_name = NULL;
    const char *wrong_type = NULL;
@@ -343,12 +349,12 @@ int pwla_get_array_name(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(get_array_name_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_array_name_targets, alist, action_name, 0)))
        goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('a', "get_array_name");
+      ate_register_wrong_report_type('a', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -356,14 +362,14 @@ int pwla_get_array_name(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "get_array_name")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "get_array_name")))
+                                                     action_name)))
       goto early_exit;
 
    // The arguments are secured, execute the action:
@@ -385,6 +391,7 @@ int pwla_get_array_name(ARG_LIST *alist)
  */
 int pwla_get_field_sizes(ARG_LIST *alist)
 {
+   const char *action_name = "get_field_sizes";
    const char *handle_name = NULL;
    const char *array_name = NULL;
    const char *wrong_type = NULL;
@@ -398,12 +405,12 @@ int pwla_get_field_sizes(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(get_field_sizes_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_field_sizes_targets, alist, action_name, 0)))
        goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('v', "get_field_sizes");
+      ate_register_wrong_report_type('v', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -411,14 +418,14 @@ int pwla_get_field_sizes(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "get_field_sizes")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *array_var;
    if ((retval = create_array_var_by_given_or_default_name(&array_var,
                                                            array_name,
                                                            DEFAULT_ARRAY_NAME,
-                                                           "get_field_sizes")))
+                                                           action_name)))
       goto early_exit;
 
    // Begin work:
@@ -469,6 +476,7 @@ int pwla_get_field_sizes(ARG_LIST *alist)
  */
 int pwla_get_row(ARG_LIST *alist)
 {
+   const char *action_name = "get_row";
    const char *handle_name = NULL;
    const char *array_name = NULL;
    const char *row_index_str = NULL;
@@ -484,12 +492,12 @@ int pwla_get_row(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(get_row_targets, alist, 0)))
+   if ((retval = process_word_list_args(get_row_targets, alist, action_name, 0)))
        goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('v', "get_row");
+      ate_register_wrong_report_type('v', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -497,30 +505,43 @@ int pwla_get_row(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "get_row")))
+                                                action_name)))
       goto early_exit;
+
+   AHEAD *ahead = ahead_cell(handle_var);
 
    SHELL_VAR *array_var;
    if ((retval = create_array_var_by_given_or_default_name(&array_var,
                                                            array_name,
                                                            DEFAULT_ARRAY_NAME,
-                                                           "get_row")))
+                                                           action_name)))
       goto early_exit;
 
-   AHEAD *ahead = ahead_cell(handle_var);
+   retval = EX_USAGE;
+
+   // Validate requested row index
    int row_index = -1;
-   if (row_index_str && get_int_from_string(&row_index, row_index_str))
+   if (row_index_str)
    {
-      if (row_index < 0 || row_index >= ahead->row_count)
+      if (get_int_from_string(&row_index, row_index_str))
       {
-         ate_register_error("out-of-range row index value (%d out of %d)",
-                            row_index, ahead->row_count);
+         if (row_index < 0 || row_index >= ahead->row_count)
+         {
+            ate_register_error("out-of-range row index value (%d out of %d)",
+                               row_index, ahead->row_count);
+            goto early_exit;
+         }
+      }
+      else
+      {
+         ate_register_error("failed to inteprest '%s' as a row index in '%s'",
+                            row_index_str, action_name);
          goto early_exit;
       }
    }
    else
    {
-      ate_register_error("missing or bad row index value in 'get_row'");
+      ate_register_error("missing row index in '%s'", action_name);
       goto early_exit;
    }
 
@@ -538,7 +559,7 @@ int pwla_get_row(ARG_LIST *alist)
       retval = EXECUTION_SUCCESS;
    else
    {
-      ate_register_error("incomplete row read in 'get_row'");
+      ate_register_error("incomplete row read in '%s'", action_name);
       retval = EXECUTION_FAILURE;
    }
 
@@ -559,6 +580,7 @@ int pwla_get_row(ARG_LIST *alist)
  */
 int pwla_put_row(ARG_LIST *alist)
 {
+   const char *action_name = "put_row";
    const char *handle_name = NULL;
    const char *row_index_str = NULL;
    const char *row_name = NULL;
@@ -572,20 +594,20 @@ int pwla_put_row(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(put_row_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(put_row_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "put_row")))
+                                                action_name)))
       goto early_exit;
 
    // Need ahead of time to validate values
    AHEAD *ahead = ahead_cell(handle_var);
 
    SHELL_VAR *array_var = NULL;
-   if ((retval = get_array_var_by_name_or_fail(&array_var, row_name, "put_row")))
+   if ((retval = get_array_var_by_name_or_fail(&array_var, row_name, action_name)))
       goto early_exit;
 
    retval = EX_USAGE;
@@ -603,18 +625,27 @@ int pwla_put_row(ARG_LIST *alist)
 
    // Validate requested row index
    int row_index = -1;
-   if (row_index_str && get_int_from_string(&row_index, row_index_str))
+   if (row_index_str)
    {
-      if (row_index < 0 || row_index >= ahead->row_count)
+      if (get_int_from_string(&row_index, row_index_str))
       {
-         ate_register_error("out-of-range row index value (%d out of %d)",
-                            row_index, ahead->row_count);
+         if (row_index < 0 || row_index >= ahead->row_count)
+         {
+            ate_register_error("out-of-range row index value (%d out of %d)",
+                               row_index, ahead->row_count);
+            goto early_exit;
+         }
+      }
+      else
+      {
+         ate_register_error("failed to inteprest '%s' as a row index in '%s'",
+                            row_index_str, action_name);
          goto early_exit;
       }
    }
    else
    {
-      ate_register_error("missing or bad row index value in 'get_row'");
+      ate_register_error("missing row index in '%s'", action_name);
       goto early_exit;
    }
 
@@ -652,6 +683,7 @@ int pwla_put_row(ARG_LIST *alist)
  */
 int pwla_resize_rows(ARG_LIST *alist)
 {
+   const char *action_name = "resize_rows";
    const char *handle_name = NULL;
    const char *new_row_size_str = NULL;
 
@@ -663,13 +695,13 @@ int pwla_resize_rows(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(resize_rows_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(resize_rows_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "resize_rows")))
+                                                action_name)))
       goto early_exit;
 
    retval = EX_USAGE;
@@ -677,7 +709,7 @@ int pwla_resize_rows(ARG_LIST *alist)
 
    if (!new_row_size_str)
    {
-      ate_register_error("missing row size argument for action 'resize_rows'");
+      ate_register_error("missing row size argument for action '%s'", action_name);
       goto early_exit;
    }
 
@@ -686,13 +718,13 @@ int pwla_resize_rows(ARG_LIST *alist)
    {
       if (new_row_size < 1)
       {
-         ate_register_error("invalid row size of %d requested in action 'resize_rows'", new_row_size);
+         ate_register_error("invalid row size of %d requested in action '%s'", new_row_size, action_name);
          goto early_exit;
       }
    }
    else
    {
-      ate_register_not_an_int(new_row_size_str, "resize_rows");
+      ate_register_not_an_int(new_row_size_str, action_name);
       goto early_exit;
    }
 
@@ -725,6 +757,7 @@ int pwla_resize_rows(ARG_LIST *alist)
  */
 int pwla_reindex_elements(ARG_LIST *alist)
 {
+   const char *action_name = "reindex_elements";
    const char *handle_name = NULL;
 
    ARG_TARGET resize_rows_targets[] = {
@@ -734,13 +767,13 @@ int pwla_reindex_elements(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(resize_rows_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(resize_rows_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "resize_rows")))
+                                                action_name)))
       goto early_exit;
 
    AHEAD *ahead = ahead_cell(handle_var);

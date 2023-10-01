@@ -65,6 +65,7 @@ int pwla_sort_qsort_callback(const void *left, const void *right, void *arg)
  */
 int pwla_sort(ARG_LIST *alist)
 {
+   const char *action_name = "sort";
    const char *handle_name = NULL;
    const char *callback_name = NULL;
    const char *new_handle_name = NULL;
@@ -82,34 +83,34 @@ int pwla_sort(ARG_LIST *alist)
    // will be checked for non-NULL upon an early exit
    SHELL_VAR *return_var = NULL, *left_var = NULL, *right_var = NULL;
 
-   if ((retval = process_word_list_args(sort_targets, alist, AL_NO_OPTIONS)))
+   if ((retval = process_word_list_args(sort_targets, alist, action_name, AL_NO_OPTIONS)))
        goto early_exit;
 
    SHELL_VAR *handle_var = NULL;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "sort")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *function_var = NULL;
    if ((retval = get_function_by_name_or_fail(&function_var,
                                               callback_name,
-                                              "sort")))
+                                              action_name)))
       goto early_exit;
 
    if (new_handle_name == NULL)
    {
-      ate_register_missing_argument("new handle name", "sort");
+      ate_register_missing_argument("new handle name", action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
 
    const char *stem = "QSORT_ROW_STEM_";
-   if ((retval = create_var_by_stem(&return_var, stem, "sort")))
+   if ((retval = create_var_by_stem(&return_var, stem, action_name)))
       goto early_exit;
-   if ((retval = create_array_var_by_stem(&left_var, stem, "sort")))
+   if ((retval = create_array_var_by_stem(&left_var, stem, action_name)))
       goto early_exit;
-   if ((retval = create_array_var_by_stem(&right_var, stem, "sort")))
+   if ((retval = create_array_var_by_stem(&right_var, stem, action_name)))
       goto early_exit;
 
    // Prepare a WORD_LIST for the qsort callback to use

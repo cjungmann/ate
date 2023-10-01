@@ -15,6 +15,7 @@
  */
 int pwla_template(ARG_LIST *alist)
 {
+   const char *action_name = "template";
    const char *handle_name = NULL;
    const char *value_name = NULL;
    const char *array_name = NULL;
@@ -30,7 +31,7 @@ int pwla_template(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(template_targets, alist, 0)))
+   if ((retval = process_word_list_args(template_targets, alist, action_name, 0)))
        goto early_exit;
 
    // Gotta do this (with a couple of exceptions):
@@ -38,7 +39,7 @@ int pwla_template(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "template")))
+                                                action_name)))
       goto early_exit;
 
    // For actions that return a discrete (single) value
@@ -46,7 +47,7 @@ int pwla_template(ARG_LIST *alist)
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "template")))
+                                                     action_name)))
       goto early_exit;
 
    // For actions that return an array value
@@ -54,7 +55,7 @@ int pwla_template(ARG_LIST *alist)
    if ((retval = create_array_var_by_given_or_default_name(&array_var,
                                                            array_name,
                                                            DEFAULT_ARRAY_NAME,
-                                                           "template")))
+                                                           action_name)))
       goto early_exit;
 
    retval = EX_USAGE;
@@ -67,13 +68,13 @@ int pwla_template(ARG_LIST *alist)
    }
    else
    {
-      ate_register_not_an_int(start_row_str, "template");
+      ate_register_not_an_int(start_row_str, action_name);
       goto early_exit;
    }
 
    // For actions that create an array for callback functions
    SHELL_VAR *new_array = NULL;
-   if ((retval = create_array_var_by_stem(&new_array, "ATE_USER_ARRAY_", "template")))
+   if ((retval = create_array_var_by_stem(&new_array, "ATE_USER_ARRAY_", action_name)))
       goto early_exit;
 
    // Use the values aquired above

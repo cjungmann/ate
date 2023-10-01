@@ -39,6 +39,7 @@ int pwla_make_key_qsort_callback(const void *left, const void *right, void *sort
  */
 int pwla_make_key(ARG_LIST *alist)
 {
+   const char *action_name = "make_key";
    const char *handle_name = NULL;
    const char *new_handle_name = NULL;
    const char *column_index_string = NULL;
@@ -60,13 +61,13 @@ int pwla_make_key(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(walk_rows_targets, alist, 0)))
+   if ((retval = process_word_list_args(walk_rows_targets, alist, action_name, 0)))
        goto early_exit;
 
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "make_key")))
+                                                action_name)))
       goto early_exit;
 
    AHEAD *ahead = ahead_cell(handle_var);
@@ -74,7 +75,7 @@ int pwla_make_key(ARG_LIST *alist)
    SHELL_VAR *new_handle_var = NULL;
    if ((retval = create_special_var_by_name(&new_handle_var,
                                             new_handle_name,
-                                            "make_key")))
+                                            action_name)))
       goto early_exit;
 
    // Fail only if user specified a function that can't be found:
@@ -82,7 +83,7 @@ int pwla_make_key(ARG_LIST *alist)
    if (function_name
        && ((retval = get_function_by_name_or_fail(&function_var,
                                                   function_name,
-                                                  "make_key"))))
+                                                  action_name))))
       goto early_exit;
 
    // Set sorting function to string or integer sort,
@@ -123,13 +124,13 @@ int pwla_make_key(ARG_LIST *alist)
       SHELL_VAR *cb_return = NULL;
       SHELL_VAR *cb_row = NULL;
 
-      if ((retval = create_var_by_stem(&cb_return, MI_STEM, "make_key")))
+      if ((retval = create_var_by_stem(&cb_return, MI_STEM, action_name)))
          goto early_exit;
 
-      if ((retval = create_array_var_by_stem(&cb_row, MI_STEM, "make_key")))
+      if ((retval = create_array_var_by_stem(&cb_row, MI_STEM, action_name)))
          goto early_exit;
 
-      if ((retval = create_array_var_by_stem(&handle_array, MI_STEM, "make_key")))
+      if ((retval = create_array_var_by_stem(&handle_array, MI_STEM, action_name)))
          goto early_exit;
 
       // Make WORD_LIST for invoking callback function
@@ -182,18 +183,18 @@ int pwla_make_key(ARG_LIST *alist)
          {
             if (column_index < 0 || column_index >= ahead->row_size)
             {
-               ate_register_error("requested column %d is out of range in make_key", column_index);
+               ate_register_error("requested column %d is out of range in %s", column_index, action_name);
                goto early_exit;
             }
          }
          else
          {
-            ate_register_error("failed to convert '%s' to an integer in make_key", column_index_string);
+            ate_register_error("failed to convert '%s' to an integer in %s", column_index_string, action_name);
             goto early_exit;
          }
       }
 
-      if ((retval = create_array_var_by_stem(&handle_array, MI_STEM, "make_key")))
+      if ((retval = create_array_var_by_stem(&handle_array, MI_STEM, action_name)))
          goto early_exit;
 
       ARRAY *target_array = array_cell(handle_array);
@@ -252,7 +253,7 @@ int pwla_make_key(ARG_LIST *alist)
    }
    else
    {
-      ate_register_error("unexpected failure indexing a new handle in 'make_key'");
+      ate_register_error("unexpected failure indexing a new handle in '%s'", action_name);
       retval = EXECUTION_FAILURE;
    }
 

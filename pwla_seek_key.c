@@ -80,6 +80,7 @@ int debug_comp(const char *left, const char *right)
  */
 int pwla_seek_key(ARG_LIST *alist)
 {
+   const char *action_name = "seek_key";
    const char *handle_name = NULL;
    const char *search_value = NULL;
    const char *value_name = NULL;
@@ -107,13 +108,13 @@ int pwla_seek_key(ARG_LIST *alist)
       { NULL }
    };
 
-   int retval = process_word_list_args(append_data_targets, alist, 0);
+   int retval = process_word_list_args(append_data_targets, alist, action_name, 0);
    if (retval)
       goto early_exit;
 
    if (wrong_type)
    {
-      ate_register_wrong_report_type('a', "seek_key");
+      ate_register_wrong_report_type('a', action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -121,26 +122,26 @@ int pwla_seek_key(ARG_LIST *alist)
    SHELL_VAR *handle_var;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
-                                                "seek_key")))
+                                                action_name)))
       goto early_exit;
 
    SHELL_VAR *value_var;
    if ((retval = create_var_by_given_or_default_name(&value_var,
                                                      value_name,
                                                      DEFAULT_VALUE_NAME,
-                                                     "seek_key")))
+                                                     action_name)))
       goto early_exit;
 
    SHELL_VAR *outcome_var;
    if ((retval = create_var_by_given_or_default_name(&outcome_var,
                                                      outcome_name,
                                                      DEFAULT_OUTCOME_NAME,
-                                                     "seek_key")))
+                                                     action_name)))
       goto early_exit;
 
    if (search_value == NULL)
    {
-      ate_register_missing_argument("search_value", "seek_key");
+      ate_register_missing_argument("search_value", action_name);
       retval = EX_USAGE;
       goto early_exit;
    }
@@ -175,7 +176,7 @@ int pwla_seek_key(ARG_LIST *alist)
       if ((retval = create_var_by_given_or_default_name(&tally_var,
                                                         comp_tally_name,
                                                         NULL,
-                                                        "seek_key")))
+                                                        action_name)))
          goto early_exit;
 
       pcomp = tally_comp;
