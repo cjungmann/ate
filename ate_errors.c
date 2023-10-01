@@ -53,9 +53,9 @@ void ate_register_error(const char *format, ...)
    }
 }
 
-void ate_register_unknown_option(char option)
+void ate_register_unknown_option(char option, const char *action_name)
 {
-   ate_register_error("option '-%c' is not recognized", option);
+   ate_register_error("option '-%c' is not recognized in action '%s'", option, action_name);
 }
 
 void ate_register_wrong_report_type(char option, const char *action)
