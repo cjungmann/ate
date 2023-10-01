@@ -114,6 +114,7 @@ int pwla_list_actions(ARG_LIST *alist)
  */
 int pwla_show_action(ARG_LIST *alist)
 {
+   const char *action_name = "show_action";
    const char *desired_action = NULL;
    ARG_TARGET filter_targets[] = {
       { "action_name",     AL_ARG, &desired_action },
@@ -122,7 +123,7 @@ int pwla_show_action(ARG_LIST *alist)
 
    int retval;
 
-   if ((retval = process_word_list_args(filter_targets, alist, 0)))
+   if ((retval = process_word_list_args(filter_targets, alist, action_name, 0)))
        goto early_exit;
 
    struct pwla_action_def *ptr = pwla_actions;
