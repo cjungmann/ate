@@ -13,6 +13,14 @@ The key table is intended for use by the
 .B seek_key
 action to conduct fast binary searches and enable ISAM (indexed
 sequential action method) access to the rows of the source table.
+.PP
+The key table can also be passed to
+.B walk_rows
+with the
+.B -k
+option to use the key order for calling the
+.B walk_rows
+callback function.
 .arg_handle
 .TP
 .I new_handle_name
@@ -37,12 +45,10 @@ This option will be ignored if the
 .B -f
 option is also used.
 .TP
-.BI "-f " set_key_callback
+.BI "-f " key_value_callback
 is called by
 .B make_key
-for each row to get a computed key value.  See
-.B SET KEY FUNCTION
-below.
+for each row to get a computed key value.
 .IP
 This option takes precedence over the
 .B -c
@@ -50,61 +56,43 @@ option.
 .TP
 .RI [ ... ]
 optional extra arguments, as needed, to be transmitted to the
-.I set_key_callback
+.I key_value_callback
 for each row.
 .PP
 .TP
-.B SET KEY FUNCTION
-tells
-.B make_key
-to call the script function named by the
-.I set_key_callback
-argument for each row of the source table to compute the key value
-to be used for the row.
-.IP
-The script function will receive the following arguments from
-.BR make_key :
+.B Key Value Callback Function
+The
+.B key_value_callback
+function, if specified with the
+.B -f
+option, should be a script function that will be called for each
+table row to request a constructed value to be used as the row's key.
 .IP
 The callback function will receive the following arguments:
-.RS 8
 .TS
 tab(|);
 l lx.
 \(Do1|T{
-use with nameref variable to that will be used to return the
-computed key value for the row.
+a
+.B result variable
+name for a nameref variable to which the constructed key value will
+be returned.
 T}
 \(Do2|T{
-use with nameref variable to access a copy of the current row from
-the source table.
+a
+.B row array name
+for a nameref variable containing a copy of the row's contents to
+be used to construct the key value.
 T}
 \&...|T{
-optional extra arguments submitted to the action
-.BR make_key .
+.B extra arguments
+will follow
+.I $2
+as provided to the
+.B make_key
+action to aid with constructing the key value.
 T}
 .TE
-.RE
 .IP
-Here is a simple example of a
-.IR set_key_callback :
-
-.EX
-set_key_callback()
-{
-   local -n skf_keyval=\(dq\(Do1\(dq
-   local -n skf_row=\(dq\(Do2\(dq
-
-   # make lower-case for case-insensitive searches
-   sfk_keyval=\(dq\(Do{skf_row[0],,}\(dq
-}
-.EE
-.PP
-Refer to the
-.B SEEK_KEY EXAMPLE
-below.
-.PP
-See the
-.B SEEK_KEY
-action above and the
-.B SEEK_KEY EXAMPLE
-below.
+When key values have all been collected, the key table will be sorted
+on the key values.

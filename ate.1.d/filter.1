@@ -8,7 +8,7 @@ Create a new handle on the array with a subset of rows, as determined
 by a callback function.
 .PP
 .proto_filter
-.RS 4
+.RS 7
 .arg_handle
 .TP
 .I selector_callback
@@ -27,15 +27,30 @@ optional extra arguments, as needed, to be transmitted to the
 .I selector_callback
 function for each row.
 .RE
-.PP
-The callback function will get the following arguments:
+.TP
+.B Selector Callback Function
+The
+.B selector_callback
+script function will be called for each row of the table to determine
+whether or not the row should be included in the filtered table.
+.IP
+The
+.I selector_callback
+function will be called with the following arguments:
 .TS
-tab(|) center;
-l l.
-\(Do1|name of array with a row's contents
-\&....|extra arguments passed to the \fBfilter\fP action.
+tab(|);
+l lx.
+\(Do1|T{
+.B row's contents
+have been copied to an array whose name is in the
+.I $1
+argument.
+T}
+\&....|T{
+.B extra arguments
+passed to the \fBfilter\fP action.
+T}
 .TE
-.PP
-Refer to the
-.B FILTER EXAMPLE
-below.
+.IP
+Return zero (0) if the row should be included in the filtered list,
+and a non-zero value to refuse the row.
