@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+declare -A action_args
+
+declare -A action_desc=(
+    list_actions     "show list of available actions"
+    show_action      "show usage information for given action"
+    "declare"        "initialize a new table"
+    append_data      "add data to the table"
+    index_rows       "create new index to table rows"
+    get_row_count    "get number of rows in the table"
+    get_row_size     "get number of fields in a row"
+    get_array_name   "get name of hosted array"
+    get_field_sizes  "get max field size for each table column"
+    get_row          "get copy of indicated table row"
+    put_row          "replace table row with contents of an array"
+    resize_rows      "add or subtract columns from the table"
+    reindex_elements "update order and indexes of hosted array"
+    sort             "create a copied handle in a sorted order"
+    filter           "create a copied handle with subset of rows"
+    make_key         "create new table of keys and row indexes"
+    seek_key         "search make_key-generated key for a value"
+    walk_rows        "invoke a function for each row of a table"
+)
+
+# This list, created from the man synopsis prototypes,
+# determines the order of the elements in the generated
+# agent list and, as a result, the order the prototypes
+# are presented in the output of 'ate show_action'.
+declare -a action_list
+
+declare -a re_arr=(
+    ^
+    [[:space:]]+
+    ate
+    [[:space:]]+
+    \(
+       [^[:space:]]+
+    \)
+    [[:space:]]+
+    \(
+       .\*
+    \)
+    $
+)
+
+declare -n action_part=BASH_REMATCH[1]
+declare -n action_args_part=BASH_REMATCH[2]
+
+declare OIFS="$IFS"
+declare IFS=''
+declare re_proto="${re_arr[*]}"
+IFS="$OIFS"
+
+print_agent_entry()
+{
+    local action="$1"
+
+    local -a line_args=(
+        "$action"
+        "${action_desc[$action]}"
+        "$action"
+        "${action_args[$action]}"
+        "pwla_$action"
+    )
+
+    printf "{ \"%s\",\n  \"%s\",\n  \"ate %s %s\",\n  %s }" "${line_args[@]}"
+}
+
+while read -r; do
+    if [[ "$REPLY" =~ $re_proto ]]; then
+        if [[ "$action_part" != "action_name" ]]; then
+            action_list+=( "$action_part" )
+            action_args["$action_part"]="${action_args_part}"
+        fi
+    fi
+done < <( cd ate.1.d; MANLENGTH=70 man -l synopsis.1 )
+
+declare -i count=0
+echo "struct pwla_action_def pwla_actions[] = {"
+for cur_action in "${action_list[@]}"; do
+    if (( count++ != 0 )); then
+        echo ","
+        echo
+    fi
+
+    print_agent_entry "$cur_action"
+done
+echo
+echo "};"
