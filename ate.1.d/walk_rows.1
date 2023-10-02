@@ -20,7 +20,7 @@ will be terminated.
 .RS 7
 .arg_handle
 .TP
-.I callback
+.I row_use_callback
 to a script function that
 .B ate
 will call with each indexed table row.
@@ -38,23 +38,29 @@ action.
 .TP
 .BI "-s " starting_row
 If specified, this is the (0-based) row number of the first
-row to be sent to the callback function.
+row to be sent to the
+.I row_use_callback
+function.
 .TP
 .BI  "-c " row_count
 If specified (following the
 .IR starting_row ),
-this is the number of rows to send to the callback function.
+this is the number of rows to send to the
+.I row_use_callback
+function.
 .TP
 .RI [ ... ]
 optional extra arguments, as needed, to be transmitted to the
-.I callback_name
+.I row_use_callback
 function for each row.
 .RE
 .TP
 .B Callback Function
 .RS 7
 .PP
-The callback function will get the following arguments:
+The
+.I row_use_callback
+function will get the following arguments:
 .TS
 tab(|) center;
 l lx.

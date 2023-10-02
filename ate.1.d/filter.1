@@ -7,12 +7,11 @@
 Create a new handle on the array with a subset of rows, as determined
 by a callback function.
 .PP
-.B ate filter
-.I handle_name filter_function_name new_handle_name
+.proto_filter
 .RS 4
 .arg_handle
 .TP
-.I filter_function_name
+.I selector_callback
 is a script function that will be called with each row of the source
 handle.
 The callback function will receive two arguments, an array name to be
@@ -25,7 +24,7 @@ is the name to use for the new handle if the filtering succeeded.
 .TP
 .RI [ ... ]
 optional extra arguments, as needed, to be transmitted to the
-.I filter_function_name
+.I selector_callback
 function for each row.
 .RE
 .PP

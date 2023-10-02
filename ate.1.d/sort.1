@@ -10,12 +10,11 @@ This action exposes the C-library
 .B qsort
 function for use in a Bash script.
 .PP
-.B ate sort
-.I handle_name comparison_function sorted_handle_name
+.proto_sort
 .RS 7
 .arg_handle
 .TP
-.I comparison_function
+.I comparison_callback
 the name of a script callback function that will report the
 relative order of two given rows
 .TP
@@ -24,7 +23,7 @@ the requested name for the new sorted handle
 .TP
 .RI [ ... ]
 optional extra arguments, as needed, to be transmitted to the
-.I comparison_function
+.I comparison_callback
 for each row.
 .RE
 .PP
@@ -32,7 +31,7 @@ for each row.
 .RS 7
 .PP
 The callback
-.I comparison_function
+.I comparison_callback
 ranks two rows according to which should go first.
 It will get three variable name arguments with which it will make
 local nameref variables to access their contents and to return the

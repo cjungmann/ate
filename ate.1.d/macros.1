@@ -157,19 +157,19 @@ ate
 ..
 .de proto_walk_rows
 .  B ate walk_rows
-.  print_prototype @handle_name @callback ?-k:sorting_key ?-s:starting_row ?-c:row_count "?@extra ..."
+.  print_prototype @handle_name @row_use_callback ?-k:sorting_key ?-s:starting_row ?-c:row_count "?@extra ..."
 ..
 .de proto_sort
 .  B ate sort
-.  print_prototype @handle_name @comparison_function @sorted_handle_name "?@extra ..."
+.  print_prototype @handle_name @comparison_callback @sorted_handle_name "?@extra ..."
 ..
 .de proto_filter
 .  B ate filter
-.  print_prototype @handle_name @filter_function @filtered_handle_name "?@extra ..."
+.  print_prototype @handle_name @selector_callback @filtered_handle_name "?@extra ..."
 ..
 .de proto_make_key
 .  B ate make_key
-.  print_prototype @handle_name @new_handle_name ?-inr ?-c:column_index ?-f:set_key_function "?@extra ..."
+.  print_prototype @handle_name @new_handle_name ?-inr ?-c:column_index ?-f:set_key_callback "?@extra ..."
 ..
 .de proto_seek_key
 .  B ate seek_key
