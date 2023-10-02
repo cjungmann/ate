@@ -51,7 +51,7 @@ extern int pwla_action_count;
  * @param "list"   list of command line arguments
  * @return EXECUTION_SUCCESS or an error-dignalling non-zero value.
  */
-static int ate(WORD_LIST *list)
+static int ate_builtin(WORD_LIST *list)
 {
    if (list == NULL)
    {
@@ -128,7 +128,7 @@ static char *desc_ate[] = {
 
 struct builtin ate_struct = {
    .name      = "ate",
-   .function  = ate,
+   .function  = ate_builtin,
    .flags     = BUILTIN_ENABLED,
    .long_doc  = desc_ate,
    .short_doc = "ate action_name [handle_name] [-a array_name] [-v value_name] [value ...]",
