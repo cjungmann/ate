@@ -5,3 +5,4 @@ enable_ate
 html
 *.o
 *.so
+pwla_agent_list.def
