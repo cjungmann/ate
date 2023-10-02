@@ -34,13 +34,21 @@ $(ENABLER):
 	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
 	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
 
+pwla_agent_list.def: ate.1.d/synopsis.1 gen_agent_list
+	./gen_agent_list > pwla_agent_list.def
+
+pwla_agent.c: pwla_agent_list.def ;
 
 *.c: *.h
 	@echo "Forcing full recompile after any header file change"
 	touch *.c
 
+
 %o: %c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+prototypes:
+	( cd ate.1.d;  MANWIDTH=70 man -l synopsis.1 )
 
 install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
