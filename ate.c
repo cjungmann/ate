@@ -88,7 +88,7 @@ static int ate_builtin(WORD_LIST *list)
 // }
 
 static char *desc_ate[] = {
-   "Treats Bash arrays as fast tables, with database characteristics",
+   "Extend Bash arrays to be fast tables with database characteristics.",
    "",
    "Create an ate table for very fast indexed access.  Read and write",
    "rows.  Sort tables or generate keys for alternative orders and",
