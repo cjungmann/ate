@@ -52,19 +52,67 @@ declare IFS=''
 declare re_proto="${re_arr[*]}"
 IFS="$OIFS"
 
+rebuild_prototype()
+{
+    local -n rp_array="$1"
+    local -a new_array
+    local curline
+    local -i linelen=0
+    local -i partlen
+    for part in "${rp_array[@]}"; do
+        part="${part%% }"
+        # Add back leading [ if has trailing ]:
+        if [ "${part: -1:1}" == ']' ]; then
+            part="[${part}"
+        fi
+
+        partlen="${#part}"
+        linelen="${#curline}"
+
+        if (( linelen + partlen < 60 )); then
+            curline="$curline $part"
+        else
+            new_array+=( "${curline}\n" )
+            curline="       $part"
+        fi
+    done
+
+    if [ "${#curline}" -gt 0 ]; then
+        new_array+=( "$curline" )
+    fi
+
+    rp_array=( "${new_array[@]}" )
+}
+
+massage_prototype()
+{
+    local -n mp_proto="$1"
+    if [ "${#mp_proto}" -gt 70 ]; then
+        local OIFS="$IFS"
+        local IFS="["
+        local -a parts=( $mp_proto )
+        rebuild_prototype parts
+        IFS=''
+        mp_proto="${parts[*]}"
+        IFS="$OIFS"
+    fi
+}
+
 print_agent_entry()
 {
     local action="$1"
 
+    printf -v prototype "ate %s %s" "$action" "${action_args[$action]}"
+    massage_prototype prototype
+
     local -a line_args=(
         "$action"
         "${action_desc[$action]}"
-        "$action"
-        "${action_args[$action]}"
+        "$prototype"
         "pwla_$action"
     )
 
-    printf "{ \"%s\",\n  \"%s\",\n  \"ate %s %s\",\n  %s }" "${line_args[@]}"
+    printf "{ \"%s\",\n  \"%s\",\n  \"%s\",\n  %s }" "${line_args[@]}"
 }
 
 while read -r; do
