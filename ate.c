@@ -30,6 +30,8 @@
 #include <shell.h>
 #endif
 
+#include <builtins/common.h>  // for builtin_error() function
+
 #include <stdio.h>
 
 #include "word_list_stack.h"
@@ -55,8 +57,8 @@ static int ate_builtin(WORD_LIST *list)
 {
    if (list == NULL)
    {
-      ate_register_error("no action name provide for ate");
-      return EX_USAGE;
+      builtin_error("action name expected: see 'help ate'.");
+      return EXECUTION_FAILURE;
    }
 
    const char *action = list->word->word;
@@ -70,14 +72,7 @@ static int ate_builtin(WORD_LIST *list)
       {
          ARG_LIST *alist = NULL;
          args_from_word_list(alist, list->next);
-         int retval = (*(ptr->func))(alist);
-         // if (retval == EX_USAGE)
-         // {
-         //    builtin_usage();
-         //    // printf("usage:\n  %s\n", ptr->usage);
-         // }
-
-         return retval;
+         return (*(ptr->func))(alist);
       }
 
       ++ptr;
@@ -93,36 +88,20 @@ static int ate_builtin(WORD_LIST *list)
 // }
 
 static char *desc_ate[] = {
-   "ate - Table extension for Bash arrays",
+   "Treats Bash arrays as fast tables, with database characteristics",
    "",
-   "ate list_actions                quick list of action names",
-   "ate show_action [action_name]   details about action_name",
+   "Create an ate table for very fast indexed access.  Read and write",
+   "rows.  Sort tables or generate keys for alternative orders and",
+   "indexed-sequential access.",
    "",
-   "Declare an Array Table Extension handle, then use one of several",
-   "actions to interact with the table.",
+   "There are two reference actions:",
+   "  'ate list_actions' for a list of action names,",
+   "  'ate show_action action_name' to show the arguments of the",
+   "       'action_name' action.",
    "",
-   "All 'ate' actions except 'declare', 'list_actions, and",
-   "'show_action' require an initialized ate handle.  The",
-   "'declare' action creates an ate handle (see 'man ate(1)').",
+   "  'ate show_action' without an action name shows all actions.",
    "",
-   "When ate returns information, the results are written to shell",
-   "variables that can be read in Bash.  Single value results",
-   "like 'row_size' or 'row_count' are written to Bash variable",
-   "ATE_VALUE by default.  Table row results are written to Bash",
-   "variable ATE_ARRAY.",
-   "",
-   "The result variables can be changed using '-v' and '-a' options:",
-   "",
-   "  -a array    Use _array_ as the name of array to be used for",
-   "              returning multi-value results when appropriate",
-   "              for the action type.",
-   "  -v value    Use _value_ as the name of the shell variable to",
-   "              be used for return single value results when",
-   "              appropriate for the action type.",
-   "",
-   "Some ate actions take additional arguments that follow the",
-   "'action_name', 'handle_name' arguments and any options.  Look",
-   "at man ate(1) or 'ate show_action' for more details.",
+   "See ate(1) for usage details or ate(7) for a tutorial.",
    (char*)NULL     // end of array marker
 };
 
@@ -131,7 +110,7 @@ struct builtin ate_struct = {
    .function  = ate_builtin,
    .flags     = BUILTIN_ENABLED,
    .long_doc  = desc_ate,
-   .short_doc = "ate action_name [handle_name] [-a array_name] [-v value_name] [value ...]",
+   .short_doc = "ate action_name [options] [arguments]",
    .handle    = 0
 };
 
