@@ -36,19 +36,17 @@ $(ENABLER):
 
 pwla_agent_list.def: ate.1.d/synopsis.1 gen_agent_list
 	./gen_agent_list > pwla_agent_list.def
-
-pwla_agent.c: pwla_agent_list.def ;
+	touch pwla_agent.c
 
 *.c: *.h
 	@echo "Forcing full recompile after any header file change"
 	touch *.c
 
+# Override general rule to force recompile if agent list was regenerated
+pwla_agent.c: pwla_agent_list.def ;
 
 %o: %c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-prototypes:
-	( cd ate.1.d;  MANWIDTH=70 man -l synopsis.1 )
 
 install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
