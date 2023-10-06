@@ -534,7 +534,7 @@ int pwla_get_row(ARG_LIST *alist)
       }
       else
       {
-         ate_register_error("failed to inteprest '%s' as a row index in '%s'",
+         ate_register_error("failed to interpret '%s' as a row index in '%s'",
                             row_index_str, action_name);
          goto early_exit;
       }
@@ -638,7 +638,7 @@ int pwla_put_row(ARG_LIST *alist)
       }
       else
       {
-         ate_register_error("failed to inteprest '%s' as a row index in '%s'",
+         ate_register_error("failed to interpret '%s' as a row index in '%s'",
                             row_index_str, action_name);
          goto early_exit;
       }
