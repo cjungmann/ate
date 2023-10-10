@@ -189,7 +189,11 @@ int pwla_walk_rows(ARG_LIST *alist)
          goto early_exit;
 
       // Prepare and call the callback
-      if ((retval = invoke_shell_function_word_list(function_var, cb_args)))
+      // Note different response to non-zero: when the callback returns 0,
+      // the loop should continue, a non-zero callback return means that
+      // the loop should terminate.  That's not an error, we will just
+      // jump out of the loop without changing the retval.
+      if (invoke_shell_function_word_list(function_var, cb_args))
          goto early_exit;
 
       ++ae_ptr;
