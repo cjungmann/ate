@@ -336,8 +336,6 @@ int pwla_seek_key(ARG_LIST *alist)
          }
       }
 
-      printf("Key table index is %ld.\n", ael_ptr - ahead->rows);
-
       int return_index;
       if ( key_table_index_flag )
          return_index = ael_ptr - ahead->rows;
