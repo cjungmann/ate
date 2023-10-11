@@ -45,6 +45,13 @@ with the
 .B -i
 option.
 .TP
+.B -k
+return the key table row index of the record matching the
+search value.
+This indirect index value is used for sequential record access in the
+order defined by the key table, especially for use with
+.BR walk_rows " with the " -k " option."
+.TP
 .B -n
 conduct case-insensitive search by converting search value to
 lower-case.

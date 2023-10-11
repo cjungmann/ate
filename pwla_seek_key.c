@@ -89,6 +89,7 @@ int pwla_seek_key(ARG_LIST *alist)
    const char *outcome_name = NULL;
    const char *debug_flag = NULL;
    const char *int_sort_flag = NULL;
+   const char *key_table_index_flag = NULL;
    const char *lower_case_flag = NULL;
    const char *permissive_flag = NULL;
    const char *sequential_flag = NULL;
@@ -102,6 +103,7 @@ int pwla_seek_key(ARG_LIST *alist)
       { "o",            AL_OPT, &outcome_name},
       { "d",            AL_FLAG, &debug_flag},
       { "i",            AL_FLAG, &int_sort_flag},
+      { "k",            AL_FLAG, &key_table_index_flag},
       { "n",            AL_FLAG, &lower_case_flag},
       { "p",            AL_FLAG, &permissive_flag},
       { "s",            AL_FLAG, &sequential_flag },
@@ -334,7 +336,15 @@ int pwla_seek_key(ARG_LIST *alist)
          }
       }
 
-      set_var_from_int(value_var, ael_ptr - ahead->rows);
+      printf("Key table index is %ld.\n", ael_ptr - ahead->rows);
+
+      int return_index;
+      if ( key_table_index_flag )
+         return_index = ael_ptr - ahead->rows;
+      else
+         get_int_from_string(&return_index, (*(ael_ptr))->next->value);
+
+      set_var_from_int(value_var, return_index);
       set_var_from_int(outcome_var, (comp==0?1:2));
    }
 
