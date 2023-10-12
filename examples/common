@@ -1,0 +1,359 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+
+reset_screen() { echo $'\e[2J\e[1;1H'; }
+
+# Replace utilities::exit_on_error() for functions called by
+# run_demo_interaction() function below to prevent unreadable
+# script errors that 'exit 1' causes.
+exit_on_error()
+{
+   local -i exval="$?"
+   if [ "$exval" -ne 0 ]; then
+       printf $'ate error at line %d of script %s:\n' \
+              $(( "${BASH_LINENO[0]}" - 1 )) \
+              "${BASH_SOURCE[1]}"
+       printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+       return 1
+   fi
+   return 0
+}
+
+
+
+# fields: name, species, birthdate
+declare -a pets_array=(
+    Nemo    fish    2010-06-06
+    Spot    dog     2014-08-06
+    Fluffy  cat     2015-07-21
+    Polly   parrot  1978-01-17
+)
+
+declare -a new_pets=(
+    Wilbur  pig  2020-05-03
+    Gizmo   ''   ''
+)
+
+read_one_char()
+{
+    local -n roc_keyp="$1"
+    local prompt="${2:-Press any key to continue}"
+    read -n1 -p "$prompt" keyp
+    local -i ecode="$?"
+    if [ "$ecode" -eq 0 ]; then
+        # move back one character and erase (remove what was just typed)
+        printf $'\e[1D\e[K'
+        roc_keyp="$keyp"
+    else
+        roc_keyp=""
+    fi
+
+    return $ecode
+}
+
+# Make it easy to get the journalctl table we used in eg_basic:
+get_journalctl_table()
+{
+    local table_name="$1"
+
+    # ensure valid table name
+    ate get_row_size "$table_name" -v row_size
+    exit_on_error
+    if [ "$row_size" -ne 4 ]; then
+        echo "Table $table_name has $row_size columns.  We're expecting 4."
+        exit 1
+    fi
+
+    # Build the regular expression
+    read hostname < /etc/hostname
+    local -a re_arr=(
+        ^
+        \(                  #1 date-time group
+           .\*
+           [[:digit:]]{2}
+           :[[:digit:]]{2}
+           :[[:digit:]]{2}
+        \)
+        [[:space:]]
+        "$hostname"
+        [[:space:]]
+        \(                 #2 service group
+           [^\\\[ ]+
+        \)
+        \(                 #3 process ID container group (ignored)
+           \\[
+           \(              #4 process ID group
+           [[:digit:]]+
+           \)
+           \\]
+        \)?
+        :[[:space:]]
+        \(                 #5 message group
+           .\*
+        \)
+    )
+
+    # Compress the array for the final expression
+    local OIFS="$IFS"
+    local IFS=''
+    local re="${re_arr[*]}"
+    IFS="$OIFS"
+
+    # Make aliases for the regex matches
+    local -n dtime="BASH_REMATCH[1]"
+    local -n svice="BASH_REMATCH[2]"
+    local -n procid="BASH_REMATCH[4]"
+    local -n msg="BASH_REMATCH[5]"
+
+    # Read and parse the journal log entries
+    while read -r curline; do
+        if [[ "$curline" =~ $re ]]; then
+            ate append_data "$table_name" "$dtime" "$svice" "$procid" "${msg:0:30}"
+        fi
+    done < <( journalctl -S yesterday -U today )
+
+    # Index rows to make them available
+    ate index_rows "$table_name"
+    exit_on_error
+}
+
+# Collect functions that collect function names that begin with a
+# demo99__ prefix (the numbers are to enforce a presentation order).
+collect_demos()
+{
+    local table_name="$1"
+
+    local -i expected_row_size=3
+
+    # Make sure we're in agreement about row_size:
+    ate get_row_size "$table_name" -v row_size
+    if [ "$row_size" -ne "$expected_row_size" ]; then
+        echo "Inconsistent row size for collect_demos function:"
+        echo "Table has $row_size rows, we're expecting $expected_row_size."
+        exit 1
+    fi
+
+    local re=demo[[:digit:]]+__\(.\*\)
+    while read -r -a ARRAY; do
+        local func_name="${ARRAY[2]}"
+        if [[ "$func_name" =~ $re ]]; then
+            local info="${BASH_REMATCH[1]}"
+            local name="${info%%__*}"
+            local subname="${info#*__}"
+            ate append_data "$table_name" "$func_name" "$name" "$subname"
+            exit_on_error
+        fi
+    done < <( declare -p -F )
+
+    ate index_rows "$table_name"
+}
+
+# Make global reference value of 'a' for converting
+# back-and-forth between a 0-based row index and a
+# letter-based label for selecting demos
+declare -i letter_a_value
+val_from_char "letter_a_value" "a"
+
+letter_from_ndx()
+{
+    local -i ndx="$2"
+    if (( ndx<0 || ndx>25 )); then
+        echo "Index $ndx out-of-range (0-25 for a-z)"
+        exit 1
+    fi
+
+    char_from_val "$1" $(( ndx + letter_a_value ))
+}
+
+ndx_from_letter()
+{
+    val_from_char "$1" "$2"
+    local -n nfl_ndx="$1"
+    (( nfl_ndx -= letter_a_value ))
+}
+
+
+# Printout the collection of demo functions with letter labels
+# as part of the screen-painting done for each iteration of
+# the user interface in 'run_demo_interaction'
+show_demo_menu()
+{
+    print_line()
+    {
+        local -n pl_row="$1"
+        local -i ndx="$2"
+
+        local letter
+        letter_from_ndx "letter" "$ndx"
+
+        printf "%c: %s (%s)\n" "$letter" "${pl_row[1]}" "${pl_row[2]}"
+    }
+
+    local table_name="$1"
+    ate walk_rows "$table_name" print_line
+}
+
+# Empty functions to signal comment or blank line when
+# run through script function show_func(), which uses
+# 'declare -f' to retrieve the function's content.
+# 'declare -f' omits comments and blank lines, so if I
+# want to keep 'em, I use these no-op functions to
+# signal print_func_line() to line
+B() { :; }
+C() { :; }
+
+declare fmt_comment=$'%s\e[31;1m# %s\e[m'
+declare fmt_echo=$'%s\e[32;1mecho\e[m %s'
+declare fmd_ate_action=$'%s\e[33;1mate %s\e[m %s'
+declare fmt_normal="%s"
+
+declare re_comment_line=^\([[:space:]]\*\)C\([[:space:]]+\(.\*\)\)$
+declare re_echo_line=^\([[:space:]]\*\)echo\([[:space:]]+\(.\*\)\)?$
+declare re_blank_line=^\([[:space:]]\*\)B[[:space:]]\*$
+declare re_ate_action=^\([[:space:]]\*\)ate[[:space:]]+\([^[:space:]]+\)\([[:space:]]+\(.\*\)\)?$
+
+declare -n code_prespace=BASH_REMATCH[1]
+declare -n code_content=BASH_REMATCH[3]
+
+declare -n code_ate_action=BASH_REMATCH[2]
+declare -n code_ate_args=BASH_REMATCH[4]
+
+print_func_line()
+{
+    local line="$1"
+
+    local line_str
+    if [[ "$line" =~ $re_comment_line ]]; then
+        printf -v line_str "$fmt_comment" "$code_prespace" "$code_content"
+    elif [[ "$line" =~ $re_echo_line ]]; then
+        printf -v line_str "$fmt_echo" "$code_prespace" "$code_content"
+    elif [[ "$line" =~ $re_ate_action ]]; then
+        printf -v line_str  "$fmd_ate_action" "$code_prespace" "$code_ate_action" "$code_ate_args"
+    elif [[ "$line" =~ $re_blank_line ]]; then
+        line_str=""
+    else
+        printf -v line_str "$fmt_normal" "$line"
+    fi
+
+    if [ "$#" -gt 1 ]; then
+        local -n pfl_array="$2"
+        pfl_array+=( "$line_str" )
+    else
+        echo "$line_str"
+    fi
+}
+
+declare re_heredoc=^[[:space:]]+cat\ "<<"\(.\*\)$
+
+show_func()
+{
+    local func_name="$1"
+    local OIFS="$IFS"
+    local IFS=$'\n'
+    declare func=( $( declare -f "$func_name" ) )
+    IFS="$OIFS"
+
+    local heredoc
+
+    for line in "${func[@]}"; do
+        if [ "${line: -1:1}" == ';' ]; then
+            line_len="${#line}"
+            line="${line:0:$(( line_len-1 ))}"
+        fi
+
+        if [ -n "$heredoc" ]; then
+            if [[ "$heredoc" == "$line" ]]; then
+                heredoc=""
+            fi
+        else
+            # check if heredoc
+            if [[ "$line" =~ $re_heredoc ]]; then
+                heredoc="${BASH_REMATCH[1]}"
+            else
+                print_func_line "$line"
+            fi
+        fi
+    done
+}
+
+# Runs primary user interface, repeated offering to run one of
+# several demo functions, cleaning up before and after.
+run_demo_interaction()
+{
+    local -a intro_stuff=( $@ )
+
+    local script_name="${BASH_SOURCE[1]}"
+
+    # Prepare demo options table
+    ate declare demo_table 3
+    exit_on_error
+    collect_demos demo_table
+
+    # Get option limit
+    ate get_row_count demo_table -v demo_count
+    exit_on_error
+
+    declare OIFS="$IFS"
+
+    while :; do
+        reset_screen
+        printf $'running demos from \e[32;1m%s\e[m\n' "$script_name"
+        for intro in "${intro_stuff[@]}"; do
+            "$intro"
+            echo
+        done
+
+        echo "Select a demonstration from the following list:"
+        echo "-----------------------------------------------"
+        show_demo_menu "demo_table"
+        echo
+
+        local keyp
+        read_one_char keyp "Press a letter to choose a demo, 'q' for top menu:"
+
+        if [[ "${keyp,,}" == 'q' ]]; then
+            echo
+            break
+        fi
+
+        local -i ndx
+        ndx_from_letter ndx "$keyp"
+        if (( ndx>=0 && ndx<demo_count )); then
+            ate get_row "demo_table" "$ndx" -a drow
+            exit_on_error
+
+            local func_name="${drow[0]}"
+
+            local -i exmode=1
+            local keyp
+
+            while :; do
+                reset_screen
+                printf $'  Script: \e[32;1m%s\e[m\n' "$script_name"
+                printf $'Function: \e[32;1m%s\e[m\n' "$func_name"
+                echo "${drow[1]}: \"${drow[2]}\""
+                echo
+                if [ "$exmode" -eq 1 ]; then
+                    "$func_name"
+                    echo
+                    read_one_char keyp "Press 'c' for the code, any other key to return"
+                    if [ "$keyp" == 'c' ]; then
+                        exmode=0
+                    else
+                        break
+                    fi
+                else
+                    show_func "$func_name"
+                    echo
+                    read_one_char keyp "Press 'e' to execute the code, any other key to return"
+                    if [ "$keyp" == 'e' ]; then
+                        exmode=1
+                    else
+                        break
+                    fi
+                fi
+            done
+        fi
+    done
+}
+
+

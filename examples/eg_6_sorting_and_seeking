@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Practice using various sorting methods"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+source tables
+source simple_pager
+
+declare catalog
+ate declare catalog "$course_cat_row_size" course_cat
+exit_on_error
+
+script_header()
+{
+    cat <<EOF
+Sorting tables and making and using key tables are useful features
+of the ate API.  This script includes some examples that hope to
+illustrate good practices and inspriation to use these features to
+solve other problems.
+
+EOF
+}
+
+demo0__view_table()
+{
+    cat <<EOF
+Look at the table used by examples in this script.
+
+The columns are:
+    class name, section, department, professor, and period.
+
+EOF
+    echo "Class catalog table"
+    echo "-------------------"
+    simple_pager catalog
+    # print_formatted_table catalog
+}
+
+demo1__sort__sort_on_two_columns()
+{
+    cat <<EOF
+Using the 'sort' action to sort on two columns.
+
+EOF
+    C Make a sort value from concatenation of period and class name
+    get_sort_val()
+    {
+        local -n gsv_return="$1"
+        local -n gsv_row="$2"
+        printf -v gsv_return "%03d_%s" "${gsv_row[4]}" "${gsv_row[0]}"
+    }
+    B
+    sort_callback()
+    {
+        local -n sc_comp="$1"
+        local name_left="$2"
+        local name_right="$3"
+        B
+        local val_left val_right
+        get_sort_val val_left "$name_left"
+        get_sort_val val_right "$name_right"
+        B
+        if [[ "$val_left" < "$val_right" ]]; then
+            sc_comp=-1
+        elif [[ "$val_left" > "$val_right" ]]; then
+            sc_comp=1
+        else
+            sc_comp=0
+        fi
+        return 0
+    }
+    B
+    ate sort catalog sort_callback sorted_catalog
+    exit_on_error
+    B
+    echo
+    echo "Result of sort on period + classname"
+    echo "------------------------------------"
+    print_formatted_table sorted_catalog
+}
+
+demo2__make_key__key_on_two_columns()
+{
+    cat <<EOF
+Like the 'sort' example in the previous demo, this exercise compares
+the class period and class name for the key.
+
+One advantage of using a key is that when taking a subset, 'seek_key'
+uses a binary search to find the record that starts the subset.  This
+becomes increasingly important as the table size increases.
+
+Another advantage of a key is that the computed key values are
+preserved in each key record, enabling searches to proceed without
+having to calculate the key string with each comparison.
+
+EOF
+    B
+    echo "Make a key table on the class period and class name:"
+    C Function for use as 'make_key' callback
+    key_maker()
+    {
+        local -n km_keyval="$1"
+        local -n km_row="$2"
+        B
+        printf -v km_keyval "%03d_%s" "${km_row[4]}" "${km_row[0]}"
+        return 0
+    }
+    B
+    ate make_key catalog period_name -f key_maker
+    exit_on_error
+    B
+    echo
+    echo "Walk the rows in the key order"
+    C walk_row for printing
+    period_display()
+    {
+        local -n pd_row="$1"
+        echo "${pd_row[*]}"
+        return 0
+    }
+    B
+    echo
+    echo "Classes sorted on period and class name"
+    echo "---------------------------------------"
+    ate walk_rows catalog period_display -k period_name
+    exit_on_error
+}
+
+demo3__seek_key__simple_demonstration()
+{
+    cat <<EOF
+Demonstrate a two 'seek_key' methods.
+
+The 'seek_key' action can return either the row index of the source
+table or the row index of the key table.  Both results are useful
+in specific situations.
+
+Including a -k option in 'seek_key' signals 'ate' to return the
+key table row index.  This is useful for sequential access of
+multiple records (ISAM).
+
+Without the -k option, 'seek_key' returns the row index in the
+source table.  This is more convenient when the record being sought
+is unique in the table as it might be in a look-up table.
+
+EOF
+    echo "--------------------------------------------------------------"
+    echo "Making a key on the period column, using the -i integer option"
+    ate make_key catalog period_key -ic 4
+    exit_on_error
+    B
+    C Variable seek value for consistency and easier changes
+    local -i seek_period=5
+    B
+    echo
+    echo "Find the first class in the catalog for period $seek_period"
+    ate seek_key period_key "$seek_period" -i -v row_ndx
+    exit_on_error
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        ate get_row catalog "$row_ndx" -a cat_row
+        exit_on_error
+        echo "Seeking '$seek_period', found row at index $row_ndx: '${cat_row[*]}'"
+    else
+        echo "Failed to find '$seek_period' in the key"
+    fi
+    echo
+    echo "For searches where more than one record may match, use -k option"
+    echo "----------------------------------------------------------------"
+    B
+    row_print()
+    {
+        local -n rp_row="$1"
+        local period="$5"
+        if [ "${rp_row[4]}" -eq "$period" ]; then
+            echo "${rp_row[*]}"
+            return 0
+        else
+            return 1
+        fi
+    }
+    B
+    C Use -k option to get key row index as start for walk_rows
+    echo "Find the classes in the catalog for period $seek_period"
+    ate seek_key period_key "$seek_period" -ik -v key_ndx
+    exit_on_error
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        ate walk_rows catalog -k period_key row_print -s "$key_ndx" "$seek_period"
+        exit_on_error
+    else
+        echo "failed to find period $seek_period"
+    fi
+}
+
+demo4__class_distribution__sort_then_count()
+{
+    cat <<EOF
+This demonstration uses the simple 'make_key' form indexing a specific
+column.  With grouped class periods, it will be easy to count the
+number of classes per period
+
+EOF
+    B
+    count_periods()
+    {
+        local -n cp_row="$1"
+        local -n cp_current="$5"
+        local -n cp_tallies="$6"
+        local -i row_period="${cp_row[4]}"
+        if [ "${cp_row[4]}" -gt "$cp_current" ]; then
+            cp_current="${cp_row[4]}"
+            cp_tallies["$cp_current"]=1
+        else
+            (( ++cp_tallies["$cp_current"] ))
+        fi
+        return 0
+    }
+    B
+    C integer key: -i, column index 4
+    ate make_key catalog period_key -ic 4
+    exit_on_error
+    B
+    C Declare count-tracking variables
+    local -i current=0
+    local -A tally
+    B
+    ate walk_rows catalog -k period_key count_periods "current" "tally"
+    exit_on_error
+    B
+    C Make table of periods and their tally for sorting
+    ate declare period_table 2
+    exit_on_error
+    for ptally in "${!tally[@]}"; do
+        ate append_data period_table "$ptally" "${tally[$ptally]}"
+        exit_on_error
+    done
+    ate index_rows period_table
+    exit_on_error
+    B
+    C Sort the table with 'make_key'
+    ate make_key period_table period_key -irc1
+    exit_on_error
+    B
+    print_formatted_table period_table period_key
+}
+
+
+run_demo_interaction script_header

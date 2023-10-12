@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+
+reset_screen() { echo -n "[2J[1;1H"; }
+disable_echo() { stty -echo; }
+enable_echo()  { stty echo; }
+hide_cursor() { echo -n $'\e[?25l'; }
+show_cursor() { echo -n $'\e[?25h'; }
+
+get_cursor_position()
+{
+    local -i brows bcols
+    local -n gcp_rows="${1:-brows}"
+    local -n gcp_cols="${2:-bcols}"
+
+    read -sr -dR -p $'\e[6n' REPLY
+
+    # extract the string-ending, semicolon-separated numbers
+    local re='\[([[:digit:]]+;[[:digit:]]+)$'
+    if [[ "$REPLY" =~ $re ]]; then
+        REPLY="${BASH_REMATCH[1]}"
+    else
+        REPLY="${REPLY#*[}"
+    fi
+
+    local IFS=';'
+    local -a arr
+    arr=( $REPLY )
+
+    gcp_rows="${arr[0]}"
+    gcp_cols="${arr[1]}"
+}
+
+set_cursor_position()
+{
+    local -i row="${1:-1}"
+    local -i col="${2:-1}"
+
+    if [ "$col" -lt 0 -o "$row" -lt 0 ]; then
+        echo "Unexpected missing parameter!" >&2
+        exit 1
+    fi
+
+    printf $'\e['"${row};${col}H"
+}
+
+get_screen_size()
+{
+    local -i csave rsave
+    get_cursor_position "rsave" "csave"
+    set_cursor_position 999 999
+    get_cursor_position "$1" "$2"
+    set_cursor_position "$rsave" "$csave"
+}
+
+make_format_str()
+{
+    local -n mfs_format="$1"
+    local table_name="$2"
+
+    local -i min_col_size=2
+    local -i row_size
+    ate get_row_size "$table_name" -v row_size
+    exit_on_error
+
+    local -a col_sizes
+    ate get_field_sizes "$table_name" -a col_sizes
+    exit_on_error
+
+    local -a parts
+    for (( ndx=0; ndx < row_size; ++ndx )); do
+        local -i col_size="${col_sizes[$ndx]}"
+        (( col_size = (col_size < min_col_size ? min_col_size : col_size ) ))
+        parts+="%-${col_size}s"
+    done
+
+    local OIFS="$IFS"
+    local IFS=' '
+    mfs_format="${parts[*]}"
+    IFS="$OIFS"
+}
+
+get_keyp()
+{
+    local -n keystrokestring="$1"
+
+    # Enclosed functions to eliminate dependencies
+    val_from_char() { LC_CTYPE=C; printf -v "$1" '%d' "'$2"; }
+    char_from_val() { printf -v "str" "\\%03o" "$2"; printf -v "$1" "$str"; }
+
+    local -i keyval
+    read -srN1 keyp
+    val_from_char keyval "$keyp"
+
+    # Ignoring possibility of \0
+    if [ "$keyval" -lt 27 ]; then
+        char_from_val keyp $(( keyval + 64 ))
+        keystrokestring="^$keyp"
+    elif [ "$keyval" -eq 27 ]; then
+        local -a parts=( ^\[ )
+        if read -t 0; then
+            while read -t 0; do
+                read -srN1
+                parts+=( "$REPLY" )
+                if [[ "$REPLY" =~ [[:alpha:]] ]] \
+                   || ( [[ "$REPLY" == '~' ]] \
+                        && [[ "$parts[@]:-2:1}" =~ [[:digit:]] ]] ); then
+                    break
+                fi
+            done
+        fi
+        local OIFS="$IFS"
+        local IFS=''
+        keystrokestring="${parts[*]}"
+        IFS="$OIFS"
+    else
+        keystrokestring="$keyp"
+    fi
+
+    # echo "keystrokestring is '$kestrokestring'"
+    # read -n1 -p Press
+}
+
+simple_pager()
+{
+    local table_name="$1"
+    local key_name="$2"
+
+    line_printer()
+    {
+        local -n lp_row="$1"
+        local fmt="$5"
+        printf "${fmt}\n" "${lp_row[@]}"
+        return 0
+    }
+
+    local format_str
+    make_format_str format_str "$table_name"
+
+    local tall wide
+    get_screen_size tall wide
+
+    # Display parameters
+    local -i top_line max_lines
+    (( top_line=2, max_lines=tall-4 ))
+
+    # Content parameters
+    local -i bottom_row row_at_end top_row=-1
+    ate get_row_count "$table_name" -v bottom_row
+    exit_on_error
+    (( --bottom_row ))
+    (( row_at_end = bottom_row - max_lines ))
+    (( row_at_end = ( row_at_end < 0 ? 0 : row_at_end ) ))
+
+    # Gatekeeper to prevent replots unless there's a new line
+    local -i new_top=0
+
+    local -a ate_args=(
+        "$table_name"
+        line_printer
+        -c "$max_lines"
+        )
+
+    if [ -n "$key_name" ]; then
+        ate_args+=( -k "$key_name" )
+    fi
+
+    local -a keys_arr=(
+        '^[[A'   # up
+        '^[[B'   # down
+        '^[[5~'  # PgUp
+        '^[[6~'  # PgDn
+        '^[[H'   # Home
+        '^[[F'   # End
+    )
+    ate declare keys_tab 1 keys_arr
+    exit_on_error
+
+    local keyp
+
+    while :; do
+        if [ "$new_top" -ne "$top_row" ]; then
+            reset_screen
+            set_cursor_position "$top_line" 0
+            top_row="$new_top"
+            ate walk_rows "${ate_args[@]}" -s "$top_row" "$format_str"
+        fi
+
+        get_keyp "keyp"
+        if [ "${keyp,,}" == 'q' ]; then
+            break
+        else
+            (( new_top = top_row ))
+            ate seek_key keys_tab "$keyp" -ks -v key_row
+            exit_on_error
+            if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+                case "$key_row" in
+                    0) (( --new_top ))
+                       ;;
+                    1) (( ++new_top ))
+                       ;;
+                    2) (( new_top -= max_lines ))
+                       ;;
+                    3) (( new_top += max_lines ))
+                       ;;
+                    4) (( new_top = 0 ))
+                       ;;
+                    5) (( new_top = bottom_row - max_lines ))
+                       ;;
+                esac
+
+                (( new_top = (new_top < 0) ? 0 : new_top ))
+                (( new_top = (new_top > row_at_end) ? row_at_end : new_top ))
+            fi
+        fi
+    done
+}
+
+

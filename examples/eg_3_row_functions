@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "get_row and put_row to edit table rows"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+
+# Delete this if you're not using the 'classes' table
+source tables
+echo "Creating a global table for the examples"
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+
+script_header()
+{
+    cat <<EOF
+The ate actions 'get_row' and 'put_row' are used to work with
+individual rows in a table.  In practice, 'get_row' will mainly be
+used to access a key row following a call to 'seek_key'.  Like 'get_row',
+'put_row' works on a single row, but 'put_row' is more likely to be used
+because it can be used in a 'walk_rows' callback function to modify rows'
+contents.
+
+EOF
+}
+
+demo1__get_row_put_row__simple_demonstration()
+{
+    cat <<EOF
+Using a copy of the generic classes table, read, change, and update
+a row in the table.
+
+EOF
+    C Copy table to preserve original
+    ate declare classes_copy 1
+    exit_on_error
+    copy_table classes_copy classes
+B
+    echo "Starting Class Schedule"
+    echo "-----------------------"
+    print_formatted_table classes_copy
+B
+    echo
+    echo "Dropping French"
+    C Get current row
+    ate get_row classes_copy 6
+    exit_on_error
+B
+    C Change the appropriate fields
+    ATE_ARRAY[0]="Study Hall"
+    ATE_ARRAY[2]="Library"
+    ATE_ARRAY[3]="Staff"
+B
+    C Put back the updated row
+    ate put_row classes_copy 6 ATE_ARRAY
+    exit_on_error
+B
+    echo
+    echo "Updated Class Schedule"
+    echo "----------------------"
+    print_formatted_table classes_copy
+}
+
+
+run_demo_interaction script_header

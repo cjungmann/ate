@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+
+get_example_files()
+{
+    local fname="$1"
+    local re_egs=^eg_[[:digit:]]+.\*$
+    local -a full_list=( * )
+    local tagline
+
+    for exfile in "${full_list[@]}"; do
+        if [[ "$exfile" =~ $re_egs ]]; then
+            tagline=$( "./$exfile" "tagline" )
+            ate append_data "$fname" "$exfile" "$tagline"
+            exit_on_error
+        fi
+    done
+    ate index_rows "$fname"
+}
+
+ate declare exlist 2
+exit_on_error
+get_example_files exlist
+
+print_header()
+{
+    cat <<EOF
+                 ATE TABLE EXAMPLES
+                 ------------------
+
+Like a picture is worth a thousand words, well-designed examples
+can be worth more than their weight in other documentation.
+
+From here you can access several scripts that demonstrate effective
+use of tables acceessed through the 'ate' builtin command.
+
+The examples below are organized in an order of increasing
+complexity.  The more complicated scripts attempt to show how
+to deliver useful interactions.
+
+EOF
+    }
+
+example_menu()
+{
+    local tname="$1"
+    print_line()
+    {
+        local -n pl_row="$1"
+        local -i ndx="$2"
+
+        local letter
+        letter_from_ndx "letter" "$ndx"
+        printf $'\e[33;1m%c\e[m: %s\n' "$letter" "${pl_row[1]}"
+    }
+
+    echo "Select one of the following demonstration topics:"
+    echo "-------------------------------------------------"
+    ate walk_rows "$tname" print_line
+}
+
+run_script_by_index()
+{
+    local -i ndx="$1"
+    local tname="$2"
+
+    ate get_row "$tname" "$ndx" -a script_row
+    exit_on_error
+
+    "./${script_row[0]}"
+}
+
+ate get_row_count exlist -v script_count
+exit_on_error
+
+while :; do
+    reset_screen
+    print_header
+
+    example_menu exlist
+    echo
+    declare -i ndx
+    read -n1 -p "Type a letter to run a demo, 'q' to quit"
+    declare -i rexit="$?"
+    echo
+    if [ "$rexit" -eq 0 ]; then
+        if [[ "${REPLY,,}" == 'q' ]]; then
+            echo
+            exit 1
+        fi
+        ndx_from_letter "ndx" "$REPLY"
+        if [ "$ndx" -lt "$script_count" ]; then
+            reset_screen
+            run_script_by_index "$ndx" "exlist"
+        fi
+    fi
+
+done

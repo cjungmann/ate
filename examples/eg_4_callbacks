@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Simple demonstrations of callback-using actions."
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+source utilities
+source common
+source tables
+
+print_header()
+{
+   cat <<EOF
+This script contains basic demonstrations of the four
+ate actions that employ callback functions.
+
+EOF
+}
+
+echo "Creating a global table for the examples"
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+demo1__show_table()
+{
+    cat <<EOF
+View the unaltered table here.
+
+EOF
+    echo "Raw table to confirm acceptable output"
+    echo "--------------------------------------"
+    print_formatted_table classes
+}
+
+demo2__sort()
+{
+    cat <<EOF
+The 'sort' action uses the C library function 'qsort', passing the
+call to the comparison function to a script function that performs
+the same function.
+
+Sort is similar to 'make_key' in that it imposes a new order on the
+contents of a table.  The difference from 'sort' is that it makes
+a duplicate index of pointers to the same table as the source table,
+where 'make_key' makes a new 2-column table of key values and row
+indexes.
+
+EOF
+
+    C Enclosed comparison function
+    comp_rows()
+    {
+        C Use namerefs to access reporting variable
+        local -n cr_comparison="$1"
+        C Use namerefs to access array values
+        local -n cr_left="$2"
+        local -n cr_right="$3"
+        B
+        C Use the extra 'sort' argument
+        local -i column="$4"
+        B
+        C Making lower case for case-indensitive sort
+        local left_val="${cr_left[$column],,}"
+        local right_val="${cr_right[$column],,}"
+        B
+        if [[ "$left_val" < "$right_val" ]]; then
+            cr_comparison=-1
+        elif [[ "$left_val" > "$right_va;" ]]; then
+            cr_comparison=1
+        else
+            cr_comparison=0
+        fi
+        return 0
+    }
+    B
+    C Sort on the fourth column, index no. 3, professor names:
+    ate sort classes comp_rows sorted_classes 3
+    exit_on_error
+    B
+    echo "Table sorted on professor name"
+    echo "------------------------------"
+    print_formatted_table sorted_classes
+}
+
+demo3__filter()
+{
+    cat <<EOF
+It's harder to devise a meaningful filter for such a short table.
+In this example, we're looking for classe that are longer than 1
+character, indicating a class hour shared among multiple classes
+during a week.
+
+EOF
+
+    C Function to determine membership in filter table
+    filter_func()
+    {
+        C Use nameref to access reporting variable
+        local -n ff_row="$1"
+        B
+        C Return 0 to include, non-zero to exclude this row
+        B
+        C The result of the last statement in a Bash function
+        C becomes the exit value of the function.
+        [ "${#ff_row[1]}" -gt 1 ]
+    }
+    B
+    ate filter classes filter_func filtered_table
+    exit_on_error
+    B
+    echo "Filtered table"
+    echo "--------------"
+    print_formatted_table filtered_table
+}
+
+demo4__make_key__computed_key_value_and_seek()
+{
+    cat <<EOF
+Like 'sort', 'make_key' creates a new order of the source table.
+Unlike 'sort', however, 'make_key' creates a new table that is
+designed for being searched.
+
+Key tables can be used for search or ordering purposes.  When a key
+table is provided to the 'walk_rows' action, the walk will use the
+key table order for the 'walk-rows' callback.
+
+Using a key value-computing function for 'make_key' and 'seek_key'
+helps ensure consistent key format for predictable searching.
+
+EOF
+    C Callback for computing the key value make key values lower-case
+    key_maker()
+    {
+        C The computed key value will be reported here:
+        local -n km_result="$1"
+        local -n km_row="$2"
+        km_result="${km_row[0],,}"
+    }
+    B
+    ate make_key classes class_key -f key_maker
+    exit_on_error
+    B
+    local target_class="Chemistry"
+    B
+    echo "About to conduct key search for '$target_class'"
+    B
+    C Use key table to get the key row index of the target class.
+    C Make lower-case search term to match key values set by 'key_maker'
+    ate seek_key class_key "$target_class" -n -v row_ndx
+    exit_on_error
+    B
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        ate get_row classes "$row_ndx" -a class_row
+        exit_on_error
+        B
+        echo "class_row is '${class_row[*]}'"
+    else
+        echo "Failed to find key value '$target_class'"
+    fi
+}
+
+demo5__make_key__by_column_not_callback()
+{
+    cat <<EOF
+The 'make_key' action has a non-callback that is expected to more
+commonly used than the callback version.
+
+'make_key' will sort on the contents of a specified column.  There
+ are extra flags to support this feature, -i for integer sort,
+ -n for case-insensitive sort, and of course -c to indicate on which
+column to sort.
+
+EOF
+
+    C Create a key with case-insensitive value on column index 3
+    ate make_key classes -nc3 profs_key
+    exit_on_error
+    B
+    echo "Key-sorted table on Profs"
+    echo "-------------------------"
+    print_formatted_table classes profs_key
+}
+
+demo5__walk_rows__get_fed_every_table_row()
+{
+    cat <<EOF
+This is expected to be the most used of the ate actions.  This simple
+example is an introduction, more elaborate and useful examples can be
+found in other example scripts.
+
+EOF
+
+    use_row()
+    {
+        local -n ur_row="$1"
+        local -i ndx="$2"
+        local table_name="$3"
+        C read the extra argument:
+        local student_name="$5"
+B
+        printf '%s is taking %s at %s in %s from %s\n' "$student_name" "${ur_row[@]}"
+B
+        return 0
+    }
+B
+    C Passing extra argument to be picked up in the callback:
+    ate walk_rows classes use_row "George"
+    exit_on_error
+}
+
+run_demo_interaction print_header

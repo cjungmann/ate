@@ -1,0 +1,67 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+
+declare -i pets_row_size=3
+declare -a pets_array=(
+    Spot   dog       2019-01-17
+    Fluffy cat       2016-06-06
+    Finn   goldfish  2001-07-21
+    Polly  parrot    1976-08-09
+)
+
+declare -i class_row_size=4
+declare -a class_array=(
+    Chemistry       1    203   Harper
+    Calculus        2    245   Gustafson
+    English\ 3      3    115   Black
+    Phys-ed         4A   gym   Bradsher
+    Health          4B   120   Hyde
+    World\ history  5    125   Smith
+    French\ 3       6    140   Jackson
+)
+
+declare -i course_cat_row_size=5
+# name, section, department, professor, period
+declare -a course_cat=(
+    French\ 1            1 language  Jackson      4
+    French\ 2            1 language  Jackson      2
+    French\ 3            1 language  Jackson      1
+    French\ 4            1 language  Jackson      6
+
+    Spanish\ 1           1 language  Ripoll       1
+    Spanish\ 1           2 language  Iglesias     3
+    Spanish\ 1           3 language  Lopez        5
+    Spanish\ 2           1 language  Lopez        6
+    Spanish\ 2           2 language  Ripoll       2
+    Spanish\ 2           3 language  Iglesias     4
+    Spanish\ 3           1 language  Lopez        5
+    Spanish\ 3           2 language  Iglesias     1
+    Spanish\ 4           1 language  Ripoll       6
+
+    Latin\ 1             1 language  Bryce        1
+    Latin\ 2             1 language  Bryce        3
+    Latin\ 3             1 language  Bryce        5
+    Latin\ 4             1 language  Bryce        6
+
+    Algebra\ 1           1 math      Newton       3
+    Algebra\ 1           2 math      Newton       4
+    Algebra\ 1           3 math      Germain      1
+    Geometry             1 math      Euclid       2
+    Geometry             2 math      Euclid       4
+    Trigonometry         1 math      Pythagoras   5
+    Trigonometry         2 math      Pythagoras   6
+    Calculus             1 math      Newton       3
+
+    English\ 1           1 english   Keane        2
+    English\ 1           2 english   Black        4
+    English\ 1           3 english   Black        6
+    English\ 2           1 english   Potter       1
+    American\ Literature 1 english   Platt        3
+
+    Biology\ 1           1 science   Darwin       3
+    Biology\ 1           2 science   Darwin       4
+    Chemistry\ 1         1 science   Curie        2
+    Chemistry\ 1         2 science   Curie        5
+    Physics\ 1           1 science   Einstein     6
+    Physics\ 1           2 science   Newton       1
+)
+

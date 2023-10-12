@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Queries for table information"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+source utilities
+source common
+source tables
+
+
+echo "Creating a global table for the examples"
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+print_header()
+{
+   cat <<EOF
+There isn't much to see in this example because the actions
+demonstrated here are simple to understand and easy to use.
+
+The ate actions get_row_count, get_row_size, and get_array_name
+report details about the table, and get_field_sizes returns the
+size of the largest element in each column to support formatted
+table printing.
+
+Actions get_row_size and get_row_count may be useful to confirm
+assumptions about table to avoid out-of-range usage errors.
+
+Action get_array_name will expose an array name for direct
+access, which would be useful for originally empty tables
+that generate their own arrays.
+
+EOF
+}
+
+
+
+demo1__view_demo_table()
+{
+    echo "Fake student's class schedule"
+    echo "-----------------------------"
+    print_formatted_table classes
+}
+
+demo2__default_report_vars()
+{
+    echo "Reading table info individually"
+    ate get_row_size classes
+    echo "row size is '$ATE_VALUE'"
+    B
+    ate get_row_count classes
+    echo "row count is '$ATE_VALUE'"
+    B
+    ate get_array_name classes
+    echo "array name is '$ATE_VALUE'"
+    B
+    ate get_field_sizes classes
+    local OIFS="$IFS"
+    local IFS=','
+    local combined="${ATE_ARRAY[*]}"
+    IFS="$OIFS"
+    echo "field sizes are ${combined//,/, }"
+}
+
+
+demo3__show_dimensions()
+{
+    echo "It's convenient to get info into named variables"
+    echo "so the value isn't lost to the next call to ate."
+    echo
+    echo "Reading table info into named variables"
+    B
+    ate get_row_size classes -v row_size
+    ate get_row_count classes -v row_count
+    ate get_array_name classes -v array_name
+    echo "The table as $row_count rows of $row_size elements in array $array_name"
+    B
+    ate get_field_sizes classes -a field_sizes
+    B
+    local OIFS="$IFS"
+    local IFS=','
+    local combined="${field_sizes[*]}"
+    IFS="$OIFS"
+    echo "The table's field sizes are ${combined//,/, }"
+}
+
+run_demo_interaction print_header

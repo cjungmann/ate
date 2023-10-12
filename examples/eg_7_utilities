@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Illustrating ate-using utilities"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+
+source tables
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+print_header()
+{
+    cat <<EOF
+The topics in this script perform useful tasks.  Some of them will
+demonstrate their homonymous functions in the 'utilities' script."
+
+EOF
+}
+
+
+
+demo1__copy_table__using_walk_rows_to_copy_a_table()
+{
+    local -a new_array
+    row_stop()
+    {
+        C Simple needs for this function, the row and the array name:
+        local -n rs_row="$1"
+        C Use a nameref of the array name to access the array methods:
+        local -n rs_array="$5"
+B
+        C Fill the extra field with a tag
+        rs_array+=( "${rs_row[@]}" "copy" )
+        return 0
+    }
+B
+    local source_table="classes"
+    local target_table="target"
+B
+    C Make empty target table.  Get source row size of source
+    C table so the contents will align.
+    ate get_row_size "$source_table" -v row_size
+    exit_on_error
+    C Add an extra field for a tag to show it is not the same table
+    ate declare "$target_table" $(( row_size + 1 ))
+    exit_on_error
+B
+    C Get array name for filling from 'row_stop' function
+    ate get_array_name "$target_table" -v array_name
+    exit_on_error
+B
+    ate walk_rows "$source_table" row_stop "$array_name"
+    exit_on_error
+    ate index_rows "$target_table"
+B
+    C View the results:
+    echo "Copied table"
+    echo "------------"
+    print_formatted_table "$target_table"
+}
+
+demo2__generic_comp__reusable_comparison_callback_for_column_sorting()
+{
+    cat <<EOF
+Sorting a table on a column is a common need and is easily
+generalized.
+
+This demo shows an example of how to employ extra parameters to
+perform a useful task.
+EOF
+    C Make class catalog table
+    ate declare catalog "$course_cat_row_size" course_cat
+    exit_on_error
+    B
+    C Here is an implementation of a generic comparison function.
+    C This function is complete and could be used as-is in a script.
+    generic_comp()
+    {
+        local -n gc_result="$1"
+        local -n gc_left_row="$2"
+        local -n gc_right_row="$3"
+        C Read extra parameter for column index
+        local -i col="${4:- 0}"
+        B
+        C Resolve specific values
+        local left_val="${gc_left_row[$col]}"
+        local right_val="${gc_right_row[$col]}"
+        B
+        if [[ "$left_val" < "$right_val" ]]; then
+            gc_result=-1
+        elif [[ "$left_val" > "$right_val" ]]; then
+            gc_result=1
+        else
+            gc_result=0
+        fi
+        return 0
+    }
+    B
+    echo "sort table on class period"
+    ate sort catalog generic_comp by_period 4
+    exit_on_error
+    B
+    echo
+    echo "Catalog sorted by class period"
+    echo "------------------------------"
+    print_formatted_table by_period
+}
+
+
+run_demo_interaction print_header

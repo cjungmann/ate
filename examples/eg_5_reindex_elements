@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Explore weird 'reindex_elements' action"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+
+# Delete this if you're not using the 'classes' table
+source tables
+echo "Creating a global table for the examples"
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+# source: https://en.wikipedia.org/wiki/Largest_and_heaviest_animals
+IFS=$'\n' read -a large_land_animals -r -d '' <<EOF
+    African bush elephant
+    Asian elephant
+    African forest elephant
+    White rhinoceros
+    Hippopotamus
+    Indian rhinoceros
+    Black rhinoceros
+    Javan rhinoceros
+    Giraffe
+    Gaur
+EOF
+
+script_header()
+{
+    cat <<EOF
+Sorting an array doesn't change the array contents, only the pointers
+to the array elements.  However, resizing DOES change the array
+contents to add or remove elements by row according to the new
+specification.  The code behind 'reindex_elements' performs the
+reorganization.  Since it was already done, and other uses can be
+imagined, the code was made public through the 'reindex_elements'
+action.
+
+One obscure use is to efficiently sort an array when the sorted array
+is the final desired product.
+
+1. Declare and populate a 1-field table
+2. Sort the new table however needed
+3. Reindex elements to realize the new order
+
+EOF
+}
+
+demo1__reindex_elements__sort_an_array()
+{
+    cat <<EOF
+I got a list of the 81 largest cities in the world from:
+https://en.wikipedia.org/wiki/List_of_largest_cities
+
+The list is in order of decreasing city population, but for this
+demonstration, we'll use ate 'declare', 'sort', and 'reindex_elements'
+to change the sort order to alphabetic.
+
+EOF
+    comper()
+    {
+        local -n c_comp="$1"
+        local -n c_left="$2"
+        local -n c_right="$3"
+        local v_left="${c_left[0],,}"
+        local v_right="${c_right[0],,}"
+
+        if [[ "$v_left" < "$v_right" ]]; then
+            c_comp=-1
+        elif [[ "$v_left" > "$v_right" ]]; then
+            c_comp=1
+        else
+            c_comp=0
+        fi
+
+        return 0
+    }
+    C Employ nameref for easy source changes:
+    local -n sarray="large_land_animals"
+    C Copy of the array to preserve the source for subsequent uses
+    local -a copied_array=( "${sarray[@]}" )
+    B
+    C Use ate actions to perform the sort
+    ate declare ranked_table 1 copied_array
+    exit_on_error
+    ate sort ranked_table comper sorted_table
+    exit_on_error
+    ate reindex_elements sorted_table
+    exit_on_error
+    B
+    C Discard ate tables to prove they are no longer necessary
+    unset sorted_table
+    unset ranked_table
+    B
+    OIFS="$IFS"
+    IFS=$'\n'
+    B
+    echo "The original array in order of animal size is:"
+    echo "${sarray[*]}"
+    echo
+    echo "Alphabetical sorting of reindexed array is:"
+    echo "${copied_array[*]}"
+    IFS="$OIFS"
+}
+
+
+run_demo_interaction script_header

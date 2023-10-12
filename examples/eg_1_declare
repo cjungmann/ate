@@ -1,0 +1,259 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Declaring ate tables"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+source utilities
+source common
+
+print_header()
+{
+    cat <<EOF
+This script includes code fragments from the ate tutorial in ate(7),
+illustrating how to perform the most basic functions of declaring and
+using an ate table.
+
+Actions used in this script:
+   declare
+   append_data
+   index_rows
+
+EOF
+}
+
+exit_on_error()
+{
+   local -i exval="$?"
+   if [ "$exval" -ne 0 ]; then
+       printf $'ate error at line %d of script %s:\n' \
+              $(( "${BASH_LINENO[0]}" - 1 )) \
+              "${BASH_SOURCE[1]}"
+       printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+       exit 1
+   fi
+}
+
+simple_print_table()
+{
+    print_line()
+    {
+        local -n pl_row="$1"
+        local IFS=$'\t'
+        echo "${pl_row[*]}"
+    }
+
+    ate walk_rows "$1" print_line
+}
+
+simple_print_table=print_formatted_table
+
+declare -a pets_array=(
+    Nemo    fish    2010-06-06
+    Spot    dog     2014-08-06
+    Fluffy  cat     2015-07-21
+    Polly   parrot  1978-01-17
+)
+
+demo1__declare__basic()
+{
+    cat <<EOF
+Initialize a table by hosting an existing array.
+
+A rows index is automatically generated when using this
+basic method.  Other 'declare' methods will require invoking
+the 'index_rows' action to enable the table.
+
+EOF
+
+    echo "Step 1: single action to make a table"
+    ate declare pet_table 3 pets_array
+    exit_on_error
+    C This is a cool comment
+B
+    echo
+    echo "Look at the finished table:"
+    simple_print_table pet_table
+}
+
+demo2__declare__append_data__fill_with_array_contents()
+{
+    cat <<EOF
+Declare an empty table, fill it with 'append_data,' and
+initialize with 'index_rows.'
+
+EOF
+
+    echo "Step 1: declare pet_table"
+    ate declare pet_table 3
+    exit_on_error
+    B
+    echo "Step 2: append pets_array data to pet_table"
+    ate append_data pet_table "${pets_array[@]}"
+    exit_on_error
+    B
+    echo "Step 3: index rows to make them available"
+    ate index_rows pet_table
+    exit_on_error
+    B
+    echo
+    echo "Look at the finished table:"
+    simple_print_table pet_table
+}
+
+
+demo3__declare__append_data__fill_with_file_contents()
+{
+    cat <<EOF
+Initialize an empty table, the fill the table, line-by-line, with the
+contents of a data file, using 'append_data' to add each interpreted
+
+One of the challenges with this example is how to recognize the
+quote-enclosed elements using simple Bash syntax.  This helps
+preserve the ability to successfully parse data that use multiple
+spaces to format human-written tables into columns for easier
+reading.
+
+Using 'append_data' to add each line provides an opportunity
+to recognize a misformed line before it corrupts subsequent data
+with misaligned elements.
+
+EOF
+
+    echo "Step 1: declare task_table"
+    ate declare task_table 3
+    exit_on_error
+    local -a els
+    B
+    echo "Step 2: read lines from file 'data_task_table'"
+    while read -r; do
+        C preserve quote-enclosed arguments with this:
+        declare -a "els=($REPLY)"
+        B
+        ate append_data task_table "${els[@]}"
+        exit_on_error
+    done < "data_task_table"
+    B
+    echo "Step 3: index rows to make them available"
+    ate index_rows task_table
+    exit_on_error
+    B
+    echo
+    echo "Look at the finished table:"
+    print_formatted_table task_table
+}
+
+demo4__declare__get_array_name__fill_with_array_contents()
+{
+    cat <<EOF
+Initialize an empty table and get the generated array name for use
+with a nameref variable.  Then use Bash syntax ( array+=( els ) )
+to fill the array.  Index the table's rows after it's filled.
+
+EOF
+
+    echo "Step 1: declare pet_table"
+    ate declare pet_table 3
+    exit_on_error
+    B
+    echo "Step 2: get generated array name"
+    ate get_array_name pet_table -v array_name
+    exit_on_error
+    B
+    echo "Step 3: make nameref of array and set with Bash syntax"
+    local -n larray="$array_name"
+    larray=( "${pets_array[@]}" )
+    B
+    echo "Step 4: index rows to make them available"
+    ate index_rows pet_table
+    exit_on_error
+    B 
+    echo
+    echo "Look at the finished table:"
+    print_formatted_table pet_table
+}
+
+demo5__declare__append_data__regex_to_parse_journalctl()
+{
+    cat <<EOF
+Managing a very large table is where ate shines.  The challenge is in
+populating the large table.  This example will retrieve yesterday's
+data from journalctl, parsing each log entry with a regular expression
+to fill out the table.
+EOF
+    echo "Step 1: declare log_table"
+    ate declare log_table 4
+    exit_on_error
+    B
+    echo "Step 2: build the regular expression"
+    read hostname < /etc/hostname
+    B
+    C The following is formatted in many lines in the
+    C source file, but Bash dumps them in one line.
+    C Look at the source file to see this in context.
+    local -a re_arr=(
+        ^
+        \(                  #1 date-time group
+           .\*
+           [[:digit:]]{2}
+           :[[:digit:]]{2}
+           :[[:digit:]]{2}
+        \)
+        [[:space:]]
+        "$hostname"
+        [[:space:]]
+        \(                 #2 service group
+           [^\\\[ ]+
+        \)
+        \(                 #3 process ID container group (ignored)
+           \\[
+           \(              #4 process ID group
+           [[:digit:]]+
+           \)
+           \\]
+        \)?
+        :[[:space:]]
+        \(                 #5 message group
+           .\*
+        \)
+    )
+    B
+    # Compress the array for the final expression
+    local OIFS="$IFS"
+    local IFS=''
+    local re="${re_arr[*]}"
+    IFS="$OIFS"
+    B
+    local -n dtime="BASH_REMATCH[1]"
+    local -n svice="BASH_REMATCH[2]"
+    local -n procid="BASH_REMATCH[4]"
+    local -n msg="BASH_REMATCH[5]"
+    B
+    echo "Step 3: read and parse the journal log entries"
+    while read -r curline; do
+        if [[ "$curline" =~ $re ]]; then
+            ate append_data log_table "$dtime" "$svice" "$procid" "${msg:0:30}"
+        fi
+    done < <( journalctl -S yesterday -U today )
+    B
+    echo "Step 4: index rows to make them available"
+    ate index_rows log_table
+    exit_on_error
+    B
+    ate get_row_count log_table -v row_count
+    exit_on_error
+    echo "Step 5: get row_count to see what we got:"
+    echo "        (we read $row_count log entries)."
+    B 
+    echo
+    echo "Press any key to see the resulting table"
+    read -n1 -p "(runs in 'less', use 'q' to exit less)":
+    print_formatted_table log_table | less
+}
+
+run_demo_interaction print_header
