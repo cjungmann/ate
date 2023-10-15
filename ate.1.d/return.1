@@ -6,9 +6,9 @@
 .PP
 The
 .B ate
-command returns an exit status that indicates the result of the
-call.
-Following Linux custom, an exit status of zero
+command returns an integer value exit status to inform the caller
+how the command went.
+Following Unix/Linux custom, an exit status of zero
 .RI ( 0 )
 indicates success and will be interpreted as
 .B true
@@ -16,29 +16,58 @@ by Bash in
 .BR if " and " while
 statements.
 .PP
-Errors are indicated by non-zero exit status, with the exception of the
-.B seek_key
-action that differentiates between an exact or approximate match as
-well as an error condition.
+An error is indicated by a non-zero exit status.
+Unless there is an undiscovered bug in
+.BR ate ,
+all errors are considered usage errors, even out-of-range errors
+which can be prevented by knowing the limits or finding the limits
+using the
+.BR get_row_count " or " get_row_size
+actions.
 .PP
-When the exit status is not zero, the
+Whenever a usage error occurs, the
 .B ATE_RESULT
-variable will contain an explanation of the error.
-.SS SPECIAL RESULT VARIABLES
+variable is set with an explanation of the error.
+A well-written script could skip error-checking in a final form if
+possible usage errors are eliminated.
+.SS SEEK_KEY SPECIAL CASE
 .PP
-Certain actions produce results that must be examined.
-.BR ATE_VALUE " and " ATE_ARRAY
-are the default result variable names for simple values and array
-values, respectively.
-Actions
-.BR get_row_count ", " get_row_size ", " get_array_name ", " seek_key
-each report simple results and
-.BR get_field_sizes " and " get_row
-report array results.
+The
+.B seek_key
+action is treated differently from other actions because there are two
+levels of failure:
+.BR usage " and " "failed search" .
 .PP
-The default result variable can be changed by naming an alternative
-variable name using
+Usage errors must be fixed, but a failed search is a normal result
+and is not considered an error.
+Instead,
+.B seek_key
+search results are reported in the variable
+.BR ATE_SEARCH_OUTCOME .
+.PP
+Upon return from a
+.B seek_key
+action,
+.B ATE_SEARCH_OUTCOME
+will be set with one of three values:
+.IP
+.TS
+tab(|);
+l lx.
+0|The search target was not found in the key table.
+
+1|T{
+The search target was found (the row index will be found in
+.B ATE_VALUE
+or a custom variable named by the
 .B -v
-for simple simple values and
-.B -a
-for array values.
+option).
+T}
+
+2|T{
+A target equal to or greater than the search key was found while in
+.I permissive
+.RB ( -p )
+mode.
+T}
+.TE
