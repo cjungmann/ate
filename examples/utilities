@@ -1,0 +1,234 @@
+# -*- mode: sh; sh-shell: bash -*-
+# shellcheck shell=bash
+
+is_root() { [ "$USER" == "root" ]; }
+
+# char_from_val "result_name" "$integer_value"
+char_from_val()
+{
+    printf -v "str" "\\%03o" "$2"
+    printf -v "$1" "$str"
+}
+
+# val_from_char "result_name" "$character"
+val_from_char() { LC_CTYPE=C; printf -v "$1" '%d' "'$2"; }
+
+exit_on_error()
+{
+   local -i exval="$?"
+   if [ "$exval" -ne 0 ]; then
+       printf $'ate error at line %d of script %s:\n' \
+              $(( "${BASH_LINENO[0]}" - 1 )) \
+              "${BASH_SOURCE[1]}"
+       printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+       exit 1
+   fi
+}
+
+# For use with ate action 'sort' to compare a single column.
+#
+# The index of the column to be compared should be set as an extra
+# parameter to the 'sort' action.
+#
+# If the column value is omitted, column index 0 will be used.
+#
+# Usage to sort on column #3 (index 2):
+#    ate sort table_name generic_ate_comp sorted_table_name 2
+generic_ate_comp()
+{
+    local -n return_val="$1"
+    local -n left_arr="$2"
+    local -n right_arr="$3"
+    local -i col="${4:-0}"
+
+    local lval="${left_arr[$col]}"
+    local rval="${right_arr[$col]}"
+
+    # echo "Comparing '$lval' to '$rval'"
+
+    if [[ "$lval" < "$rval" ]]; then
+        return_val=-1
+    elif [[ "$lval" > "$rval" ]]; then
+        return_val=1
+    else
+        return_val=0
+    fi
+    return 0
+}
+
+# Add commas and, if requested, a decimal point to an integer value.
+#
+# Args
+#    (name):     name of variable to which the resulting string is copied
+#    (integer):  value to be converted
+#    (integer):  BCD flag.  If 1, show cents with a period
+commaize_number()
+{
+    local -n return_var="$1"
+    local -i val="$2"
+    local -i bcd="$3"
+
+    local -i remains
+    local -a parts=()
+
+    looper()
+    {
+        local -i part=$(( remains % 1000 ))
+        (( remains /= 1000 ))
+        if [ "$remains" -gt 0 ]; then
+            looper
+            (( part += 1000 ))
+            parts+=( "${part:1}" )
+        else
+            parts+=( "$part" )
+        fi
+    }
+
+    local sign=""
+    if [ "$val" -lt 0 ]; then
+        sign="-"
+        (( remains = -val ))
+    else
+        (( remains = val ))
+    fi
+
+    local IFS=','
+    if [ "$bcd" -ne 0 ]; then
+        local -i cents=$(( (remains % 100) + 100 ))
+        (( remains /= 100 ))
+        looper
+        return_var="${sign}${parts[*]}.${cents:1}"
+    else
+        looper
+        return_var="${sign}${parts[*]}"
+    fi
+}
+
+convert_float()
+{
+    local -n cf_int="$1"
+    local val="$2"
+    local -i precision="$3"
+
+    # split into whole and fraction parts
+    local IFS=$'.'
+    local -a parts=( $val )
+    if [ "${#parts[*]}" -eq 1 ]; then
+        parts[1]="0"
+    fi
+
+    # whole part
+    (( cf_int = "${parts[0]}" * (10 ** precision) ))
+
+    # 0-pad, then trim fraction part (extra digit for rounding)
+    printf -v frac "%-$((precision+1))s" "${parts[1]}"
+    frac="${frac// /0}"
+    frac="${frac:0:$(( precision+1 ))}"
+
+    # round fraction part
+    local -i last_num frac_int="1$frac"
+    (( frac_int -= (10 ** (precision+1)) ))
+    (( last_num = frac_int % 10 ))
+    (( frac_int /= 10 ))
+    if [ "$last_num" -ge 5 ]; then
+        (( ++frac_int ))
+    fi
+
+    (( cf_int = cf_int + frac_int ))
+}
+
+# Copy a table to preserve the original in scripts where the
+# original must be preserved.
+copy_table()
+{
+    local target_table="$1"
+    local source_table="$2"
+    copy_row()
+    {
+        local -n cr_row="$1"
+        local -n cr_target_array="$5"
+        cr_target_array+=( "${cr_row[@]}" )
+        return 0
+    }
+
+    # Force target table to match source table's row size:
+    ate get_row_size "$source_table" -v row_size
+    exit_on_error
+    ate resize_rows "$target_table" "$row_size"
+    exit_on_error
+
+    # Prepare for and start walk
+    ate get_array_name "$target_table" -v array_name
+    exit_on_error
+    ate walk_rows "$source_table" copy_row "$array_name"
+    exit_on_error
+
+    # Indexing necessary after adding rows:
+    ate index_rows "$target_table"
+    exit_on_error
+}
+
+
+print_formatted_table()
+{
+    local handle_name="$1"
+    local key_handle="$2"
+    local null_value="${NULL_VALUE:-''}"
+
+    make_format_str()
+    {
+        local -n mfs_str="$1"
+        local -i min_size="${#null_value}"
+
+        local -a col_sizes
+        ate get_field_sizes "$handle_name" -a col_sizes
+        local -i row_size="${#col_sizes[*]}"
+
+        for (( ndx=0; ndx < row_size; ++ndx )); do
+            local -i col_size="${col_sizes[$ndx]}"
+            (( col_size = (col_size < min_size ? min_size : col_size) ))
+            col_sizes[$ndx]="%-${col_size}s"
+        done
+
+        local IFS=' '
+        mfs_str="${col_sizes[*]}\n"
+    }
+
+    replace_nulls()
+    {
+        local -n rn_row="$1"
+        local -i row_len="${#rn_row[*]}"
+        for (( ndx=0; ndx < row_len; ++ndx )); do
+            local val="${rn_row[$ndx]}"
+            if [ -z "$val" ]; then
+                rn_row[$ndx]="$null_value"
+            fi
+        done
+    }
+
+    print_line()
+    {
+        replace_nulls "$1"
+
+        local -n pl_row="$1"
+        local format_str="$5"
+
+        printf "$format_str" "${pl_row[@]}"
+        return 0
+    }
+
+    local fstr
+    make_format_str fstr
+
+    local -a wr_args=(
+        "$handle_name"
+        print_line
+        "$fstr"
+    )
+
+    if [ -n "$key_handle" ]; then
+        wr_args+=( "-k" "$key_handle" )
+    fi
+
+    ate walk_rows "${wr_args[@]}"
+}
