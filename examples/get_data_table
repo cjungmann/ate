@@ -1,0 +1,189 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+
+declare -a gdt_available_tables=()
+
+fill_table()
+{
+    local table_name="$1"
+    local -n ft_heads_array="$2"
+    local -i row_size="$3"
+    local file_name="$4"
+    local data_url="$5"
+
+    if ! [ -d "data" ]; then
+        mkdir data
+    fi
+
+    local data_file="data/${file_name}"
+
+    if ! [ -f "$data_file" ]; then
+        wget "$data_url" -O "$data_file"
+    fi
+
+    local OIFS="$IFS"
+    local IFS=$'\t'
+
+    ate get_row_size "$table_name" -v starting_row_size
+    exit_on_error
+
+    if [ "$starting_row_size" -ne "$row_size" ]; then
+        ate resize_rows "$table_name" "$row_size"
+        exit_on_error
+    fi
+
+    ate get_array_name "$table_name" -v arrname
+    exit_on_error
+    local -n array="$arrname"
+
+    # setup for changing target array
+    local array_name="ft_heads_array"
+    ft_heads_array=()
+
+    local -a row_array
+    local array_name="ft_heads_array"
+    local -n currow="$array_name"
+
+    while read -r -a "$array_name"; do
+        local -i elscount="${#currow[*]}"
+        if [ "$elscount" -eq "$row_size" ]; then
+            if [[ "$array_name" == "ft_heads_array" ]]; then
+                array_name="row_array"
+                local -n currow="$array_name"
+            else
+                array+=( "${currow[@]}" )
+            fi
+        else
+            echo "Oops, row count read ($elscount) different from expected row size ($row_size)."
+            return 0
+        fi
+    done < "$data_file"
+
+    ate index_rows "$table_name"
+    exit_on_error
+}
+
+table_fill_counties_complete()
+{
+    local table_name="$1"
+    local array_name="$2"
+    local -a ft_args=(
+        "$table_name"
+        "$array_name"
+        188
+        "county_complete.txt"
+        "https://www.openintro.org/data/tab-delimited/county_complete.txt"
+        )
+    fill_table "${ft_args[@]}"
+}
+
+table_fill_county()
+{
+    local file_name="county.txt"
+    local table_name="$1"
+    local array_name="$2"
+    local -a ft_args=(
+        "$table_name"
+        "$array_name"
+        15
+        "$file_name"
+        "https://www.openintro.org/data/tab-delimited/${file_name}"
+        )
+    fill_table "${ft_args[@]}"
+}
+
+table_fill_state_stats()
+{
+    local file_name="state_stats.txt"
+    local table_name="$1"
+    local array_name="$2"
+    local -a ft_args=(
+        "$table_name"
+        "$array_name"
+        24
+        "$file_name"
+        "https://www.openintro.org/data/tab-delimited/${file_name}"
+        )
+    fill_table "${ft_args[@]}"
+}
+
+table_fill_airports()
+{
+    local file_name="usairports.txt"
+    local table_name="$1"
+    local array_name="$2"
+    local -a ft_args=(
+        "$table_name"
+        "$array_name"
+        14
+        "$file_name"
+        "https://www.openintro.org/data/tab-delimited/${file_name}"
+        )
+    fill_table "${ft_args[@]}"
+}
+
+stat_table()
+{
+    local hname="$1"
+    ate get_row_size "$hname" -v row_size
+    exit_on_error
+    ate get_row_count "$hname" -v row_count
+    exit_on_error
+    ate get_array_name "$hname" -v array_name
+
+    echo "For table $hname, there are $row_count rows of $row_size fields using array $array_name"
+}
+
+
+get_available_tables()
+{
+    local -n gat_tables="$1"
+    gat_tables=()
+    while read -r -a frec; do
+        local fname="${frec[2]}"
+        if [[ "${fname:0:11}" == "table_fill_" ]]; then
+            gat_tables+=( "${fname:11}" )
+        fi
+    done < <( declare -F )
+}
+
+is_valid_table_name()
+{
+    local IFS=$'\e'
+    local names="${gdt_available_tables[*]}"
+    if [[ "$names" =~ "$1" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+get_data_table()
+{
+    local handle_name="$1"
+    local heads_array_name="$2"
+    local table_name="$3"
+
+    ate get_row_size "$handle_name" -v row_size
+    exit_on_error
+
+    if is_valid_table_name "$table_name"; then
+        local execall="table_fill_${table_name}"
+        "$execall" "$handle_name" "$heads_array_name"
+    else
+        echo "Unrecognized table name '$table_name'"
+        echo "The recognized tables are:"
+        for t in "${gdt_available_tables[@]}"; do
+            echo "  $t"
+        done
+    fi
+}
+
+
+
+
+###########################
+##### Start Execution #####
+###########################
+
+get_available_tables "gdt_available_tables"
+
