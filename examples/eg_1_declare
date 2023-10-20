@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ "$1" == "tagline" ]]; then
-    echo "Declaring ate tables"
+    echo "Declaring ate Tables"
     exit 1
 fi
 
@@ -81,7 +81,7 @@ B
     simple_print_table pet_table
 }
 
-demo2__declare__append_data__fill_with_array_contents()
+demo2__declare__fill_table_with_array_contents()
 {
     cat <<EOF
 Declare an empty table, fill it with 'append_data,' and
@@ -107,7 +107,7 @@ EOF
 }
 
 
-demo3__declare__append_data__fill_with_file_contents()
+demo3__declare__fill_table_with_file_contents()
 {
     cat <<EOF
 Initialize an empty table, the fill the table, line-by-line, with the
@@ -148,7 +148,7 @@ EOF
     print_formatted_table task_table
 }
 
-demo4__declare__get_array_name__fill_with_array_contents()
+demo4__declare__fill_table_through_direct_array_access()
 {
     cat <<EOF
 Initialize an empty table and get the generated array name for use
@@ -156,7 +156,6 @@ with a nameref variable.  Then use Bash syntax ( array+=( els ) )
 to fill the array.  Index the table's rows after it's filled.
 
 EOF
-
     echo "Step 1: declare pet_table"
     ate declare pet_table 3
     exit_on_error
@@ -178,7 +177,47 @@ EOF
     print_formatted_table pet_table
 }
 
-demo5__declare__append_data__regex_to_parse_journalctl()
+demo5__declare__append_data_and_mismatched_data()
+{
+    cat <<EOF
+The append_data action fills the table row-by-row.  In order to
+enforce aligned data, an incomplete final row will not be added to
+the table.  An incomplete final row will also indicate a usage
+error with a non-zero exit code and will set the ATE_ERROR
+variable with an explanation.
+EOF
+    # Append_data for table to preserve source array
+    ate declare pet_table 3
+    exit_on_error
+    ate append_data pet_table "${pets_array[@]}"
+    exit_on_error
+    ate index_rows pet_table
+    exit_on_error
+    B
+    echo
+    echo "Add well-formed three element row, a rescue alien." 
+    ate append_data pet_table "Gizmo" "alien" 1066-10-14
+    exit_on_error
+    print_formatted_table
+    B
+    echo
+    echo "Add a single element, triggering a usage error."
+    echo "Forgo 'exit_on_error' in favor of custom error handling"
+    echo "to better illustrate the behaviors."
+    ate append_data pet_table "Stray"
+    if [ "$?" -ne 0 ]; then
+        echo "encounted an error, $ATE_ERROR, when appending an element."
+    fi
+
+    ate index_rows pet_table
+    exit_on_error
+    B
+    C Look at result of adding an incomplete row:
+    print_formatted_table pet_table
+
+}
+
+demo6__declare__fill_table_with_journalctl()
 {
     cat <<EOF
 Managing a very large table is where ate shines.  The challenge is in
