@@ -95,7 +95,7 @@ while :; do
             exit 1
         fi
         ndx_from_letter "ndx" "$REPLY"
-        if [ "$ndx" -lt "$script_count" ]; then
+        if (( ndx >=0 && ndx < script_count )); then
             reset_screen
             run_script_by_index "$ndx" "exlist"
         fi
