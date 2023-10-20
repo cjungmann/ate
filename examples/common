@@ -1,5 +1,10 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 
+if [ -z "$SIMPLE_PAGER" ]; then
+    echo "Loading simple_pager in \'common\' module"
+    source simple_pager
+fi
+
 reset_screen() { echo $'\e[2J\e[1;1H'; }
 
 # Replace utilities::exit_on_error() for functions called by
@@ -217,6 +222,9 @@ declare -n code_content=BASH_REMATCH[3]
 declare -n code_ate_action=BASH_REMATCH[2]
 declare -n code_ate_args=BASH_REMATCH[4]
 
+# This function transforms the line if appropriate, then either
+# writes the line to stdout or the raw and transformed strings
+# will be written to an array named in $2.
 print_func_line()
 {
     local line="$1"
@@ -236,7 +244,11 @@ print_func_line()
 
     if [ "$#" -gt 1 ]; then
         local -n pfl_array="$2"
+        local -n pfl_maxlen="$3"
         pfl_array+=( "$line_str" )
+        if [ "${#line}" -gt "$pfl_maxlen" ]; then
+            pfl_maxlen="${#line}"
+        fi
     else
         echo "$line_str"
     fi
@@ -252,7 +264,17 @@ show_func()
     declare func=( $( declare -f "$func_name" ) )
     IFS="$OIFS"
 
+    func_line_printer()
+    {
+        local -n flp_row="$1"
+        local fmt="$5"
+        printf "${fmt}\n" "${flp_row[0]}"
+        return 0
+    }
+
+    local -a tlines
     local heredoc
+    local -i maxlen=0
 
     for line in "${func[@]}"; do
         if [ "${line: -1:1}" == ';' ]; then
@@ -269,10 +291,21 @@ show_func()
             if [[ "$line" =~ $re_heredoc ]]; then
                 heredoc="${BASH_REMATCH[1]}"
             else
-                print_func_line "$line"
+                print_func_line "$line" "tlines" "maxlen"
             fi
         fi
     done
+
+    ate declare lines_tab 1 tlines
+    exit_on_error
+
+    local fmt_str="%-${maxlen}s"
+
+    local -A popts=(
+        "display_func" "func_line_printer"
+        "format_string" "$fmt_str"
+    )
+    simple_pager lines_tab popts
 }
 
 # Runs primary user interface, repeated offering to run one of
@@ -310,7 +343,7 @@ run_demo_interaction()
         local keyp
         read_one_char keyp "Press a letter to choose a demo, 'q' for top menu:"
 
-        if [[ "${keyp,,}" == 'q' ]]; then
+        if [[ "${keyp,,}" == 'q' ]] || [[ "$keyp" == $'\e' ]]; then
             echo
             break
         fi
@@ -343,13 +376,7 @@ run_demo_interaction()
                     fi
                 else
                     show_func "$func_name"
-                    echo
-                    read_one_char keyp "Press 'e' to execute the code, any other key to return"
-                    if [ "$keyp" == 'e' ]; then
-                        exmode=1
-                    else
-                        break
-                    fi
+                    exmode=1
                 fi
             done
         fi
