@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# loaded flag to prevent duplicate loading
+declare SIMPLE_PAGER=1
+
 reset_screen() { echo -n "[2J[1;1H"; }
 disable_echo() { stty -echo; }
 enable_echo()  { stty echo; }
@@ -25,6 +28,7 @@ get_cursor_position()
     local IFS=';'
     local -a arr
     arr=( $REPLY )
+    # IFS=';' read -a arr < "$REPLY"
 
     gcp_rows="${arr[0]}"
     gcp_cols="${arr[1]}"
@@ -52,7 +56,7 @@ get_screen_size()
     set_cursor_position "$rsave" "$csave"
 }
 
-make_format_str()
+make_pager_format_str()
 {
     local -n mfs_format="$1"
     local table_name="$2"
@@ -62,9 +66,11 @@ make_format_str()
     ate get_row_size "$table_name" -v row_size
     exit_on_error
 
+    echo -n "About to get field sizes:"
     local -a col_sizes
     ate get_field_sizes "$table_name" -a col_sizes
     exit_on_error
+    read -n1 -p " got 'em: '${col_sizes[*]}'"
 
     local -a parts
     for (( ndx=0; ndx < row_size; ++ndx )); do
@@ -74,8 +80,8 @@ make_format_str()
     done
 
     local OIFS="$IFS"
-    local IFS=' '
-    mfs_format="${parts[*]}"
+    local IFS=" "
+    mfs_format=$'\e[42;1m'"${parts[*]}"$'\e[m'
     IFS="$OIFS"
 }
 
@@ -88,22 +94,25 @@ get_keyp()
     char_from_val() { printf -v "str" "\\%03o" "$2"; printf -v "$1" "$str"; }
 
     local -i keyval
-    read -srN1 keyp
-    val_from_char keyval "$keyp"
+    read -srN1 keychar
+    val_from_char keyval "$keychar"
 
-    # Ignoring possibility of \0
     if [ "$keyval" -lt 27 ]; then
-        char_from_val keyp $(( keyval + 64 ))
-        keystrokestring="^$keyp"
-    elif [ "$keyval" -eq 27 ]; then
-        local -a parts=( ^\[ )
-        if read -t 0; then
+        char_from_val keychar $(( keyval + 64 ))
+        keystrokestring="^$keychar"
+    elif [ "$keyval" -ne 27 ]; then
+        keystrokestring="$keychar"
+    else
+        local -a parts=( '^[' )
+        if read -t 0 keychar; then
+            read -srN1
+            parts+=( "$keychar" )
             while read -t 0; do
                 read -srN1
-                parts+=( "$REPLY" )
-                if [[ "$REPLY" =~ [[:alpha:]] ]] \
-                   || ( [[ "$REPLY" == '~' ]] \
-                        && [[ "$parts[@]:-2:1}" =~ [[:digit:]] ]] ); then
+                parts+=( "$keychar" )
+                # No longer checking for digit before '~', consider
+                # restoring the check if it's not working properly.
+                if [[ "$keychar" =~ ([[:alpha:]]|~)$ ]]; then
                     break
                 fi
             done
@@ -112,19 +121,115 @@ get_keyp()
         local IFS=''
         keystrokestring="${parts[*]}"
         IFS="$OIFS"
-    else
-        keystrokestring="$keyp"
     fi
-
-    # echo "keystrokestring is '$kestrokestring'"
-    # read -n1 -p Press
 }
 
+# fields are: key-string, label, prompt flag, function-to-call, function-arguments
+# The function arguments start with a delimiter with which to split the arguments.
+declare -a SP_navigation=(
+    "^[[A"  "line up"    0  pager_navigate "|-1"
+    "^[[B"  "line down"  0  pager_navigate "|1"
+    "^[[5~" "page up"    0  pager_navigate "|-100"
+    "^[[6~" "page down"  0  pager_navigate "|100"
+    '^[[H'  "home"       0  pager_navigate "|-1000"
+    '^[[F'  "end"        0  pager_navigate "|1000"
+    'q'     "quit"       1  pager_exit     ""
+    '^['    "quit"       1  pager_exit     ""
+)
+
+ate declare SPNav_table 5 SP_navigation
+
+SP_navigate()
+{
+    local -n spn_top="$1"
+    local -i move_val="$2"
+    local -i max_top_row="$3"
+    local -i line_count="$4"
+    local -i row_count="$5"
+
+    case "$move_val" in
+        1)     (( ++spn_top )) ;;
+        -1)    (( --spn_top )) ;;
+        100)   (( spn_top += line_count )) ;;
+        -100)  (( spn_top -= line_count )) ;;
+        1000)  (( spn_top = max_top_row )) ;;
+        -1000) (( spn_top = 0 )) ;;
+    esac
+
+    if [ "$spn_top" -lt 0 ]; then
+        spn_top=0
+    elif [ "$spn_top" -gt "$max_top_row" ]; then
+        spn_top="$max_top_row"
+    fi
+}
+
+
+# This function is a little opaque because it's a temporary
+# solution: the original goal, for which 'ate' is a necessary
+# reprequisit, was to make a flexible pager.
+#
+# That said, here are some usage hints:
+# The first argument must be a table name.  With no other options,
+# the pager will get field widths to format the table by columns
+# before starting the scrolling pager.
+#
+# To run, the function needs some resources for which there are
+# default values that can be replaced:
+# keys_table:       a table of keystroke strings associated with
+#                   functions to call if the keystroke is recognized
+# display_func:     prints a line for a table row, the default display
+#                   function prints the fields using a format string.
+# format_string:    can be provided to replace the default format string
+#                   that prints the fields in column-aligned format.
+#                   If you override the display_func, you may also want
+#                   to override the format_string
+# key_name:         This value should be that name of a key table to
+#                   direct the order of the table's rows.
 simple_pager()
 {
     local table_name="$1"
-    local key_name="$2"
+    local -n sp_opts="$2"
 
+    # extract options to local variable, installing defaults if missing
+    local keys_table="${sp_opts[keys_table]:-SPNav_table}"
+    local display_func="${sp_opts[display_func]:-line_printer}"
+    local format_str="${sp_opts[format_string]}"
+    local key_name="${sp_opts[key_name]}"
+
+    if [ -z "$format_str" ]; then
+        make_pager_format_str format_str "$table_name"
+    fi
+
+    # Get screen dimensions and calculate display limits:
+    local tall wide
+    get_screen_size tall wide
+    local -i top_line line_count
+    (( top_line=2, line_count=tall-4 ))
+
+    # Get table size and calculate content limits:
+    # Content parameters
+    local -i row_count max_top_row
+    ate get_row_count "$table_name" -v row_count
+    exit_on_error
+    (( max_top_row = row_count - line_count ))
+    (( max_top_row = ( max_top_row < 0 ? 0 : max_top_row ) ))
+
+    # Keep track of first row-to-print and whether
+    # it's changed between iterations:
+    local -i old_top=-1 top_row=0
+
+    # Array containing unchanging options to 'ate walk_rows':
+    local -a ate_args=(
+        "$table_name"
+        "$display_func"
+        -c "$line_count"
+        )
+    # Append to arguments for keyed order if key provided
+    if [ -n "$key_name" ]; then
+        ate_args+=( -k "$key_name" )
+    fi
+
+    # Nested walk_rows callback
     line_printer()
     {
         local -n lp_row="$1"
@@ -133,83 +238,46 @@ simple_pager()
         return 0
     }
 
-    local format_str
-    make_format_str format_str "$table_name"
+    pager_navigate()
+    {
+        local move_val="$1"
+        SP_navigate "top_row" "$move_val" "$max_top_row" "$line_count" "$row_count"
+        return 0
+    }
 
-    local tall wide
-    get_screen_size tall wide
-
-    # Display parameters
-    local -i top_line max_lines
-    (( top_line=2, max_lines=tall-4 ))
-
-    # Content parameters
-    local -i bottom_row row_at_end top_row=-1
-    ate get_row_count "$table_name" -v bottom_row
-    exit_on_error
-    (( --bottom_row ))
-    (( row_at_end = bottom_row - max_lines ))
-    (( row_at_end = ( row_at_end < 0 ? 0 : row_at_end ) ))
-
-    # Gatekeeper to prevent replots unless there's a new line
-    local -i new_top=0
-
-    local -a ate_args=(
-        "$table_name"
-        line_printer
-        -c "$max_lines"
-        )
-
-    if [ -n "$key_name" ]; then
-        ate_args+=( -k "$key_name" )
-    fi
-
-    local -a keys_arr=(
-        '^[[A'   # up
-        '^[[B'   # down
-        '^[[5~'  # PgUp
-        '^[[6~'  # PgDn
-        '^[[H'   # Home
-        '^[[F'   # End
-    )
-    ate declare keys_tab 1 keys_arr
-    exit_on_error
+    pager_exit()
+    {
+        return 1
+    }
 
     local keyp
 
     while :; do
-        if [ "$new_top" -ne "$top_row" ]; then
+        if [ "$old_top" -ne "$top_row" ]; then
             reset_screen
             set_cursor_position "$top_line" 0
-            top_row="$new_top"
+            old_top="$top_row"
             ate walk_rows "${ate_args[@]}" -s "$top_row" "$format_str"
         fi
 
         get_keyp "keyp"
-        if [ "${keyp,,}" == 'q' ]; then
-            break
-        else
-            (( new_top = top_row ))
-            ate seek_key keys_tab "$keyp" -ks -v key_row
+        ate seek_key "$keys_table" "$keyp" -ks -v key_ndx
+        exit_on_error
+        if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+            ate get_row "$keys_table" "$key_ndx" -a key_row
             exit_on_error
-            if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-                case "$key_row" in
-                    0) (( --new_top ))
-                       ;;
-                    1) (( ++new_top ))
-                       ;;
-                    2) (( new_top -= max_lines ))
-                       ;;
-                    3) (( new_top += max_lines ))
-                       ;;
-                    4) (( new_top = 0 ))
-                       ;;
-                    5) (( new_top = bottom_row - max_lines ))
-                       ;;
-                esac
 
-                (( new_top = (new_top < 0) ? 0 : new_top ))
-                (( new_top = (new_top > row_at_end) ? row_at_end : new_top ))
+            local func_to_call="${key_row[3]}"
+            local args_to_call="${key_row[4]}"
+            if [ "${#args_to_call}" -gt 1 ]; then
+                IFS="${args_to_call:0:1}" read -r -a args <<< "${args_to_call:1}"
+                if ! "$func_to_call" "${args[@]}"; then
+                    break
+                fi
+            else
+                if ! "$func_to_call"; then
+                    break
+                fi
             fi
         fi
     done
