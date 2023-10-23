@@ -205,6 +205,15 @@ show_demo_menu()
 # signal print_func_line() to line
 B() { :; }
 C() { :; }
+# The following set of function/macros are used to
+# populate an array when executing, but be recognized
+# and printed as a vertical array declaration in
+# show_func().
+# AS = array start, AV = raw array value, AV_v quoted array value, AE = array end
+AS() { local -g ARRNAME="$1"; local -ga "$1"; local -n AV_a="$1"; AV_a=(); }
+AV() { local -n AV_a="$ARRNAME"; AV_a+=( "$1" ); }
+AV_v() { local -n AV_a="$ARRNAME"; local -n AV_val="$1"; AV_a+=( "${AV_val}" ); }
+AE() { :; }
 
 declare fmt_comment=$'%s\e[31;1m# %s\e[m'
 declare fmt_echo=$'%s\e[32;1mecho\e[m %s'
@@ -215,6 +224,14 @@ declare re_comment_line=^\([[:space:]]\*\)C\([[:space:]]+\(.\*\)\)$
 declare re_echo_line=^\([[:space:]]\*\)echo\([[:space:]]+\(.\*\)\)?$
 declare re_blank_line=^\([[:space:]]\*\)B[[:space:]]\*$
 declare re_ate_action=^\([[:space:]]\*\)ate[[:space:]]+\([^[:space:]]+\)\([[:space:]]+\(.\*\)\)?$
+
+# The re_array_start, _value, and _value_value have a double
+# grouping to code_prespace and code_content aliases work for
+# these regexes
+declare re_array_start=^\([[:space:]]\*\)AS[[:space:]]\(\(.\*\)\)$
+declare re_array_value=^\([[:space:]]\*\)AV[[:space:]]\(\(.\*\)\)$
+declare re_array_value_value=^\([[:space:]]\*\)AV_v[[:space:]]\(\(.\*\)\)$
+declare re_array_end=^\([[:space:]]\*\)AE[[:space:]]\*$
 
 declare -n code_prespace=BASH_REMATCH[1]
 declare -n code_content=BASH_REMATCH[3]
@@ -238,6 +255,14 @@ print_func_line()
         printf -v line_str  "$fmd_ate_action" "$code_prespace" "$code_ate_action" "$code_ate_args"
     elif [[ "$line" =~ $re_blank_line ]]; then
         line_str=""
+    elif [[ "$line" =~ $re_array_start ]]; then
+        printf -v line_str "%slocal -a %s=(" "$code_prespace" "$code_content"
+    elif [[ "$line" =~ $re_array_value ]]; then
+        printf -v line_str "%s   %s" "$code_prespace" "$code_content"
+    elif [[ "$line" =~ $re_array_value_value ]]; then
+        printf -v line_str "%s   \"\${%s}\"" "$code_prespace" "$code_content"
+    elif [[ "$line" =~ $re_array_end ]]; then
+        printf -v line_str "%s)" "$code_prespace"
     else
         printf -v line_str "$fmt_normal" "$line"
     fi
