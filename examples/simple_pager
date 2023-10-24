@@ -100,15 +100,15 @@ get_keyp()
     if [ "$keyval" -lt 27 ]; then
         char_from_val keychar $(( keyval + 64 ))
         keystrokestring="^$keychar"
-    elif [ "$keyval" -ne 27 ]; then
+    elif [ "$keyval" -gt 27 ]; then
         keystrokestring="$keychar"
     else
         local -a parts=( '^[' )
         if read -t 0 keychar; then
-            read -srN1
+            read -srN1 keychar
             parts+=( "$keychar" )
             while read -t 0; do
-                read -srN1
+                read -srN1 keychar
                 parts+=( "$keychar" )
                 # No longer checking for digit before '~', consider
                 # restoring the check if it's not working properly.
