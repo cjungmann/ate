@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Declaring ate Tables"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+source utilities
+source common
+
+print_header()
+{
+    cat <<EOF
+This script includes code fragments from the ate tutorial in ate(7),
+illustrating how to perform the most basic functions of declaring and
+using an ate table.
+
+Actions used in this script:
+   declare
+   append_data
+   index_rows
+
+EOF
+}
+
+exit_on_error()
+{
+   local -i exval="$?"
+   if [ "$exval" -ne 0 ]; then
+       printf $'ate error at line %d of script %s:\n' \
+              $(( "${BASH_LINENO[0]}" - 1 )) \
+              "${BASH_SOURCE[1]}"
+       printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+       exit 1
+   fi
+}
+
+simple_print_table()
+{
+    print_line()
+    {
+        local -n pl_row="$1"
+        local IFS=$'\t'
+        echo "${pl_row[*]}"
+    }
+
+    ate walk_rows "$1" print_line
+}
+
+simple_print_table=print_formatted_table
+
+declare -a pets_array=(
+    Nemo    fish    2010-06-06
+    Spot    dog     2014-08-06
+    Fluffy  cat     2015-07-21
+    Polly   parrot  1978-01-17
+)
+
+demo1__declare__embedded_array_method()
+{
+    cat <<EOF
+Initialize a table by hosting an existing array.
+
+A rows index is automatically generated when using this
+basic method.  Other 'declare' methods will require invoking
+the 'index_rows' action to enable the table.
+
+EOF
+
+    echo "Step 1: single action to make a table"
+    ate declare pet_table 3 pets_array
+    exit_on_error
+    C This is a cool comment
+B
+    echo
+    echo "Look at the finished table:"
+    simple_print_table pet_table
+}
+
+demo2__declare__fill_empty_table_method_usingxs_append_data()
+{
+    cat <<EOF
+Creating a table without an array name results in ate creating a
+new empty array for hosting the table data.
+Declare an empty table, fill it with 'append_data,' and
+initialize with 'index_rows.'
+
+EOF
+
+    echo "Step 1: declare empty pet_table"
+    ate declare pet_table 3
+    exit_on_error
+    B
+    echo "Step 2: append pets_array data to pet_table"
+    ate append_data pet_table "${pets_array[@]}"
+    exit_on_error
+    B
+    echo "Step 3: index rows to make them available"
+    ate index_rows pet_table
+    exit_on_error
+    B
+    echo
+    echo "Look at the finished table:"
+    simple_print_table pet_table
+}
+
+demo3__declare__fill_empty_table_method_using_get_array_name()
+{
+    cat <<EOF
+An arguable faster method is to get the array name of a table and
+append data directly to the array.  It will be faster to append an
+entire dataset in one statement, but using this method also bypasses
+the error-checking performed by 'append_data'
+
+EOF
+    echo "Step 1: declare empty pet_table"
+    ate declare pet_table 3
+    exit_on_error
+    B
+    echo "Step 2: get array name"
+    ate get_array_name pet_table -v array_name
+    exit_on_error
+    B
+    echo "Step 3: Nameref the array name and append array elements"
+    declare -n array_ref="$array_name"
+    array_ref+=( "${pets_array[@]}" )
+    B
+    echo "Step 4: Index added rows"
+    ate index_rows pet_table
+    exit_on_error
+    B
+    echo
+    echo "Look at the finished table:"
+    simple_print_table pet_table
+}
+
+
+demo4__declare__fill_table_with_file_contents()
+{
+    cat <<EOF
+Initialize an empty table, the fill the table, line-by-line, with the
+contents of a data file, using 'append_data' to add each interpreted
+
+One of the challenges with this example is how to recognize the
+quote-enclosed elements using simple Bash syntax.  This helps
+preserve the ability to successfully parse data that use multiple
+spaces to format human-written tables into columns for easier
+reading.
+
+Using 'append_data' to add each line provides an opportunity
+to recognize a misformed line before it corrupts subsequent data
+with misaligned elements.
+
+EOF
+    echo "Step 1: declare task_table"
+    ate declare task_table 3
+    exit_on_error
+    local -a els
+    B
+    echo "Step 2: read lines from file 'data_task_table'"
+    while read -r; do
+        C preserve quote-enclosed arguments with this:
+        declare -a "els=($REPLY)"
+        B
+        ate append_data task_table "${els[@]}"
+        exit_on_error
+    done < "data_task_table"
+    B
+    echo "Step 3: index rows to make them available"
+    ate index_rows task_table
+    exit_on_error
+    B
+    echo
+    echo "Look at the finished table:"
+    print_formatted_table task_table
+}
+
+demo5__declare__missing_values()
+{
+    cat <<EOF
+When table source data neglects place-holder empty strings
+for missing values, the table alignment will be ruined.
+
+EOF
+    echo "Declare a 4-column table for vaccination records"
+    ate declare pet_table 4
+    exit_on_error
+    B
+    echo "Import the 3-column table data"
+    ate append_data pet_table "${pets_array[@]}"
+    exit_on_error
+    B
+    echo "Index table to access the rows"
+    ate index_rows pet_table
+    exit_on_error
+    B
+    echo
+    echo "Show the table:"
+    print_formatted_table pet_table
+    B
+    echo
+    echo "You can see how row elements get shifted back to"
+    echo "fill in previous rows that failed to provide empty"
+    echo "strings for missing values."
+}
+
+
+run_demo_interaction print_header
