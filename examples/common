@@ -281,13 +281,20 @@ print_func_line()
 
 declare re_heredoc=^[[:space:]]+cat\ "<<"\(.\*\)$
 
+# Break down a function into constituent lines, making conversions
+# as necessary, then display the code in function simple_pager.
+#
+# In functions using this, make sure that printf format strings
+# are enclosed in single quotes without a '$' prefix in oder to
+# preserve newline, escape, and other control characters.
 show_func()
 {
     local func_name="$1"
-    local OIFS="$IFS"
-    local IFS=$'\n'
-    declare func=( $( declare -f "$func_name" ) )
-    IFS="$OIFS"
+
+    declare -a func
+    while IFS='' read -r line; do
+        func+=( "${line}" )
+    done < <( declare -f "$func_name" )
 
     func_line_printer()
     {
