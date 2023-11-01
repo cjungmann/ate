@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ "$1" == "tagline" ]]; then
-    echo "Queries for table information"
+    echo "Table Information"
     exit 1
 fi
 
@@ -25,20 +25,15 @@ exit_on_error
 print_header()
 {
    cat <<EOF
-There isn't much to see in this example because the actions
-demonstrated here are simple to understand and easy to use.
+This script includes functions that demonstrate the topics covered
+in the 'TABLE INFORMATION' section of the ate(7) manual.
 
-The ate actions get_row_count, get_row_size, and get_array_name
-report details about the table, and get_field_sizes returns the
-size of the largest element in each column to support formatted
-table printing.
+Table information is available to prevent usage errors, to tabulate
+column sizes, and to learn the array name.
 
-Actions get_row_size and get_row_count may be useful to confirm
-assumptions about table to avoid out-of-range usage errors.
-
-Action get_array_name will expose an array name for direct
-access, which would be useful for originally empty tables
-that generate their own arrays.
+The menu below access functions that match subheadings in the manual.
+After the function shows the output, type 'c' to see the code that
+generated the output.
 
 EOF
 }
@@ -52,9 +47,21 @@ demo1__view_demo_table()
     print_formatted_table classes
 }
 
-demo2__default_report_vars()
+demo2__table_information__default_reports()
 {
-    echo "Reading table info individually"
+    cat <<EOF
+While reporting variables can be changed, the reporting variables
+'ATE_VALUE' and 'ATE_ARRAY' are the default names to read value
+and array reports from ate actions.  Providing default reporting
+variables is in the interest of starting with a simpler interface.
+
+EOF
+    echo "  Demonstration Table  "
+    echo "-----------------------"
+    print_formatted_table classes
+    B
+    echo
+    echo "Reading table information using default report variables:"
     ate get_row_size classes
     echo "row size is '$ATE_VALUE'"
     B
@@ -65,15 +72,77 @@ demo2__default_report_vars()
     echo "array name is '$ATE_VALUE'"
     B
     ate get_field_sizes classes
-    local OIFS="$IFS"
-    local IFS=','
-    local combined="${ATE_ARRAY[*]}"
-    IFS="$OIFS"
-    echo "field sizes are ${combined//,/, }"
+    echo "field sizes are '${ATE_ARRAY[*]}'"
 }
 
+demo3__table_information__specified_reports()
+{
+    echo "  Demonstration Table  "
+    echo "-----------------------"
+    print_formatted_table classes
+    B
+    echo
+    echo "Step 1: Getting information with specified report variables:"
+    C Confident of usage, we will skip exit_on_error calls:
+    ate get_row_size classes -v row_size
+    ate get_row_count classes -v row_count
+    ate get_array_name classes -v array_name
+    B
+    C Package arguments to printf so all line lengths stay in bounds
+    declare format="There are %d rows of %d fields using array '%s'\n"
+    AS pf_args
+    AV_v row_count
+    AV_v row_size
+    AV_v array_name
+    AE
+    B
+    echo
+    echo "Step 2: Use printf to print table information:"
+    printf "$format" "${pf_args[@]}"
+}
 
-demo3__show_dimensions()
+demo4__get_field_sizes__find_maximum_field_sizes_for_formatting()
+{
+    cat <<EOF
+The 'get_field_sizes' action is useful for formatting, either for a
+full table printout, or for selected columns.
+
+EOF
+    echo
+    echo "Get field sizes for the classes table"
+    ate get_field_sizes classes -a col_sizes
+    exit_on_error
+    echo "Column sizes are ${col_sizes[*]}"
+    B
+    echo
+    echo "Construct a format string"
+    C Transform each column size into a format fragment:
+    declare -a cols
+    for size in "${col_sizes[@]}"; do
+        cols+=( "%-${size}s" )
+    done
+    B
+    C Concatenate fragments to make the format string
+    setfmt() { fmtstr="${cols[*]}\n"; }
+    IFS=' ' setfmt
+    echo "Format string: '$fmtstr'"
+    B
+    echo
+    echo "Making a custom 'walk_rows' printer callback"
+    pr_callback()
+    {
+        local -n prc_row="$1"
+        local fmt="$5"
+        printf "$fmt" "${prc_row[@]}"
+        return 0
+    }
+    B
+    echo
+    echo "Use 'walk_rows' to print the table."
+    ate walk_rows classes pr_callback "$fmtstr"
+}
+
+demo5__show_dimensions()
 {
     echo "It's convenient to get info into named variables"
     echo "so the value isn't lost to the next call to ate."
@@ -83,15 +152,16 @@ demo3__show_dimensions()
     ate get_row_size classes -v row_size
     ate get_row_count classes -v row_count
     ate get_array_name classes -v array_name
-    echo "The table as $row_count rows of $row_size elements in array $array_name"
+    B
+    local -a pargs=( "$row_size" "$row_count" "$array_name" )
+    printf "The table has %d rows of %d values in array %s.\n" "${pargs[@]}"
     B
     ate get_field_sizes classes -a field_sizes
     B
-    local OIFS="$IFS"
-    local IFS=','
-    local combined="${field_sizes[*]}"
-    IFS="$OIFS"
+    local combined
+    IFS=',' join_array combined field_sizes
     echo "The table's field sizes are ${combined//,/, }"
 }
+
 
 run_demo_interaction print_header
