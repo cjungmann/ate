@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "tagline" ]]; then
+    echo "Using requested ate table information"
+    exit 1
+fi
+
+if ! enable -f ../ate.so ate; then
+   echo "Script requires compiled ate.so to work"
+   exit 1
+fi
+
+source utilities
+source common
+
+# Delete this if you're not using the 'classes' table
+source tables
+echo "Creating a global table for the examples"
+ate declare classes "$class_row_size"
+exit_on_error
+ate append_data classes "${class_array[@]}"
+exit_on_error
+ate index_rows classes
+exit_on_error
+
+
+script_header()
+{
+    cat <<EOF
+The ate command's exit code reports usage success or failure, with
+usage or syntax errors explained through the 'ATE_ERROR' variable.
+
+The ATE_VALUE variable will contain sought information when the
+result is a single value.  This is the reporting variable for the
+'get_row_size', 'get_row_count', 'get_array_name', and 'seek_key'
+actions.
+
+ATE_ARRAY is the report variable when the result is an array for
+the 'get_field_sizes' and 'get_row' actions.
+
+ATE_SEEK_OUTPUT reports if search match was made for 'seek_key'.
+
+
+Report variables can be changed.  Override ATE_ARRAY with -a <name>,
+ATE_VALUE with -v <name>, and ATE_SEEK_OUTCOME with -o <name>.
+
+EOF
+}
+
+declare table_name="classes"
+
+demo1__common_table()
+{
+    cat <<EOF
+We will use the following common table for the examples in the script.
+
+EOF
+    C 'table_name' is a global variable with the common table name
+    printf -v header_str "Using the '%s' common table" "$table_name"
+    printf -v dashes "%*s" "${#header_str}" " "
+    echo "$header_str"
+    echo "${dashes// /-}"
+    print_formatted_table classes
+}
+
+demo2__error_reporting()
+{
+    cat <<EOF
+The ate command follows convention in returning an exit code 0 for
+success and a non-zero value for failure, which also correspond to
+'true' and 'false' values when used with a test.
+
+Any time there is a non-zero exit code, it is a predictable usage
+error.  Upon a usage error, the 'ATE_ERROR' variable will explain the
+cause of the usage error.
+
+EOF
+    C Display command arguments before calling command,
+    C then display command feedback
+    analyze_exit_code()
+    {
+        printf 'running \e[33;1mate %s\e[m.\n' "$*"
+        ate "$@"
+        local -i exit_code="$?"
+        if [ "$exit_code" -ne 0 ]; then
+            AS pfargs
+            AV_v exit_code
+            AV_v ATE_ERROR
+            AE
+            printf 'Exit code %d: \e[31;1m%s\e[m.\n' "${pfargs[@]}"
+        fi
+        echo
+    }
+    B
+    echo
+    echo "Let's generate some usage errors"
+    echo
+    analyze_exit_code declare empty_table
+    analyze_exit_code declare empty_table 3 bogus
+    analyze_exit_code get_row empty_table 4
+}
+
+demo2__parameter_actions()
+{
+    cat <<EOF
+
+This section gives a quick overview of the informational actions
+and what their output looks like.
+
+EOF
+    B
+    echo
+    echo "Actions 'get_row_size', 'get_row_count', and 'get_array_name'"
+    ate get_row_size "$table_name"
+    exit_on_error
+    printf "Row size of %s is %d.\n" "$table_name" "$ATE_VALUE"
+    ate get_row_count "$table_name"
+    exit_on_error
+    printf "Row count of %s is %d.\n" "$table_name" "$ATE_VALUE"
+    ate get_array_name "$table_name"
+    exit_on_error
+    printf "Array name of %s is %s.\n" "$table_name" "$ATE_VALUE"
+
+    }
+
+
+run_demo_interaction script_header
