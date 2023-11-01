@@ -104,7 +104,6 @@ EOF
     unset sorted_table
     unset ranked_table
     B
-    OIFS="$IFS"
     IFS=$'\n'
     B
     echo "The original array in order of animal size is:"
@@ -112,7 +111,6 @@ EOF
     echo
     echo "Alphabetical sorting of reindexed array is:"
     echo "${copied_array[*]}"
-    IFS="$OIFS"
 }
 
 
