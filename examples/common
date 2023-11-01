@@ -98,10 +98,8 @@ get_journalctl_table()
     )
 
     # Compress the array for the final expression
-    local OIFS="$IFS"
-    local IFS=''
-    local re="${re_arr[*]}"
-    IFS="$OIFS"
+    local re
+    IFS='' join_array re re_arr
 
     # Make aliases for the regex matches
     local -n dtime="BASH_REMATCH[1]"
@@ -357,8 +355,6 @@ run_demo_interaction()
     ate get_row_count demo_table -v demo_count
     exit_on_error
 
-    declare OIFS="$IFS"
-
     while :; do
         reset_screen
         printf $'running demos from \e[32;1m%s\e[m\n' "$script_name"
@@ -400,11 +396,14 @@ run_demo_interaction()
                 if [ "$exmode" -eq 1 ]; then
                     "$func_name"
                     echo
-                    read_one_char keyp "Press 'c' for the code, any other key to return"
+                    echo "Press 'c' for the code, ESCAPE to return, 'q' for main menu"
+                    get_keyp "keyp"
                     if [ "$keyp" == 'c' ]; then
                         exmode=0
-                    else
+                    elif [ "$keyp" == "^[" ]; then
                         break
+                    elif [ "$keyp" == 'q' ]; then
+                        exit 1
                     fi
                 else
                     show_func "$func_name"
