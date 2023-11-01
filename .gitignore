@@ -6,3 +6,5 @@ html
 *.o
 *.so
 pwla_agent_list.def
+tests
+examples/eg_[[:alpha:]]
