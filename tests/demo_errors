@@ -208,6 +208,13 @@ EOF
 
     test_params "bad row_size value" resize_rows good_handle 0
     test_params "put_row missing array" put_row good_handle 0
+
+    test_params "get_row bad missing row index" get_row good_handle
+    test_params "put_row bad missing row index" put_row good_handle gotten_row
+
+    test_params "get_row bad uninterpretable row index" get_row good_handle first
+    test_params "put_row bad uninterpretable row index" put_row good_handle second
+
     test_params "put_row bad row index (too low)" put_row good_handle -1 gotten_row
     test_params "put_row bad row index (too high)" put_row good_handle 10 gotten_row
     test_params "put_row non-existent array" put_row good_handle 0 gotten_row
