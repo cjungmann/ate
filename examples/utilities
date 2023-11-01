@@ -13,6 +13,22 @@ char_from_val()
 # val_from_char "result_name" "$character"
 val_from_char() { LC_CTYPE=C; printf -v "$1" '%d' "'$2"; }
 
+# Use to join array elements using IFS.  IFS can be set just before
+# calling to avoid need for restoring a temporary value.  ie:
+# IFS=$'\n' join_array
+#
+# If the array named in $1 does not exist, it will be created as a
+# global variable and then set with the join result
+join_array()
+{
+    if ! declare -p "$1" 1>/dev/null 2>&1; then
+        if ! declare -g "$1"; then exit 1; fi
+    fi
+    local -n ja_target="$1"
+    local -n ja_source="$2"
+    ja_target="${ja_source[*]}"
+}
+
 exit_on_error()
 {
    local -i exval="$?"
