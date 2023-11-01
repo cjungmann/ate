@@ -79,10 +79,8 @@ make_pager_format_str()
         parts+="%-${col_size}s"
     done
 
-    local OIFS="$IFS"
     local IFS=" "
     mfs_format=$'\e[42;1m'"${parts[*]}"$'\e[m'
-    IFS="$OIFS"
 }
 
 get_keyp()
@@ -117,10 +115,7 @@ get_keyp()
                 fi
             done
         fi
-        local OIFS="$IFS"
-        local IFS=''
-        keystrokestring="${parts[*]}"
-        IFS="$OIFS"
+        IFS='' join_array keystrokestring parts
     fi
 }
 
@@ -134,7 +129,7 @@ declare -a SP_navigation=(
     '^[[H'  "home"       0  pager_navigate "|-1000"
     '^[[F'  "end"        0  pager_navigate "|1000"
     'q'     "quit"       1  pager_exit     ""
-    '^['    "quit"       1  pager_exit     ""
+    '^['    "return"     1  pager_return   ""
 )
 
 ate declare SPNav_table 5 SP_navigation
@@ -245,16 +240,17 @@ simple_pager()
         return 0
     }
 
-    pager_exit()
-    {
-        return 1
-    }
+    # non-zero exit code breaks while look
+    pager_return() { return 1; }
+    pager_exit() { exit 1; }
 
     local keyp
 
     while :; do
         if [ "$old_top" -ne "$top_row" ]; then
             reset_screen
+            set_cursor_position $(( tall )) 0
+            printf "Press arrow and page keys to scroll, ESCAPE to return, 'q' to leave"
             set_cursor_position "$top_line" 0
             old_top="$top_row"
             ate walk_rows "${ate_args[@]}" -s "$top_row" "$format_str"
