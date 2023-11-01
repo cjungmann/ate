@@ -1,0 +1,54 @@
+.if \n[include_flag]==0 \{\
+.  TH debug 1
+.  so macros.7
+.\}
+.SH REPORTING
+.PP
+There are several layers of reporting for the
+.B ate
+command.
+.SS USAGE REPORTING
+.PP
+The command's
+.B "exit code"
+should be used to confirm proper usage when it is zero, consultining the
+.B ATE_ERROR
+variable for information when the exit code indicates failure with a non-zero
+value.
+.PP
+There should be no usage errors in a script.
+Even range errors can be avoided by respecting index limits whose
+values can be found with
+.BR get_row_size " and " get_row_count
+actions.
+.PP
+Many
+.B ate
+example scripts use the function
+.B exit_on_error
+to confirm proper usage:
+.IP
+.EX
+exit_on_error()
+{
+   local -i ecode=\(dq\(Do?\(dq
+   if [ \(dq\(Doecode\(dq -ne 0 ]; then
+      printf \(aqError %d: %s\(rsn\(aq \(dq\(Doecode\(dq \(dq\(DoATE_ERROR\(dq
+      exit 1
+   fi
+}
+.EE
+.SS TABLE COMPOSITION REPORTING
+.PP
+There are several actions that disclose characteristics of the table.
+.BR get_row_size " and " get_row_count
+reveal the table dimensions, and
+.B get_array_name
+exposes the name of the array that hosts the table's data.
+.SS TABLE CONTENT REPORTING
+.PP
+Actions
+.BR get_row ", " seek_key ", and " get_field_sizes
+report the data, where to find the data, and the shape of the data.
+.PP
+Usage of these actions are covered elsewhere
