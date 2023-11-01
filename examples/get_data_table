@@ -20,7 +20,6 @@ fill_table()
         wget "$data_url" -O "$data_file"
     fi
 
-    local OIFS="$IFS"
     local IFS=$'\t'
 
     ate get_row_size "$table_name" -v starting_row_size
