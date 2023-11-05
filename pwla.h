@@ -145,6 +145,7 @@ int pwla_sort(ARG_LIST *alist);
 int pwla_filter(ARG_LIST *alist);
 int pwla_make_key(ARG_LIST *alist);
 int pwla_seek_key(ARG_LIST *alist);
+int pwla_animate(ARG_LIST *alist);
 
 /** @} */
 
