@@ -34,7 +34,7 @@ $(ENABLER):
 	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
 	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
 
-pwla_agent_list.def: ate.1.d/synopsis.1 gen_agent_list
+pwla_agent_list.def: ate.1.d/synopsis.1 ate.1.d/macros.1 gen_agent_list
 	./gen_agent_list > pwla_agent_list.def
 	touch pwla_agent.c
 
