@@ -43,6 +43,13 @@ reading and writing.
   solution.  For example, **ate** exposes C library function `qsort`
   to script-based comparison functions.
 
+## PREREQUISITES
+
+Building the project requires packages **build-essential** and
+**bash-builtins**.  Please install them on your system if they are
+not already installed.
+
+
 ## USAGE
 
 **ate** features are accessed through the **ate** command, followed
