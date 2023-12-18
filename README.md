@@ -49,7 +49,6 @@ Building the project requires packages **build-essential** and
 **bash-builtins**.  Please install them on your system if they are
 not already installed.
 
-
 ## USAGE
 
 **ate** features are accessed through the **ate** command, followed
@@ -187,6 +186,41 @@ Use the builtin in a script by including the following line:
 enable $( enable_ate )
 ~~~
 
+## DEBUGGING
+
+Besides having the Bash headers available, I have found it very
+useful to also have a debugger-enabled version of Bash handy for
+stepping through the code.
+
+The following instructions should help you to download, build, and
+link a debugger version of Bash into the **ate** development
+directory.
+
+The instruction assume that you have a `~/gits` directory for
+cloning or downloading then building source code, and a
+`~/work` directory for your projects.  Set those variables
+separately, copy the following lines to your copy buffer (omitting
+the directory declares), and paste the copy buffer to a terminal
+command line.
+
+~~~.sh
+declare workdir=~/work
+declare clonedir=~/gits
+
+# Download and build your version of Bash:
+cd "$clonedir"
+[[ $( bash --version ) =~ version\ ([0-9.]+) ]]
+declare BVER="bash-${BASH_REMATCH[1]}"
+# wget https://ftp.gnu.org/gnu/bash/${BVER}.tar.gz
+tar -xzf ${BVER}.tar.gz
+cd "${BVER}"
+./configure --enable-debugger
+make
+
+# Make link to the debugger-enabled Bash executable:
+cd "${workdir}/ate"
+cp -s "${clonedir}/${BVER}/bash" .
+~~~
 
 ## ALTERNATE NAMES
 
