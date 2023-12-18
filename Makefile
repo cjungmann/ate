@@ -45,6 +45,7 @@ $(ENABLER):
 install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
 	install -D --mode=775 $(TARGET) $(PREFIX)/lib
+	mkdir --mode=755 -p $(PREFIX)/share/man/man1
 	mkdir --mode=755 -p $(PREFIX)/share/man/man7
 	soelim ate.1 | gzip -c - > $(PREFIX)/share/man/man1/ate.1.gz
 	soelim ate.7 | gzip -c - > $(PREFIX)/share/man/man7/ate.7.gz
