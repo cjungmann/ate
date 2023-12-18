@@ -268,8 +268,14 @@ void survey_array(ARRAY *array)
       printf("%2ld: '%s'\n", ptr->ind, ptr->value);
       ptr = ptr->next;
    }
-   printf("Array lastref is %ld (%s).\n", array->lastref->ind, array->lastref->value);
-   printf("Array max_index, num_elements are %ld, %ld.\n", (long int)array->max_index, (long int)array->num_elements);
+   printf("Array lastref is %ld (%s).\n",
+          array->lastref->ind,
+          array->lastref->value);
+
+   printf("Array max_index, num_elements are %ld, %ld.\n",
+          (long int)array->max_index,
+          (long int)array->num_elements);
+   
    printf("How does it look?\n");
 }
 
