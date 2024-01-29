@@ -82,7 +82,8 @@ in the `.bashrc` file to enable **ate** globally.
 
 **ate** features are accessed through the **ate** command, followed
 by an `action` string and parameters that control the operation of
-the requested action.
+the requested action.  Please refer to the project man pages for
+more extensive usage instructions.
 
 ### Basic Operation:
 
@@ -114,8 +115,9 @@ ate <b>put_row</b> pets_handle 0 ATE_ARRAY
 help ate
 
 # ate Man pages:
-man 1 ate     # complete usage guide
-man 7 ate     # tutorials
+man 1 ate          # complete usage guide
+man 7 ate          # tutorials
+man 7 ate-examples
 
 # ate actions that provide help:
 
