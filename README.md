@@ -2,16 +2,18 @@
 
 **ate** is an acronym for (Bash) Array Table Extension
 
-## INTRODUCTION
+## DESCRIPTION
 
 **ate** is a loadable builtin command for Bash that enhances Bash
 arrays with a table view, fast indexed access to virtual rows, and
 some database features through a simple API.
 
-Bash arrays are double-linked lists of string values with assigned
-rather than positional index values.  They are optimized for efficient
-appending and sequential reads (ie **for** loops), but are quite slow
-for indexed access, especially for large arrays.
+Bash arrays are double-linked lists of string values.  Unintuitively,
+rather than directly accessing an element by an index, a Bash array
+finds an array element by stepping through the list to find the element
+with a matching index.  They are optimized for efficient appending and
+sequential reads (ie **for** loops), but are quite slow for indexed
+access, especially for large arrays.
 
 **ate** works with a custom Bash shell variable that catalogs the
 first array element of each virtual row in a C-langauge array that
@@ -48,6 +50,30 @@ reading and writing.
 Building the project requires packages **build-essential** and
 **bash-builtins**.  Please install them on your system if they are
 not already installed.
+
+## INSTALLATION
+
+### Clone project, build and install:
+
+~~~sh
+git clone https://www.github.com/cjungmann/ate.git
+cd ate
+make
+sudo make install
+~~~
+### Enable ate
+
+**ate** is a Bash builtin, and must be enabled before it can be used.
+
+To simplify the enable step, the project includes a script, `enable_ate`
+that makes it easier to aid enable **ate**.
+
+~~~sh
+enable $( enable_ate )
+~~~
+
+This `enable` command can be used in a script, on the commnd line, or
+in the `.bashrc` file to enable **ate** globally.
 
 ## USAGE
 
@@ -97,34 +123,6 @@ ate <b>list_actions</b>
 ate <b>show_action</b> declare    # display usage for declare action
 ate <b>show_action</b>            # display usage text for all actions
 </pre>
-
-## SETUP
-
-### Clone project, build and install:
-
-~~~sh
-git clone https://www.github.com/cjungmann/ate.git
-cd ate
-make
-sudo make install
-~~~
-### Enable ate
-
-As a Bash builtin, the **ate** module must be enabled before it can
-be used. 
-
-**ate** is a Bash builtin, and must be enabled for it to be used.
-
-Part of the installation is a script, `enable_ate` that makes it
-easier to aid enable **ate**.  Put the following line in a script
-that will use **ate**:
-
-~~~sh
-enable $( enable_ate )
-~~~
-
-This `enable` command can be used in a shell, a script, or in the
-`.bashrc` file to enable **ate** globally.
 
 ## Basic Syntax
 
