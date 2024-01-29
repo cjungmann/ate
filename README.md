@@ -64,6 +64,10 @@ cd ate
 make
 sudo make install
 ~~~
+
+There is also an _uninstall_ Makefile target to remove all traces of
+the installation.
+
 ### Enable ate
 
 **ate** is a Bash builtin, and must be enabled before it can be used.
