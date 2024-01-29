@@ -1,12 +1,10 @@
-# PROJECT ARRAY TABLE EXTENSION
+# ARRAY TABLE EXTENSION
 
 **ate** is an acronym for (Bash) Array Table Extension
 
 ## DESCRIPTION
 
-**ate** is a loadable builtin command for Bash that enhances Bash
-arrays with a table view, fast indexed access to virtual rows, and
-some database features through a simple API.
+Bash arrays can use some help.
 
 Bash arrays are double-linked lists of string values.  Unintuitively,
 rather than directly accessing an element by an index, a Bash array
@@ -15,6 +13,10 @@ element with a matching index.  Bash arrays are optimized for
 efficient appending and sequential reads (ie **for** loops), but are
 quite slow for changes, insertions, and indexed access, especially
 for large arrays.
+
+**ate** is a loadable builtin command for Bash that enhances Bash
+arrays with a table view, fast indexed access to virtual rows, and
+some database features through a simple API.
 
 **ate** works with a custom Bash shell variable that catalogs the
 first array element of each virtual row in a C-langauge array that
