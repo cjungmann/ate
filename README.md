@@ -10,10 +10,11 @@ some database features through a simple API.
 
 Bash arrays are double-linked lists of string values.  Unintuitively,
 rather than directly accessing an element by an index, a Bash array
-finds an array element by stepping through the list to find the element
-with a matching index.  They are optimized for efficient appending and
-sequential reads (ie **for** loops), but are quite slow for indexed
-access, especially for large arrays.
+finds an array element by stepping through the list to find the
+element with a matching index.  Bash arrays are optimized for
+efficient appending and sequential reads (ie **for** loops), but are
+quite slow for changes, insertions, and indexed access, especially
+for large arrays.
 
 **ate** works with a custom Bash shell variable that catalogs the
 first array element of each virtual row in a C-langauge array that
