@@ -21,14 +21,14 @@ reading and writing.
 ## FEATURES
 
 - **Much faster than stanard Bash array**  
-  **ate** creates a C-language array index of pointers to the first
-  array element of a virtual row.  The index enables direct access
-  to a virtual row for both reading and writing.
+  **ate** creates an index with a C-language array of pointers to the
+  first array element of each virtual row.  The index enables direct
+  access to a virtual row for both reading and writing.
 
 - **The table state persists between calls to the `ate` command**  
   **ate** uses a custom Bash SHELL_VAR, accessed through the handle
   name, to keep track of the table dimensions and row indexes.  This
-  permits Bash garbage collection to manage the memory while providing
+  permits Bash garbage collection to manage the memory.
 
 - **Can create alternate views to a table**  
   Secondary handles can contain sorted or filtered views of a table
@@ -103,7 +103,7 @@ ate <b>show_action</b>            # display usage text for all actions
 ### Clone project, build and install:
 
 ~~~sh
-clone https://www.github.com/cjungmann/ate.git
+git clone https://www.github.com/cjungmann/ate.git
 cd ate
 make
 sudo make install
@@ -126,7 +126,7 @@ enable $( enable_ate )
 This `enable` command can be used in a shell, a script, or in the
 `.bashrc` file to enable **ate** globally.
 
-### Basic Syntax
+## Basic Syntax
 
 **ate** *action_name* [*handle_name*] [**-v** *return_value_name*] [**-a** *return_array_name*] [...]
 
