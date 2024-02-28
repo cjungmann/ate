@@ -762,8 +762,10 @@ int get_handle_var_by_name_or_fail(SHELL_VAR **rvar,
       {
          if (ahead_p(sv))
          {
-            *rvar = sv;
-            retval = EXECUTION_SUCCESS;
+            AHEAD *ahead = ahead_cell(sv);
+            retval = ate_check_head_integrity(ahead);
+            if (retval == EXECUTION_SUCCESS)
+               *rvar = sv;
          }
          else
             ate_register_error("variable '%s' is not a handle in action '%s'", name, action);
