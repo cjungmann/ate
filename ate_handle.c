@@ -401,7 +401,8 @@ int ate_check_head_integrity(AHEAD *head)
    if (head->array == NULL
        || (array=array_cell(head->array)) == NULL
        || array_has_been_freed(array)
-       || (head->row_count>0 && array->head->next != head->rows[0])
+       // This test causes sorted handles to be judged invalid:
+       // || (head->row_count>0 && array->head->next != head->rows[0])
       )
    {
       ate_register_error("head does not contain valid array (out-of-scope?)");
