@@ -8,6 +8,9 @@
 #include "ate_utilities.h"
 #include "ate_errors.h"
 
+#include <assert.h>
+#include <stdint.h>   // For casting pointer to int to test for having been freed
+
 static const char AHEAD_ID[] = "ATE_HANDLE";
 
 /**
@@ -359,6 +362,14 @@ ARRAY_ELEMENT* ate_get_array_head(AHEAD *handle)
       return (ARRAY_ELEMENT*)NULL;
 }
 
+bool array_has_been_freed(ARRAY *array)
+{
+   assert(sizeof(int) <= sizeof(ARRAY*));
+   intptr_t ptrval = (intptr_t)array;
+   char *cptr = (char*)&ptrval;
+   return *cptr == *(cptr+1) && *cptr == *(cptr+2);
+}
+
 /**
  * @brief Test several AHEAD characteristics to see if it's consistent
  * @param "head"   Supposedly initialzed AHEAD struct
@@ -388,9 +399,12 @@ int ate_check_head_integrity(AHEAD *head)
    // Perhaps unnecessary test that an array is attached:
    ARRAY *array = NULL;
    if (head->array == NULL
-       || (array=array_cell(head->array)) == NULL)
+       || (array=array_cell(head->array)) == NULL
+       || array_has_been_freed(array)
+       || array->head->next != head->rows[0]
+      )
    {
-      ate_register_error("head does not contain valid array");
+      ate_register_error("head does not contain valid array (out-of-scope?)");
       retval = EX_NOTFOUND;
       goto early_exit;
    }
