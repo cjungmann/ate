@@ -401,18 +401,11 @@ int ate_check_head_integrity(AHEAD *head)
    if (head->array == NULL
        || (array=array_cell(head->array)) == NULL
        || array_has_been_freed(array)
-       || array->head->next != head->rows[0]
+       || (head->row_count>0 && array->head->next != head->rows[0])
       )
    {
       ate_register_error("head does not contain valid array (out-of-scope?)");
       retval = EX_NOTFOUND;
-      goto early_exit;
-   }
-
-   if (head->row_count == 0)
-   {
-      ate_register_error("head contains no indexed rows");
-      retval = EX_BADASSIGN;
       goto early_exit;
    }
 
@@ -425,13 +418,6 @@ int ate_check_head_integrity(AHEAD *head)
       ate_register_error("head incompatible row size (%d) for %d array elements",
                          head->row_size, element_count);
       retval = EX_BADASSIGN;
-      goto early_exit;
-   }
-   // Test that all elements are in a row
-   if (head->row_size * head->row_count != element_count)
-   {
-      ate_register_error("some head array elements not indexed");
-      retval = EX_NOINPUT;
       goto early_exit;
    }
 
