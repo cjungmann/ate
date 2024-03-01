@@ -38,7 +38,7 @@ int reindex_array_elements(AHEAD *head);
 
 ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size);
 
-int table_extend_rows(AHEAD *head, int new_columns);
+int table_extend_rows(AHEAD *head, int new_columns, const char *fill_value);
 int table_contract_rows(AHEAD *head, int field_to_remove);
 
 int update_row_array(SHELL_VAR *target_var, ARRAY_ELEMENT *source_row, int row_size);

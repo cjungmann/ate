@@ -654,10 +654,12 @@ int pwla_resize_rows(ARG_LIST *alist)
 {
    const char *handle_name = NULL;
    const char *new_row_size_str = NULL;
+   const char *fill_value = NULL;
 
    ARG_TARGET resize_rows_targets[] = {
       { "handle_name", AL_ARG, &handle_name},
       { "new_row_size", AL_ARG, &new_row_size_str},
+      { "fill_value", AL_ARG, &fill_value },
       { NULL }
    };
 
@@ -697,7 +699,7 @@ int pwla_resize_rows(ARG_LIST *alist)
    }
 
    if (new_row_size > ahead->row_size)
-      retval = table_extend_rows(ahead, new_row_size - ahead->row_size);
+      retval = table_extend_rows(ahead, new_row_size - ahead->row_size, fill_value);
    else if (new_row_size < ahead->row_size)
       retval = table_contract_rows(ahead, ahead->row_size - new_row_size);
 

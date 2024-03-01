@@ -396,10 +396,11 @@ ARRAY_ELEMENT *get_end_of_row(ARRAY_ELEMENT *row, int row_size)
  *                          initialized handle.
  * @param "new_columns [in] the number of fields to add to the row
  *                          size
+ * @param "fill_value" [in] (optional) value to use for new array elements
  *
  * @return EXECUTION_SUCCESS if it works, otherwise EX_USAGE or EXECUTION_FAILURE
  */
-int table_extend_rows(AHEAD *head, int new_columns)
+int table_extend_rows(AHEAD *head, int new_columns, const char *fill_value)
 {
    int retval = EXECUTION_SUCCESS;
 
@@ -414,6 +415,9 @@ int table_extend_rows(AHEAD *head, int new_columns)
    int el_count;
    int new_elements = 0;
 
+   if (fill_value == NULL)
+      fill_value = "";
+
    ARRAY_ELEMENT *field = NULL, *after_row = NULL;
 
    ARRAY_ELEMENT **row = row_start;
@@ -425,7 +429,7 @@ int table_extend_rows(AHEAD *head, int new_columns)
       el_count = 0;
       while (el_count < new_columns)
       {
-         new_element = array_create_element(0, "");
+         new_element = array_create_element(0, (char*)fill_value);
 
          new_element->prev = field;
          field->next = new_element;
