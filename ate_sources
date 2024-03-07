@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+declare PREFIX=#PREFIX#
+declare BUILTIN=#BUILTIN#
+declare SOURCE_PATH="${PREFIX}/lib/${BUILTIN}_sources"
+
+script_exists()   { [ -f "${SOURCE_PATH}/$1" ]; }
+function_loaded() { declare -pf "$1" > /dev/null 2>&1; }
+
+list_sources()
+{
+    local -a sources=( "${SOURCE_PATH}/"* )
+    local OIFS="$IFS"
+    local IFS='/'
+    for func in "${sources[@]}"; do
+        local -a parts=( $func )
+        echo "${parts[@]: -1}"
+    done
+    IFS="$OIFS"
+}
+
+return_source_name()
+{
+    for func in "$@"; do
+        if ! function_loaded "$func"; then
+            if script_exists "$func"; then
+                echo -n "${SOURCE_PATH}/$func "
+            fi
+        fi
+    done
+}
+
+if [ "$#" -eq 0 ]; then
+    list_sources
+else
+    return_source_name "$@"
+fi

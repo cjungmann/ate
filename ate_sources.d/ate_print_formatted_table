@@ -1,0 +1,27 @@
+# -*- mode:sh -*-
+ate_print_formatted_table()
+{
+    local -n pft_handle="$1"
+
+    # Make format string
+    ate get_field_sizes pft_handle
+    local -a parts=()
+    local width
+    local delim=''
+    for width in "${ATE_ARRAY[@]}"; do
+        parts+=( "$delim" "%-${width}s" )
+        delim=' '
+    done
+    # Scrunch array to format string
+    local IFS=''
+    local fmt="${parts[*]}\n"
+
+    # Embedded callback print function
+    print_row()
+    {
+        local -n pr_row="$1"
+        printf "$fmt" "${pr_row[@]}"
+    }
+
+    ate walk_rows pft_handle print_row
+}

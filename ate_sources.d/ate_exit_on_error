@@ -1,0 +1,12 @@
+# -*- mode:sh -*-
+ate_exit_on_error()
+{
+    local -i exval="$?"
+    if [ "$exval" -ne 0 ]; then
+        printf $'ate error at line %d of script %s:\n' \
+               $(( "${BASH_LINENO[0]}" - 1 )) \
+               "${BASH_SOURCE[1]}"
+        printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR"
+        exit 1
+    fi
+}
