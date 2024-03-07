@@ -276,14 +276,27 @@ bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head
  * @param "head"    [in]   an initialized AHEAD memory block
  * @return False if failed to secure an appropriate SHELL_VAR
  */
+#include <stdio.h>
 bool ate_install_head_in_handle(SHELL_VAR **handle,
                                const char *name,
                                AHEAD *head)
 {
    SHELL_VAR *newvar = NULL;
    SHELL_VAR *svar = find_variable(name);
-   if (svar == NULL)
-      svar = newvar = bind_variable(name, "", att_special);
+   if (svar == NULL || svar->context < variable_context)
+   {
+      if (variable_context == 0)
+      {
+         // global scope:
+         svar = newvar = bind_variable(name, "", att_special);
+      }
+      else
+      {
+         // function scope
+         svar = newvar = make_local_variable(name, 0);
+         svar->attributes = att_special;
+      }
+   }
 
    if (svar)
    {
