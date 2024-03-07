@@ -276,7 +276,6 @@ bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head
  * @param "head"    [in]   an initialized AHEAD memory block
  * @return False if failed to secure an appropriate SHELL_VAR
  */
-#include <stdio.h>
 bool ate_install_head_in_handle(SHELL_VAR **handle,
                                const char *name,
                                AHEAD *head)
