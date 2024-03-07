@@ -710,11 +710,11 @@ int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *acti
    char *buffer = (char*)alloca(len);
    make_unique_name(buffer, len, stem);
 
-   SHELL_VAR sv = NULL;
+   SHELL_VAR *sv = NULL;
    if (variable_context == 0)
-      svar = make_new_array_variable(buffer);
+      sv = make_new_array_variable(buffer);
    else
-      svar = make_new_local_array_variable(buffer, MKLOC_ARRAYOK);
+      sv = make_local_array_variable(buffer, MKLOC_ARRAYOK);
 
    if (sv)
    {
