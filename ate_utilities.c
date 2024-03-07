@@ -709,7 +709,13 @@ int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *acti
    int len = strlen(stem) + 5;
    char *buffer = (char*)alloca(len);
    make_unique_name(buffer, len, stem);
-   SHELL_VAR *sv = make_new_array_variable(buffer);
+
+   SHELL_VAR sv = NULL;
+   if (variable_context == 0)
+      svar = make_new_array_variable(buffer);
+   else
+      svar = make_new_local_array_variable(buffer, MKLOC_ARRAYOK);
+
    if (sv)
    {
       *var = sv;
