@@ -1,6 +1,8 @@
-TARGET = ate.so
-BUILTIN = $(basename $(TARGET))
-ENABLER = $(addprefix enable_,$(BUILTIN))
+TARGET_ROOT = ate
+TARGET = $(TARGET_ROOT).so
+BUILTIN = $(TARGET_ROOT)
+ENABLER = $(addprefix enable_,$(TARGET_ROOT))
+SOURCER = $(addprefix $(TARGET_ROOT),_sources)
 
 PREFIX ?= /usr/local
 
@@ -50,6 +52,11 @@ install: $(ENABLER)
 	soelim ate.1 | gzip -c - > $(PREFIX)/share/man/man1/ate.1.gz
 	soelim ate.7 | gzip -c - > $(PREFIX)/share/man/man7/ate.7.gz
 	soelim ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
+# install SOURCER and sources
+	install -D $(BUILTIN)_sources.d/* -t$(PREFIX)/lib/$(BUILTIN)_sources
+	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)
+	chmod a+x $(PREFIX)/bin/$(SOURCER)
+
 
 uninstall:
 	rm -f $(PREFIX)/bin/$(ENABLER)
@@ -57,13 +64,14 @@ uninstall:
 	rm -f $(PREFIX)/share/man/man1/ate.1.gz
 	rm -f $(PREFIX)/share/man/man7/ate.7.gz
 	rm -f $(PREFIX)/share/man/man7/ate-examples.7.gz
+# uninstall SOURCER stuff:
+	rm -rf $(PREFIX)/lib/$(BUILTIN)_sources
+	rm -f $(PREFIX)/bin/$(SOURCER)
 
 clean:
 	rm -f $(TARGET)
 	rm -f $(ENABLER)
 	rm -f $(MODULES)
-	rm -f examples/uscounties.csv
-	rm -f examples/simplemaps*
 
 help:
 	@echo "Makefile options:"
