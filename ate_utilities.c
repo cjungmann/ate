@@ -710,11 +710,11 @@ int create_array_var_by_stem(SHELL_VAR **var, const char *stem, const char *acti
    char *buffer = (char*)alloca(len);
    make_unique_name(buffer, len, stem);
 
+   // 2024-05-20: Don't attempt to make a local variable or it won't
+   //             work for walk_rows callback function (as far as my
+   //             limited knowledge understands).
    SHELL_VAR *sv = NULL;
-   if (variable_context == 0)
-      sv = make_new_array_variable(buffer);
-   else
-      sv = make_local_array_variable(buffer, MKLOC_ARRAYOK);
+   sv = make_new_array_variable(buffer);
 
    if (sv)
    {
