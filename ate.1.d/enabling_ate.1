@@ -40,3 +40,25 @@ file.
 .EX
 enable $( enable_ate )
 .EE
+.SS ate_sources
+.PP
+While installing the
+.B ate
+package, multiple
+.B ate
+utilities were also installed.  Enable the utilities with the
+.B ate_sources
+command.
+.PP
+Calling
+.B ate_sources
+without any arguments will list the available
+.B ate
+utilities.
+Include a utility in a project by invoking
+.B ate_sources
+with the name of the utility:
+.PP
+.EX
+.BR ate_sources " ate_exit_on_error"
+.EE
