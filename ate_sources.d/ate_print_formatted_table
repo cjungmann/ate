@@ -1,14 +1,14 @@
 # -*- mode:sh -*-
 ate_print_formatted_table()
 {
-    local -n pft_handle="$1"
+    local handle_name="$1"
 
     # Make format string
-    ate get_field_sizes pft_handle
+    ate get_field_sizes "$handle_name" -a pft_field_sizes
     local -a parts=()
     local width
     local delim=''
-    for width in "${ATE_ARRAY[@]}"; do
+    for width in "${pft_field_sizes[@]}"; do
         parts+=( "$delim" "%-${width}s" )
         delim=' '
     done
@@ -17,11 +17,12 @@ ate_print_formatted_table()
     local fmt="${parts[*]}\n"
 
     # Embedded callback print function
-    print_row()
+    apft_print_row()
     {
-        local -n pr_row="$1"
-        printf "$fmt" "${pr_row[@]}"
+        local -n apft_pr_row="$1"
+        local fmt="$5"
+        printf "$fmt" "${apft_pr_row[@]}"
     }
 
-    ate walk_rows pft_handle print_row
+    ate walk_rows "$handle_name" apft_print_row "$fmt"
 }
