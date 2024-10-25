@@ -280,40 +280,32 @@ bool ate_install_head_in_handle(SHELL_VAR **handle,
                                const char *name,
                                AHEAD *head)
 {
-   SHELL_VAR *newvar = NULL;
-   SHELL_VAR *svar = find_variable(name);
-   if (svar == NULL || svar->context < variable_context)
+   int exit_code = False;
+   SHELL_VAR *tsv = NULL;
+
+   // `bind_variable` is better than `make_local_variable` for enabling
+   // recursion in scripts
+   tsv = bind_variable(name, "", 0);
+
+   if (tsv)
    {
-      if (variable_context == 0)
-      {
-         // global scope:
-         svar = newvar = bind_variable(name, "", att_special);
-      }
-      else
-      {
-         // function scope
-         svar = newvar = make_local_variable(name, 0);
-         svar->attributes = att_special;
-      }
+      ate_dispose_variable_value(tsv);
+      tsv->value = (char*)head;
+      VSETATTR(tsv, att_special);
+      if (invisible_p(tsv))
+         VUNSETATTR(tsv, att_invisible);
+
+      // Use is allowed to ignore the instance of a new shell_var
+      // (success or failure indicated by exit code).
+      if (*handle)
+         *handle = tsv;
+
+      exit_code = True;
    }
+   else
+      ate_register_error("Failed to create variable '%s'.", name);
 
-   if (svar)
-   {
-      ate_dispose_variable_value(svar);
-      svar->value = (char*)head;
-      svar->attributes |= att_special;
-
-      // only return new svar if we have somewhere to save it:
-      if (handle)
-         *handle = svar;
-
-      return True;
-   }
-
-   if (newvar)
-      dispose_variable(newvar);
-
-   return False;
+   return exit_code;
 }
 
 /**
