@@ -142,11 +142,19 @@ int pwla_sort(ARG_LIST *alist)
               (void*)&pkg);
 
       SHELL_VAR *new_handle_var = NULL;
-      if ((retval = create_handle_by_name_or_fail(&new_handle_var,
-                                                   new_handle_name,
-                                                   newhead,
-                                                   "sort")))
+      if (ate_install_head_in_handle(&new_handle_var, new_handle_name, newhead))
+         retval = EXECUTION_SUCCESS;
+      else
+      {
          xfree(newhead);
+         ate_register_error("failed to initialize sorted handle, %s.", new_handle_name);
+         retval = EXECUTION_FAILURE;
+      }
+      // if ((retval = create_handle_by_name_or_fail(&new_handle_var,
+      //                                              new_handle_name,
+      //                                              newhead,
+      //                                              "sort")))
+      //    xfree(newhead);
    }
    else
    {
