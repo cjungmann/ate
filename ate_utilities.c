@@ -822,8 +822,8 @@ int create_handle_by_name_or_fail(SHELL_VAR **rvar,
       sv = bind_variable(name, "", 0);
       if (sv)
       {
-         sv->attributes = att_special;
          sv->value = (char*)ahead;
+         VSETATTR(sv, att_special);
          *rvar = sv;
          retval = EXECUTION_SUCCESS;
       }
@@ -1081,9 +1081,10 @@ int create_special_var_by_name(SHELL_VAR **rvar, const char *name, const char *a
    if (find_variable(name))
       unbind_variable(name);
 
-   SHELL_VAR *var = bind_variable(name, NULL, att_special);
+   SHELL_VAR *var = bind_variable(name, NULL, 0);
    if (var)
    {
+      VSETATTR(var, att_special);
       *rvar = var;
       retval = EXECUTION_SUCCESS;
    }
