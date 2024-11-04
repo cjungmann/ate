@@ -1,0 +1,24 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+# shellcheck disable=2034 # unused return nameref variable
+
+#> ate_make_format_string return_name ate_handle
+
+ate_make_format_string()
+{
+    local -n amfs_format="$1"
+    local ate_handle="$2"
+
+    local amfs_sizes
+    ate get_field_sizes "$ate_handle" -a amfs_sizes
+    local -a parts=()
+    local width
+    local delim=''
+    for width in "${amfs_sizes[@]}"; do
+        parts+=( "$delim" "%-${width}s" )
+        delim=' '
+    done
+    # Scrunch array to format string
+    local IFS=''
+    amfs_format="${parts[*]}\n"
+}

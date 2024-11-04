@@ -1,0 +1,23 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+# shellcheck disable=2034  # unused variables
+
+#> ate_get_index_with_key return_var_name key_table_name search_string
+
+ate_get_index_with_key()
+{
+   local -n return_value="$1"
+   local key_table="$2"
+   local search="$3"
+
+   local -i output key_index
+   ate seek_key "$key_table" "$search" -o output -v key_index
+   if [ "$output" -eq 1 ]; then
+       if ate get_row "$key_table" "$key_index"; then
+           return_value="${ATE_ARRAY[1]}"
+           return 0
+       fi
+   fi
+
+   return 1
+}
