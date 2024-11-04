@@ -1,9 +1,15 @@
-# -*- mode:sh -*-
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+# shellcheck disable=2317 # unreachable code in callback
+
+#> ate_print_formatted_table ate_handle
+
 ate_print_formatted_table()
 {
     local handle_name="$1"
 
     # Make format string
+    local -a pft_field_sizes
     ate get_field_sizes "$handle_name" -a pft_field_sizes
     local -a parts=()
     local width
@@ -21,6 +27,7 @@ ate_print_formatted_table()
     {
         local -n apft_pr_row="$1"
         local fmt="$5"
+        # shellcheck disable=2059
         printf "$fmt" "${apft_pr_row[@]}"
     }
 
