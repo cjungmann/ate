@@ -10,7 +10,8 @@ ate_exit_on_error()
         printf $'ate error at line %d of script %s:\n' \
                $(( "${BASH_LINENO[0]}" - 1 )) \
                "${BASH_SOURCE[1]}" >&2
-        printf $'   \e[31;1m%s\e[m\n' "$ATE_ERROR" >&2
+        printf -v errmsg $'   \e[31;1m%s\e[m\n' "$ATE_ERROR" >&2
+        read -n1 -p "$errmsg"
         exit 1
     fi
 }
