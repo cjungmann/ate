@@ -1,0 +1,146 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+declare -g ATE_TABLE_MIME_TYPES
+declare -g ATE_TABLE_ALIAS_TYPES
+declare -g ATE_TABLE_GLOBS
+declare -g ATE_TABLE_COMMENTS
+
+declare -g ATE_KEY_MIME_TYPES
+declare -g ATE_KEY_ALIAS_TYPES
+declare -g ATE_KEY_GLOBS
+declare -g ATE_KEY_COMMENTS
+
+# Populate an array with the paths of mime package databases
+get_packages_files()
+{
+    local -n gpf_array="$1"
+    gpf_array=()
+
+    if [ -n "$XDG_DATA_DIRS" ]; then
+        local IFS=':'
+        local -a gpf_dirs=( $XDG_DATA_DIRS )
+        for dir in "${gpf_dirs[@]}"; do
+            if [ -d "$dir" ]; then
+                local dname="${dir}/mime/packages/freedesktop.org.xml"
+                if [ -f "$dname" ]; then
+                    gpf_array+=( "$dname" )
+                fi
+            fi
+        done
+    fi
+
+    # Set exit code by doing the test:
+    [ "${#gpf_array[@]}" -gt 0 ]
+}
+
+add_package()
+{
+    local -n g_array_mimes="$1"
+    local -n g_array_globs="$2"
+    local -n g_array_comments="$3"
+    local -n g_array_aliases="$4"
+    local -n package_lines="$5"
+
+    local index="${#g_array_mimes[*]}"
+    local line="${package_lines[0]}"
+
+    if [[ "${line:0:2}" == "t:" ]]; then
+        local mime="${line:2}"
+        g_array_mimes+=( "$mime" )
+        for line in "${package_lines[@]:1}"; do
+            if [[ "$line" =~ ^[[:space:]]+([cga]):(.*)$ ]]; then
+                case "${BASH_REMATCH[1]}" in
+                    a ) g_array_aliases+=(  "${BASH_REMATCH[2]}" "$index" ) ;;
+                    c ) g_array_comments+=( "$index" "${BASH_REMATCH[2]}" ) ;;
+                    g ) g_array_globs+=(    "${BASH_REMATCH[2]}" "$index" ) ;;
+                esac
+            else
+                printf $'Unexpected detail, expected \e[33;1m[acg]:...\e[m, got \e[33;1m%s\e[m\n' "$line"
+            fi
+        done
+    else
+        printf $'Unexpected detail, expected \e[33;1mt:...\e[m, got \e[33;1m%s\e[m\n' "$line"
+    fi
+}
+
+
+append_packages_file()
+{
+    local pfile="$1"
+
+    # Get arrays from tables:
+    declare arr_name_mimes arr_name_globs arr_name_comments arr_name_aliases
+    ate get_array_name ATE_TABLE_MIME_TYPES -v arr_name_mimes
+    ate get_array_name ATE_TABLE_ALIAS_TYPES -v arr_name_aliases
+    ate get_array_name ATE_TABLE_GLOBS -v arr_name_globs
+    ate get_array_name ATE_TABLE_COMMENTS -v arr_name_comments
+    ate_exit_on_error
+
+    declare -a table_arr_names=(
+        "$arr_name_mimes"
+        "$arr_name_globs"
+        "$arr_name_comments"
+        "$arr_name_aliases"
+    )
+
+    local -a lines
+    while read -r; do
+        lines+=( "$REPLY" )
+    done < <( xsltproc <( echo "$XSL_DOC" ) "$pfile" )
+
+    declare mime
+    declare -a plines
+
+    for line in "${lines[@]}"; do
+        if [[ "${line:0:2}" == "t:" ]]; then
+            if [ "${#plines[*]}" -gt 0 ]; then
+                add_package "${table_arr_names[@]}" plines
+            fi
+            plines=( "$line" )
+        else
+            # echo "Adding '$line' to plines array (${#plines[*]} elements)"
+            plines+=( "$line" )
+        fi
+    done
+
+}
+
+update_mimes_indexes()
+{
+    ate index_rows "ATE_TABLE_MIME_TYPES"
+    ate index_rows "ATE_TABLE_ALIAS_TYPES"
+    ate index_rows "ATE_TABLE_GLOBS"
+    ate index_rows "ATE_TABLE_COMMENTS"
+
+    ate make_key "ATE_TABLE_MIME_TYPES" "ATE_KEY_MIME_TYPES" -c0
+    ate make_key "ATE_TABLE_ALIAS_TYPES"  "ATE_KEY_ALIAS_TYPES" -c0
+    ate make_key "ATE_TABLE_GLOBS"  "ATE_KEY_GLOBS" -c0 -i
+    ate make_key "ATE_TABLE_COMMENTS" "$ATE_KEY_COMMENTS" -c0 -i
+}
+
+make_mime_tables()
+{
+    ate declare ATE_TABLE_MIME_TYPES  1
+    ate declare ATE_TABLE_ALIAS_TYPES 2
+    ate declare ATE_TABLE_GLOBS       2
+    ate declare ATE_TABLE_COMMENTS    2
+}
+
+
+read_mime_tables()
+{
+    make_mime_tables
+
+    # Read packages data
+    local -a packages_files
+    get_packages_files packages_files
+
+    for pfile in "${packages_files[@]}"; do
+        append_packages_file "$pfile"
+    done
+
+    update_mimes_indexes
+
+    # Make mime-to-app link table
+}

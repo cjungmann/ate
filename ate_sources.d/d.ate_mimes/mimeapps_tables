@@ -1,0 +1,148 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+declare -g ATE_TABLE_APPS
+declare -g ATE_TABLE_APP_TYPE_LOOKUP
+
+declare -g ATE_KEY_APPS
+declare -g ATE_KEY_APP_TYPE_LOOKUP
+
+# Populate an array with paths to mineapps tables
+get_mimeapps_files()
+{
+    local -n gaf_array="$1"
+    gaf_array=()
+    local OIFS="$IFS"
+    local IFS=':'
+
+    # Get config-type directories
+    local -a dirs=( "$XDG_CONFIG_HOME" "$HOME/.config" )
+    if [ -n "$XDG_CONFIG_DIRS" ]; then
+        dirs+=( $XDG_CONFIG_DIRS )
+    else
+        dirs+=( "/etc/xdg" )
+    fi
+
+    IFS=$'\n'
+    # Add any mimeapps.list files found to the return array
+    for tdir in "${dirs[@]}"; do
+        if [ -d "$tdir" ]; then
+            gaf_array+=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+        fi
+    done
+
+    IFS=':'
+    # get /applications directories
+    local -a appdirs=( "$XDG_DATA_HOME" "$HOME/.local/share" )
+    if [ -n "$XDG_DATA_DIRS" ]; then
+        appdirs+=( $XDG_DATA_DIRS )
+    else
+        appdirs+=( /usr/local/share /usr/share )
+    fi
+
+    IFS=$'\n'
+    # Add any mimeapps.list files found to the return array
+    for tdir in "${appdirs[@]}"; do
+        if [ -d "$tdir" ]; then
+            # remove any trailing '/' for consistency
+            if [[ "${tdir: -1}" == '/' ]]; then
+                local -i len="${#tdir}"
+                (( --len ))
+                tdir="${tdir:0:$len}"
+            fi
+            tdir+="/applications"
+            if [ -d "$tdir" ]; then
+                array+=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+            fi
+        fi
+    done
+}
+
+# This function searches the array of app names without using
+# ate utilities.  This avoids building a new index for each
+# addition, deferring the index-building until all the apps
+# have been added to the array.
+# Returns index of the target, adding the target to the list
+# if not found (and returning the new index)
+get_app_index()
+{
+    local -n gai_index="$1"
+    local -n gai_apps="$2"
+    local gai_target="$3"
+
+    gai_index=-1
+    local -i index=0
+    for app in "${gai_apps[@]}"; do
+        if [[ "$gai_target" == "$app" ]]; then
+            gai_index="$index"
+            break
+        fi
+        (( ++index ))
+    done
+
+    if [ "$gai_index" -eq -1 ]; then
+        # echo "Adding new app, '$gai_target', at index $index"
+        gai_apps+=( "$gai_target" )
+        gai_index="$index"
+    fi
+}
+
+process_mimeapps_file()
+{
+    local name_apps="$1"
+    local -n arr_mime_apps="$2"
+    local afile="$3"
+
+    local -i app_index mime_index
+
+    local line
+    local -a pair
+    local -n mime=pair[1]
+    local -n app=pair[0]
+    while read -r line; do
+        if [[ "${line:0:1}" == "[" ]]; then
+            continue
+        fi
+        pair=( $line )
+
+        # Get application index (adding if not found)
+        get_app_index app_index name_apps "$app"
+
+        # Get mime type index
+        if ate_get_index_with_key mime_index ATE_KEY_MIME_TYPES "$mime"; then
+            arr_mime_apps+=( "$mime_index" "$app_index" )
+        fi
+    done < "$afile"
+}
+
+update_mimeapps_indexes()
+{
+    ate index_rows ATE_TABLE_APPS
+    ate index_rows ATE_TABLE_MIME_APP_LOOKUP
+
+    ate make_key ATE_KEY_APPS ATE_TABLE_APPS -c0
+    ate make_key ATE_KEY_MIME_APP_LOOKUP -c0 -i
+    }
+
+make_mimeapps_tables()
+{
+   ate declare ATE_TABLE_APPS 1
+   ate declare ATE_TABLE_MIME_APP_LOOKUP 2
+   ate declare ATE_KEY_APPS
+   ate declare ATE_KEY_MIME_APP_LOOKUP
+}
+
+read_mimeapps_tables()
+{
+   make_mimeapps_tables
+   local -a mimeapps_files
+   get_mimeapps_files mimeapps_files
+
+   local table_apps table_mime_app
+   ate get_array_name ATE_TABLE_APPS -v table_apps
+   ate get_array_name ATE_TABLE_MIME_APP -v table_mime_app
+
+   for afile in "${mimeapps_files[@]}"; do
+       process_mimeapps_file table_apps table_mime_app "$afile"
+   done
+}

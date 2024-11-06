@@ -1,0 +1,46 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+# Note that you have to escape the '$' in the XSL document
+# so the name following references the XSL variable and not
+# a unknown Bash variable.
+declare XSL_DOC
+read -r -d '' XSL_DOC <<EOF
+<?xml version="1.0" encoding="utf-8" ?>
+
+<xsl:stylesheet
+    version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:smi="http://www.freedesktop.org/standards/shared-mime-info">
+
+  <xsl:variable name="nl" select="'&#10;'" />
+  <xsl:variable name="indent" select="'  '" />
+
+  <xsl:output method="text" />
+
+  <xsl:template match="smi:comment[not(@xml:lang)]">
+    <xsl:value-of select="concat(\$indent, 'c:', ., \$nl)" />
+  </xsl:template>
+
+  <xsl:template match="smi:glob">
+    <xsl:value-of select="concat(\$indent,'g:',@pattern, \$nl)" />
+  </xsl:template>
+
+  <xsl:template match="smi:alias">
+     <xsl:value-of select="concat(\$indent,'a:',@type, \$nl)" />
+   </xsl:template>
+
+  <xsl:template match="smi:*" />
+
+  <xsl:template match="smi:mime-type">
+    <xsl:value-of select="concat('t:', @type, \$nl)" />
+    <xsl:apply-templates select="*" />
+  </xsl:template>
+
+  <xsl:template match="smi:mime-info">
+    <xsl:apply-templates select="*" />
+  </xsl:template>
+
+</xsl:stylesheet>
+EOF
+

@@ -1,0 +1,27 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+#> ate_mimes init
+#> ate_mimes add_app
+#> ate_mimes add_type
+#> ate_mimes link_app
+#> ate_mimes index
+
+enable $( enable_ate )
+source $( ate_sources ate_get_index_with_key )
+
+ate_mimes()
+{
+    source d.ate_mimes/package_xslt
+    source d.ate_mimes/mime_tables
+    source d.ate_mimes/mimeapps_tables
+
+    init()
+    {
+        read_mime_tables
+        read_mimeapps_tables
+    }
+
+    local cmd="$1"
+    "$1"
+}
