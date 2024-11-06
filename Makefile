@@ -27,15 +27,17 @@ HEADERS = $(wildcard $(SRC)/*.h)
 # Declare non-filename targets
 .PHONY: all install uninstall clean help
 
-all: $(TARGET)
+all: $(TARGET) ate_sources.d/ate_mimes
 
 $(TARGET) : $(MODULES)
 	$(CC) $(LFLAGS) -o $@ $(MODULES) $(LDFLAGS)
 
+ate_sources.d/ate_mimes: ate_sources.d/ate_mimes.def ate_sources.d/d.ate_mimes/*
+	./desource $< > $@
+
 $(ENABLER):
 	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
 	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
-
 
 *.c: *.h
 	@echo "Forcing full recompile after any header file change"
@@ -52,12 +54,11 @@ install: $(ENABLER)
 	soelim ate.1 | gzip -c - > $(PREFIX)/share/man/man1/ate.1.gz
 	soelim ate.7 | gzip -c - > $(PREFIX)/share/man/man7/ate.7.gz
 	soelim ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
-# install SOURCER and sources
-	install -D $(BUILTIN)_sources.d/* -t$(PREFIX)/lib/$(BUILTIN)_sources
+	# install SOURCER and sources
 	rm -f $(PREFIX)/bin/$(SOURCER)
 	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)
 	chmod a+x $(PREFIX)/bin/$(SOURCER)
-
+	install -D $(BUILTIN)_sources.d/ate_* -t$(PREFIX)/lib/$(BUILTIN)_sources
 
 uninstall:
 	rm -f $(PREFIX)/bin/$(ENABLER)
