@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Replace source references with the contents of the source files
+#
+# This script is not particularly adaptive: it assumes several
+# things about the source and cannot cope with deviation.
+#
+# 1. It does not translate lines that start:
+#    source $( ... ).  This preserves the ate_sources construction.
+# 2. Each line of a source file's contents will be prefixed with
+#    the number of spaces that prefixed the source file line.
+# 3. An important exception to #2 is that the spaces prefix
+#    WILL NOT be prepended to a line that contains only 'EOF'
+#    so the heredoc will work
+
+declare template=$( realpath "$1" )
+declare -a parts
+
+declare OIFS="$IFS"
+IFS='/'
+read -r -a parts <<< "$template"
+declare tpath="${parts[*]:0:$(( ${#parts[*]} - 1))}"
+IFS="$OIFS"
+
+declare indent
+
+while IFS="" read -r line; do
+    if [[ "$line" =~ ^([[:space:]]*)source\ +([^$].*)$ ]]; then
+        indent="${BASH_REMATCH[1]}"
+        while IFS="" read -r subline; do
+            if [[ "${subline:0:1}" == '#' ]]; then
+                continue
+            fi
+            if [[ "$subline" =~ ^EOF$ ]]; then
+                echo "$subline"
+            elif [ -z "$subline" ]; then
+                echo
+            else
+                echo "${indent}$subline"
+            fi
+        done < "${tpath}/${BASH_REMATCH[2]}"
+    else
+        echo "$line"
+    fi
+done < "$template"
