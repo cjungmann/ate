@@ -1,0 +1,54 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+get_mime_index_by_type()
+{
+   local -n gmibt_index="$1"
+   local search="$2"
+
+   local -i index
+   ate seek_key ATE_KEY_MIME_TYPES "$search" -v index
+   ate_exit_on_error
+   if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+       gmibt_index="$index"
+       return 0
+   else
+       ate seek_key ATE_KEY_ALIAS_TYPES "$search" -v index
+       if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+           gmibt_index="$index"
+           return 0
+       fi
+   fi
+
+   return 1
+}
+
+get_mime_index_by_glob()
+{
+    local -n gmibg_index="$1"
+    local search="$2"
+
+    local -i index
+    ate seek_key ATE_KEY_GLOBS "$search" -v index
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        gmibg_index="$index"
+        return 0
+    fi
+
+    return 1
+}
+
+get_name_by_mime_index()
+{
+    :
+}
+
+get_comment_by_mime_index()
+{
+    :
+}
+
+get_app_by_mime_index()
+{
+    :
+}

@@ -1,12 +1,6 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
-declare -g ATE_TABLE_APPS
-declare -g ATE_TABLE_APP_TYPE_LOOKUP
-
-declare -g ATE_KEY_APPS
-declare -g ATE_KEY_APP_TYPE_LOOKUP
-
 # Populate an array with paths to mineapps tables
 get_mimeapps_files()
 {
@@ -27,7 +21,10 @@ get_mimeapps_files()
     # Add any mimeapps.list files found to the return array
     for tdir in "${dirs[@]}"; do
         if [ -d "$tdir" ]; then
-            gaf_array+=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+            local -a ta=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+            if [ "${#ta[*]}" -gt 0 ]; then
+                gaf_array+=( "${ta[@]}" )
+            fi
         fi
     done
 
@@ -52,7 +49,10 @@ get_mimeapps_files()
             fi
             tdir+="/applications"
             if [ -d "$tdir" ]; then
-                array+=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+                local -a ta=( $( ls "$tdir/"*mimeapps.list 2>/dev/null ) )
+                if [ "${#ta[@]}" -gt 0 ]; then
+                    gaf_array+=( "${ta[@]}" )
+                fi
             fi
         fi
     done
@@ -72,6 +72,7 @@ get_app_index()
 
     gai_index=-1
     local -i index=0
+    local app
     for app in "${gai_apps[@]}"; do
         if [[ "$gai_target" == "$app" ]]; then
             gai_index="$index"
@@ -97,19 +98,19 @@ process_mimeapps_file()
 
     local line
     local -a pair
-    local -n mime=pair[1]
-    local -n app=pair[0]
+    local -n mime=pair[0]
+    local -n app=pair[1]
     while read -r line; do
         if [[ "${line:0:1}" == "[" ]]; then
             continue
         fi
-        pair=( $line )
+        IFS='=' read -r -a pair <<< "$line"
 
         # Get application index (adding if not found)
-        get_app_index app_index name_apps "$app"
+        get_app_index app_index "$name_apps" "$app"
 
         # Get mime type index
-        if ate_get_index_with_key mime_index ATE_KEY_MIME_TYPES "$mime"; then
+        if get_mime_index_by_type "mime_index" "$mime"; then
             arr_mime_apps+=( "$mime_index" "$app_index" )
         fi
     done < "$afile"
@@ -118,18 +119,25 @@ process_mimeapps_file()
 update_mimeapps_indexes()
 {
     ate index_rows ATE_TABLE_APPS
+    ate_exit_on_error
     ate index_rows ATE_TABLE_MIME_APP_LOOKUP
+    ate_exit_on_error
 
-    ate make_key ATE_KEY_APPS ATE_TABLE_APPS -c0
-    ate make_key ATE_KEY_MIME_APP_LOOKUP -c0 -i
-    }
+    ate get_row_count ATE_TABLE_APPS
+    ate get_row_count ATE_TABLE_MIME_APP_LOOKUP
+
+    ate make_key "ATE_TABLE_APPS"            "ATE_KEY_APPS"            -c0
+    ate_exit_on_error
+    ate make_key "ATE_TABLE_MIME_APP_LOOKUP" "ATE_KEY_MIME_APP_LOOKUP" -c0 -i
+    ate_exit_on_error
+}
 
 make_mimeapps_tables()
 {
-   ate declare ATE_TABLE_APPS 1
-   ate declare ATE_TABLE_MIME_APP_LOOKUP 2
-   ate declare ATE_KEY_APPS
-   ate declare ATE_KEY_MIME_APP_LOOKUP
+    ate declare ATE_TABLE_APPS 1
+    ate_exit_on_error
+    ate declare ATE_TABLE_MIME_APP_LOOKUP 2
+    ate_exit_on_error
 }
 
 read_mimeapps_tables()
@@ -138,11 +146,18 @@ read_mimeapps_tables()
    local -a mimeapps_files
    get_mimeapps_files mimeapps_files
 
-   local table_apps table_mime_app
-   ate get_array_name ATE_TABLE_APPS -v table_apps
-   ate get_array_name ATE_TABLE_MIME_APP -v table_mime_app
+   local rmt_array_apps rmt_array_mime_app
+   ate get_array_name ATE_TABLE_APPS -v rmt_array_apps
+   ate_exit_on_error
+   ate get_array_name ATE_TABLE_MIME_APP_LOOKUP -v rmt_array_mime_app
+   ate_exit_on_error
 
    for afile in "${mimeapps_files[@]}"; do
-       process_mimeapps_file table_apps table_mime_app "$afile"
+       process_mimeapps_file "$rmt_array_apps" "$rmt_array_mime_app" "$afile"
+       local -n aaps="$rmt_array_apps"
+       local -n aamf="$rmt_array_mime_app"
+       printf "There are %d elements after reading '%s'\n" "${#aaps[*]}" "$afile"
    done
+
+   update_mimeapps_indexes
 }

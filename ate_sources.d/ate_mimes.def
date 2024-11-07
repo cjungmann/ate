@@ -12,9 +12,11 @@ source $( ate_sources ate_get_index_with_key )
 
 ate_mimes()
 {
+    source d.ate_mimes/declares
     source d.ate_mimes/package_xslt
     source d.ate_mimes/mime_tables
     source d.ate_mimes/mimeapps_tables
+    source d.ate_mimes/access_funcs
 
     init()
     {

@@ -1,0 +1,22 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+# Declaring the table variables global so the persist
+# between separate calls to ate_mimes
+
+declare -g ATE_TABLE_MIME_TYPES
+declare -g ATE_TABLE_ALIAS_TYPES
+declare -g ATE_TABLE_GLOBS
+declare -g ATE_TABLE_COMMENTS
+
+declare -g ATE_KEY_MIME_TYPES
+declare -g ATE_KEY_ALIAS_TYPES
+declare -g ATE_KEY_GLOBS
+declare -g ATE_KEY_COMMENTS
+
+declare -g ATE_TABLE_APPS
+declare -g ATE_TABLE_APP_TYPE_LOOKUP
+
+declare -g ATE_KEY_APPS
+declare -g ATE_KEY_APP_TYPE_LOOKUP
+
