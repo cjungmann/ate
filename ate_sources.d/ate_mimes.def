@@ -25,5 +25,8 @@ ate_mimes()
     }
 
     local cmd="$1"
-    "$1"
+    "$1" "${@:2}"
+    # local -i ecode="$?"
+    # printf "exit code for '$cmd' is %d\n" "$ecode"
+    # return "$ecode"
 }

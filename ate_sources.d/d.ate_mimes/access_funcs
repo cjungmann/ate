@@ -6,16 +6,24 @@ get_mime_index_by_type()
    local -n gmibt_index="$1"
    local search="$2"
 
+   gmibt_index=-1
+
    local -i index
    ate seek_key ATE_KEY_MIME_TYPES "$search" -v index
    ate_exit_on_error
    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-       gmibt_index="$index"
+       ate get_row ATE_KEY_MIME_TYPES "$index"
+       # index="${ATE_ARRAY[1]}"
+       # ate get_row ATE_TABLE_MIME_TYPES "${ATE_ARRAY[1]}"
+       gmibt_index="${ATE_ARRAY[1]}"
        return 0
    else
        ate seek_key ATE_KEY_ALIAS_TYPES "$search" -v index
        if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-           gmibt_index="$index"
+           ate get_row ATE_KEY_ALIAS_TYPES "$index"
+           ate get_row ATE_TABLE_ALIAS_TYPES "${ATE_ARRAY[1]}"
+           # ate get_row ATE_TABLE_MIME_TYPES "${ATE_ARRAY[1]}"
+           gmibt_index="${ATE_ARRAY[1]}"
            return 0
        fi
    fi
@@ -31,24 +39,88 @@ get_mime_index_by_glob()
     local -i index
     ate seek_key ATE_KEY_GLOBS "$search" -v index
     if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-        gmibg_index="$index"
+        ate get_row ATE_KEY_GLOBS "$index"
+        ate get_row ATE_TABLE_GLOBS "${ATE_ARRAY[1]}"
+        gmibg_index="${ATE_ARRAY[1]}"
         return 0
     fi
 
     return 1
 }
 
+get_mime_index_by_filename()
+{
+    local -n gmibf_value="$1"
+    local path="$2"
+
+    local extract="${path##*/}"
+    local -a parts mime_info
+    IFS="." read -a parts -r <<< "$extract"
+
+    if [ -n "${parts[1]}" ]; then
+        local pattern="*.${parts[1]}"
+        local -i mime_index
+        if get_mime_index_by_glob "mime_index" "$pattern"; then
+            gmibf_value="$mime_index"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+
 get_name_by_mime_index()
 {
-    :
+    local -n gnbmi_value="$1"
+    local -i index="$2"
+    if ate get_row ATE_TABLE_MIME_TYPES "$index"; then
+        gnbmi_value="${ATE_ARRAY[0]}"
+        return 0
+    fi
+
+    return 1
 }
 
 get_comment_by_mime_index()
 {
-    :
+    local -n gcbmi_value="$1"
+    local -i index="$2"
+
+    ate get_row ATE_TABLE_COMMENTS "$index"
+    ate_exit_on_error
+    if ate get_row ATE_TABLE_COMMENTS "$index"; then
+        gcbmi_value="${ATE_ARRAY[1]}"
+        return 0
+    fi
+
+    return 1
 }
 
 get_app_by_mime_index()
 {
-    :
+    local -n gabmi_value="$1"
+    local -i index="$2"
+
+    ate seek_key -i ATE_KEY_MIME_APP_LOOKUP "$index"
+    ate_exit_on_error
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        ate get_row ATE_KEY_MIME_APP_LOOKUP "$ATE_VALUE"
+        ate get_row ATE_TABLE_MIME_APP_LOOKUP "${ATE_ARRAY[1]}"
+        ate get_row ATE_TABLE_APPS "${ATE_ARRAY[1]}"
+        gabmi_value="${ATE_ARRAY[0]}"
+        echo "Returning '$gamni_value' for mime index $index"
+        return 0
+    fi
+
+    # if ate seek_key -i ATE_KEY_MIME_APPS "$index"; then
+    #     if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+    #         ate get_row ATE_KEY_MIME_APPS "${ATE_VALUE}"
+    #         ate get_row ATE_TABLE_MIME_APPS "${ATE_ARRAY[1]}"
+    #         gabmi_value="${ATE_ARRAY[0]}"
+    #         return 0
+    #     fi
+    # fi
+
+    return 1
 }

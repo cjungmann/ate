@@ -43,11 +43,12 @@ add_package()
                     g ) g_array_globs+=(    "${BASH_REMATCH[2]}" "$index" ) ;;
                 esac
             else
-                printf $'Unexpected detail, expected \e[33;1m[acg]:...\e[m, got \e[33;1m%s\e[m\n' "$line"
+                printf $'Surprise, expected \e[33;1m[acg]:...\e[m, got \e[33;1m%s\e[m\n' \
+                       "$line"
             fi
         done
     else
-        printf $'Unexpected detail, expected \e[33;1mt:...\e[m, got \e[33;1m%s\e[m\n' "$line"
+        printf $'Surprise, expected \e[33;1mt:...\e[m, got \e[33;1m%s\e[m\n' "$line"
     fi
 }
 
@@ -102,7 +103,7 @@ update_mimes_indexes()
 
     ate make_key "ATE_TABLE_MIME_TYPES"  "ATE_KEY_MIME_TYPES"  -c 0
     ate make_key "ATE_TABLE_ALIAS_TYPES" "ATE_KEY_ALIAS_TYPES" -c 0
-    ate make_key "ATE_TABLE_GLOBS"       "ATE_KEY_GLOBS"       -c 0 -i
+    ate make_key "ATE_TABLE_GLOBS"       "ATE_KEY_GLOBS"       -c 0
     ate make_key "ATE_TABLE_COMMENTS"    "$ATE_KEY_COMMENTS"   -c 0 -i
 }
 
