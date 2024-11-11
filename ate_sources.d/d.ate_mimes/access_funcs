@@ -102,25 +102,20 @@ get_app_by_mime_index()
     local -n gabmi_value="$1"
     local -i index="$2"
 
+    # Get key index
     ate seek_key -i ATE_KEY_MIME_APP_LOOKUP "$index"
     ate_exit_on_error
     if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        # Use key index to get key row
         ate get_row ATE_KEY_MIME_APP_LOOKUP "$ATE_VALUE"
+        # Use key row data to get row from table-link table
         ate get_row ATE_TABLE_MIME_APP_LOOKUP "${ATE_ARRAY[1]}"
+        # Get ultimate data rom from table-link row field
         ate get_row ATE_TABLE_APPS "${ATE_ARRAY[1]}"
         gabmi_value="${ATE_ARRAY[0]}"
         echo "Returning '$gamni_value' for mime index $index"
         return 0
     fi
-
-    # if ate seek_key -i ATE_KEY_MIME_APPS "$index"; then
-    #     if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-    #         ate get_row ATE_KEY_MIME_APPS "${ATE_VALUE}"
-    #         ate get_row ATE_TABLE_MIME_APPS "${ATE_ARRAY[1]}"
-    #         gabmi_value="${ATE_ARRAY[0]}"
-    #         return 0
-    #     fi
-    # fi
 
     return 1
 }
