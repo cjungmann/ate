@@ -13,8 +13,6 @@ get_mime_index_by_type()
    ate_exit_on_error
    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
        ate get_row ATE_KEY_MIME_TYPES "$index"
-       # index="${ATE_ARRAY[1]}"
-       # ate get_row ATE_TABLE_MIME_TYPES "${ATE_ARRAY[1]}"
        gmibt_index="${ATE_ARRAY[1]}"
        return 0
    else
@@ -22,7 +20,6 @@ get_mime_index_by_type()
        if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
            ate get_row ATE_KEY_ALIAS_TYPES "$index"
            ate get_row ATE_TABLE_ALIAS_TYPES "${ATE_ARRAY[1]}"
-           # ate get_row ATE_TABLE_MIME_TYPES "${ATE_ARRAY[1]}"
            gmibt_index="${ATE_ARRAY[1]}"
            return 0
        fi
@@ -56,12 +53,23 @@ get_mime_index_by_filename()
     local extract="${path##*/}"
     local -a parts mime_info
     IFS="." read -a parts -r <<< "$extract"
+    local -i part_count="${#parts[*]}"
 
-    if [ -n "${parts[1]}" ]; then
-        local pattern="*.${parts[1]}"
-        local -i mime_index
-        if get_mime_index_by_glob "mime_index" "$pattern"; then
-            gmibf_value="$mime_index"
+    local pattern
+    local -i gmibf_index=-1
+
+    if [ "$part_count" -gt 1 ]; then
+        if [ "$part_count" -gt 2 ]; then
+            IFS='.' pattern="*.${parts[@]: -2:2}"
+            get_mime_index_by_glob "gmibf_index" "$pattern"
+        fi
+        if [ "$gmibf_index" -lt 0 ]; then
+            IFS='.' pattern="*.${parts[@]: -1:1}"
+            get_mime_index_by_glob "gmibf_index" "$pattern"
+        fi
+
+        if [ "$gmibf_index" -ge 0 ]; then
+            gmibf_value="$gmibf_index"
             return 0
         fi
     fi
@@ -89,12 +97,8 @@ get_comment_by_mime_index()
 
     ate get_row ATE_TABLE_COMMENTS "$index"
     ate_exit_on_error
-    if ate get_row ATE_TABLE_COMMENTS "$index"; then
-        gcbmi_value="${ATE_ARRAY[1]}"
-        return 0
-    fi
-
-    return 1
+    gcbmi_value="${ATE_ARRAY[1]}"
+    return 0
 }
 
 get_app_by_mime_index()
@@ -113,7 +117,6 @@ get_app_by_mime_index()
         # Get ultimate data rom from table-link row field
         ate get_row ATE_TABLE_APPS "${ATE_ARRAY[1]}"
         gabmi_value="${ATE_ARRAY[0]}"
-        echo "Returning '$gamni_value' for mime index $index"
         return 0
     fi
 
