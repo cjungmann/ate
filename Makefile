@@ -32,7 +32,7 @@ all: $(TARGET) ate_sources.d/ate_mimes
 $(TARGET) : $(MODULES)
 	$(CC) $(LFLAGS) -o $@ $(MODULES) $(LDFLAGS)
 
-ate_sources.d/ate_mimes: ate_sources.d/ate_mimes.def ate_sources.d/d.ate_mimes/*
+ate_sources.d/ate_mimes: ate_sources.d/def.ate_mimes ate_sources.d/d.ate_mimes/*
 	./desource $< > $@
 
 $(ENABLER):
