@@ -7,6 +7,7 @@
 declare -g ATE_TABLE_MIME_TYPES
 declare -g ATE_TABLE_ALIAS_TYPES
 declare -g ATE_TABLE_GLOBS
+declare -g ATE_TABLE_WCGLOBS
 declare -g ATE_TABLE_COMMENTS
 
 declare -g ATE_KEY_MIME_TYPES
