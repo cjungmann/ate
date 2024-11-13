@@ -12,6 +12,9 @@ source $( ate_sources ate_get_index_with_key )
 
 ate_mimes()
 {
+    local am_cmd="$1"
+    local -a am_args=( "${@:2}" )
+
     source d.ate_mimes/declares
     source d.ate_mimes/package_xslt
     source d.ate_mimes/mime_tables
@@ -24,6 +27,5 @@ ate_mimes()
         read_mimeapps_tables
     }
 
-    local cmd="$1"
-    "$1" "${@:2}"
+    "$am_cmd" "${am_args[@]}"
 }
