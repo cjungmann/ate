@@ -1,0 +1,127 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+source $( ate_sources ate_exit_on_error )
+
+enable $( enable_pwb )
+source $( pwb_sources pwb_exit_on_error )
+
+ate_survey_tables()
+{
+    local -a TT_MARGINS=( 0 0 )
+
+    # This centering is for the table of tables.  With table
+    # widths undefined, we're gonna just print as much as fits
+    # on the full screen.
+    get_centering_margins()
+    {
+        local -n gcm_array="$1"
+        local pwb_name="$2"
+        local ate_name="$3"
+
+        # Vertical centering: get content 'height'
+        local -i rows
+        ate get_row_count "$ate_name" -v rows
+        ate_exit_on_error
+
+        # Horizonal centering: Get max width
+        local -i max_cols=0
+        sm_ate_walker()
+        {
+            local -n row="$1"
+            local val="${row[0]}"
+            local -i len="${#val}"
+            (( max_cols = len > max_cols ? len : max_cols ))
+        }
+
+        ate walk_rows "$ate_name" sm_ate_walker
+        ate_exit_on_error
+
+        # Screen dimensions needed to calculate centered content
+        declare -A sm_dims
+        pwb get_dimensions "$pwb_name" sm_dims
+        pwb_exit_on_error
+
+        local -i tmargin lmargin
+        (( tmargin = ( sm_dims[screen_lines] - sm_dims[data_rows]) / 2 ))
+        (( tmargin = ( tmargin < 2 ) ? 2 : tmargin ))
+        (( lmargin = ( sm_dims[screen_cols] - max_cols) / 2 ))
+        (( lmargin = ( lmargin < 2 ) ? 2 : lmargin ))
+
+        gcm_array=( "$tmargin" "$lmargin" )
+    }
+
+    get_tables()
+    {
+        local tname="$1"
+        ate get_array_name "$tname"
+        local -n gt_array="$ATE_VALUE"
+        local vname
+
+        while read -r; do
+            if [[ "$REPLY" =~ ^declare\ [^[:space:]]+\ ([^=]+)=.*$ ]]; then
+                vname="${BASH_REMATCH[1]}"
+                if ate get_row_count "$vname"; then
+                    gt_array+=( "$vname" )
+                fi
+            fi
+        done < <( declare -p )
+
+        ate index_rows "$tname"
+    }
+
+    print_line()
+    {
+        local -i index="$1"
+        local dsource="$2"
+        local -i char_limit="$3"
+
+        ate get_row "$dsource" "$index"
+        ate_exit_on_error
+
+        printf -v tline "%-*s" "$char_limit" "${ATE_ARRAY[0]}"
+        printf "%s" "${tline:0:$char_limit}"
+    }
+
+    execute_line()
+    {
+        local keyp="$1"
+        local -i index="$2"
+        local dsource="$3"
+        local phandle="$4"
+
+        ate get_row "$dsource" "$index"
+        ate_exit_on_error
+
+        local el_tname="${ATE_ARRAY[0]}"
+
+        printf $'\e[2J'
+
+        pwb_display_ate_table "$el_tname"
+
+        printf $'\e[2J'
+
+        pwb print_all "$phandle"
+        pwb_exit_on_error
+    }
+
+    declare table_table
+    ate declare table_table 1
+    get_tables table_table
+
+    local -i row_count
+    ate get_row_count table_table -v row_count
+    ate_exit_on_error
+
+    if [ "$row_count" -gt 0 ]; then
+        declare pwb_viewer
+        pwb declare pwb_viewer table_table "$row_count" print_line -e execute_line
+        pwb_exit_on_error
+
+        get_centering_margins TT_MARGINS pwb_viewer table_table
+        pwb set_margins pwb_viewer "${TT_MARGINS[@]}"
+
+        pwb start pwb_viewer
+        pwb_exit_on_error
+    fi
+}
