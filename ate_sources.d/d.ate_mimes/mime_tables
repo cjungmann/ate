@@ -1,3 +1,6 @@
+# -*- mode:shell-script; sh-shell:bash  -*-
+# shellcheck shell=bash
+
 # Populate an array with the paths of mime package databases
 get_packages_files()
 {
@@ -32,6 +35,8 @@ add_package()
     local index="${#g_array_mimes[*]}"
     local line="${package_lines[0]}"
 
+    local -a comments
+
     if [[ "${line:0:2}" == "t:" ]]; then
         local mime="${line:2}"
         g_array_mimes+=( "$mime" )
@@ -39,8 +44,8 @@ add_package()
             if [[ "$line" =~ ^[[:space:]]+([cga]):(.*)$ ]]; then
                 case "${BASH_REMATCH[1]}" in
                     a ) g_array_aliases+=(  "${BASH_REMATCH[2]}" "$index" ) ;;
-                    c ) g_array_comments+=( "$index" "${BASH_REMATCH[2]}" ) ;;
                     g ) g_array_globs+=(    "${BASH_REMATCH[2]}" "$index" ) ;;
+                    c ) comments+=( "${BASH_REMATCH[2]}" )
                 esac
             else
                 printf $'Surprise, expected \e[33;1m[acg]:...\e[m, got \e[33;1m%s\e[m\n' \
@@ -50,6 +55,14 @@ add_package()
     else
         printf $'Surprise, expected \e[33;1mt:...\e[m, got \e[33;1m%s\e[m\n' "$line"
     fi
+
+    # Insert place-keeper comment if none were supplied
+    if [ "${#comments[@]}" -eq 0 ]; then
+       comments+=( "N/A" )
+    fi
+
+    # Exactly one comment per mime type
+    g_array_comments+=( "$index" "${comments[*]}" )
 }
 
 
