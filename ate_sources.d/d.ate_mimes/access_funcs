@@ -1,6 +1,32 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
+get_mime_index_by_wcglob()
+{
+    local -n gmibw_index="$1"
+    local search="$2"
+
+    local -i exitcode=1
+
+    gmibw_test_row()
+    {
+        local -n gtr_row="$1"
+        local glob="${gtr_row[0]}"
+
+        if [[ "$search" == $glob ]]; then
+            gmibw_index="${gtr_row[1]}"
+            exitcode=0
+            return 1
+        fi
+    }
+
+    set -f
+    ate walk_rows ATE_TABLE_WCGLOBS gmibw_test_row
+    set +f
+
+    return "$exitcode"
+}
+
 get_mime_index_by_type()
 {
    local -n gmibt_index="$1"
@@ -67,7 +93,12 @@ get_mime_index_by_filename()
             IFS='.' pattern="*.${parts[@]: -1:1}"
             get_mime_index_by_glob "gmibf_index" "$pattern"
         fi
+        # If direct matches fail, compare against wild-card globs with "[...]"
+        if [ "$gmibf_index" -lt 0 ]; then
+            get_mime_index_by_wcglob "gmibf_index" "$path"
+        fi
 
+        # Set return info if glob match made:
         if [ "$gmibf_index" -ge 0 ]; then
             gmibf_value="$gmibf_index"
             return 0
