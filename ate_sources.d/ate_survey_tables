@@ -1,13 +1,17 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
-source $( ate_sources ate_exit_on_error )
-
-enable $( enable_pwb )
-source $( pwb_sources pwb_exit_on_error )
-
 ate_survey_tables()
 {
+    ## START FUNCTION CONFIRM SECTION
+    set -e
+    ate_confirm_functions \
+        ate_exit_on_error \
+        pwb_exit_on_error \
+        pwb_display_ate_table
+    set +e
+    ## END FUNCTION CONFIRM SECTION
+
     local -a TT_MARGINS=( 0 0 )
 
     # This centering is for the table of tables.  With table
