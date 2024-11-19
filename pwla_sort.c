@@ -81,6 +81,12 @@ int pwla_sort(ARG_LIST *alist)
    if ((retval = process_word_list_args(sort_targets, alist, AL_NO_OPTIONS)))
        goto early_exit;
 
+   // Ignore a new handle name of --, which holds the argument
+   // place to permit subsequent arguments to be passed to the
+   // sorting callback function:
+   if (0==strcmp(new_handle_name,"--"))
+      new_handle_name=NULL;
+
    SHELL_VAR *handle_var = NULL;
    if ((retval = get_handle_var_by_name_or_fail(&handle_var,
                                                 handle_name,
@@ -92,13 +98,6 @@ int pwla_sort(ARG_LIST *alist)
                                               callback_name,
                                               "sort")))
       goto early_exit;
-
-   // if (new_handle_name == NULL)
-   // {
-   //    ate_register_error("no handle name provided for sort result in 'sort'");
-   //    retval = EX_USAGE;
-   //    goto early_exit;
-   // }
 
    const char *stem = "QSORT_ROW_STEM_";
    if ((retval = create_var_by_stem(&return_var, stem, "sort")))
