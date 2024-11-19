@@ -16,8 +16,8 @@ declare -g ATE_KEY_GLOBS
 declare -g ATE_KEY_COMMENTS
 
 declare -g ATE_TABLE_APPS
-declare -g ATE_TABLE_APP_TYPE_LOOKUP
+declare -g ATE_TABLE_MIME_APP_LOOKUP
 
 declare -g ATE_KEY_APPS
-declare -g ATE_KEY_APP_TYPE_LOOKUP
+declare -g ATE_KEY_MIME_APP_LOOKUP
 
