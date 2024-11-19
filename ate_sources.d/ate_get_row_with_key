@@ -1,20 +1,53 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
-#> ate_get_row_with_key return_array_name key_table_name data_table_name search_string
+#> ate_get_row_with_key key_table_name data_table_name search_string [-a array_name]
 
 ate_get_row_with_key()
 {
-    local return_row="$1"
-    local key_table="$2"
-    local data_table="$3"
-    local search="$4"
+    ## START FUNCTION CONFIRM SECTION
+    set -e
+    ate_confirm_functions \
+        ate_exit_on_error
+    set +e
+    ## END FUNCTION CONFIRM SECTION
 
-    local -i output key_index
-    ate seek_key "$key_table" "$search" -o output -v key_index
-    if [ "$output" -eq 1 ]; then
-        if ate get_row "$key_table" "$key_index"; then
-            if ate get_row "$data_table" "${ATE_ARRAY[1]}" -a "$return_row"; then
+    # parse arguments
+    local key_table data_table search
+    local arr_name="ATE_ARRAY"
+    local aval op_intro
+    for aval in "$@"; do
+        if [[ "$aval" == "-a" ]]; then
+            op_intro="$aval"
+            continue
+        fi
+        if [ -n "$op_intro" ]; then
+            arr_name="$aval"
+            op_intro=
+        elif [ -z "$key_table" ]; then
+            key_table="$aval"
+        elif [ -z "$data_table" ]; then
+            data_table="$aval"
+        elif [ -z "$search" ]; then
+            search="$aval"
+        fi
+    done
+
+    ate seek_key "$key_table" "$search"
+    ate_exit_on_error 1
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        if ate get_row "$key_table" "$ATE_VALUE"; then
+            # get_row arguments only include -a option
+            # if the array name to be used is not ATE_ARRAY
+            local -a cmd_args=(
+                "$data_table"
+                "${ATE_ARRAY[1]}"
+            )
+            if [[ "$arr_name" != "ATE_ARRAY" ]]; then
+                cmd_args+=( -a "$arr_name" )
+            fi
+
+            if ate get_row "${cmd_args[@]}"; then
                 return 0
             fi
         fi
