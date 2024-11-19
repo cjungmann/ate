@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
+
+# #PREFIX# and #BUILTIN# values replaced with real values when installed:
 declare PREFIX=#PREFIX#
 declare BUILTIN=#BUILTIN#
 declare SOURCE_PATH="${PREFIX}/lib/${BUILTIN}_sources"
 
-ate_script_exists()   { [ -f "${SOURCE_PATH}/$1" ]; }
-ate_function_loaded() { [[ $( type -t "$1" 2>/dev/null ) == "function" ]]; }
+script_exists()   { [ -f "${SOURCE_PATH}/$1" ]; }
+function_loaded() { [[ $( type -f "$1" 2>/dev/null ) == "function" ]]; }
 
 list_sources()
 {
@@ -21,8 +23,8 @@ list_sources()
 return_source_name()
 {
     for func in "$@"; do
-        if ! ate_function_loaded "$func"; then
-            if ate_script_exists "$func"; then
+        if ! function_loaded "$func"; then
+            if script_exists "$func"; then
                 echo -n "${SOURCE_PATH}/$func "
             fi
         fi
