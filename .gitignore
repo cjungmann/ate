@@ -5,3 +5,7 @@ enable_ate
 html
 *.o
 *.so
+# ignore generated script:
+ate_sources.d/ate_mimes
+ate_sources.d/d.ate_mimes/freedesktop.org.xml
+ate_sources.d/d.ate_mimes/gnome-mimeapps.list
