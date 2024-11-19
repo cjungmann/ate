@@ -4,14 +4,24 @@
 .\}
 .SS SORT
 .PP
-Create a duplicate table handle with the rows sorted based
-on the order imposed by a callback function.
-This action exposes the C-library
-.B qsort
-function for use in a Bash script.
+Generate a sorted table with the rows sorted based on the order
+imposed by a callback function.
+The sorted order can be written back to the original source table
+or installed into a new table based on the use or value of the
+.I sorted_handle_name
+argument.
+.PP
+Additionally, a table that is sorted on the first field can
+be used for
+.B seek_key
+actions.
+See
+.B Sorted Key Tables
+below.
 .PP
 .B ate sort
-.I handle_name comparison_function sorted_handle_name
+.I handle_name comparison_function
+.RI [ sorted_handle_name | --\ ... ]
 .RS 7
 .arg_handle
 .TP
@@ -20,7 +30,10 @@ the name of a script callback function that will report the
 relative order of two given rows
 .TP
 .I sorted_handle_name
-the requested name for the new sorted handle
+the name to use for the new sorted handle.
+To sort the table in-place, omit this argument or use
+.B --
+as a placeholder if extra arguments are used.
 .TP
 .RI [ ... ]
 optional extra arguments, as needed, to be transmitted to the
@@ -71,9 +84,49 @@ to an integer value based on how the left and right rows should be
 ordered.
 .TS
 tab(|);
-l l.
-left before right|set comp_result to a negative integer
-right before left|set comp_result to a positive integer
-left equals right|set comp_result to 0
+l lx.
+left before right|T{
+set
+.B comp_result
+to a negative integer
+T}
+right before left|T{
+set
+.B comp_result
+to a positive integer
+T}
+left equals right|T{
+set
+.B comp_result
+to 0
+T}
 .TE
+.PP
+.B DO NOT
+return the result with a
+.B return
+statement.
+This will lead to disappointment and frustration..
 .RE
+.SS Sorted Key Tables
+.PP
+Since
+.B seek_key
+searches based on the first field of a table, specially-prepared
+sorted tables can sometimes be used in situations that would
+otherwise required two tables (an index table and a data table).
+.TP
+.B Sort on first column
+This is the only field
+.B seek_key
+reads, so there can be no exceptions to this rule.
+.TP
+.B Sort in strict alphabetical or numeric order
+While the
+.B sort
+action requires a sorting function, which can consider multiple
+columns or external information to determine the order, the
+.B seek_key
+comparisons are done internally without provision to provide the
+same comparison function
+
