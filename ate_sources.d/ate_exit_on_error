@@ -1,15 +1,18 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
-#> ate_exit_on_error
+#> ate_exit_on_error [level]
 
 ate_exit_on_error()
 {
+    # Must be first line to capture previous statements exit value
     local -i exval="$?"
+
+    local level="${1:-0}"
     if [ "$exval" -ne 0 ]; then
         printf $'ate error at line %d of script %s:\n' \
-               $(( "${BASH_LINENO[0]}" - 1 )) \
-               "${BASH_SOURCE[1]}" >&2
+               $(( "${BASH_LINENO[$level]}" - 1 )) \
+               "${BASH_SOURCE[$(( level+1))]}" >&2
         printf -v errmsg $'   \e[31;1m%s\e[m\n' "$ATE_ERROR" >&2
         read -n1 -p "$errmsg"
         exit 1
