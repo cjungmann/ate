@@ -1,0 +1,18 @@
+# -*- mode:shell-script; sh-shell:bash -*-
+# shellcheck shell=bash
+
+ate_confirm_functions()
+{
+   local -i missing=0
+   local req
+   for req in "$@"; do
+       if ! [[ $( type -t "$req" ) == "function" ]]; then
+           printf 'Missing function \e[31;1m%s\e[m\n' "$req"
+           (( ++missing ))
+       fi
+   done
+
+   if [ "$missing" -gt 0 ]; then
+       exit 1
+   fi
+}
