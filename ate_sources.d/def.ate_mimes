@@ -1,5 +1,7 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
+# shellcheck disable=2034    # warning about unused variable
+# shellcheck disable=2317    # warning about inaccessible code
 
 #> ate_mimes init
 #> ate_mimes add_app
@@ -7,11 +9,16 @@
 #> ate_mimes link_app
 #> ate_mimes index
 
-enable $( enable_ate )
-source $( ate_sources ate_get_index_with_key )
-
 ate_mimes()
 {
+    ## START FUNCTION CONFIRM SECTION
+    set -e
+    ate_confirm_functions \
+        ate_exit_on_error \
+        ate_get_index_with_key
+    set +e
+    ## END FUNCTION CONFIRM SECTION
+
     local am_cmd="$1"
     local -a am_args=( "${@:2}" )
 
