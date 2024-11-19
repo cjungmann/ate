@@ -35,20 +35,12 @@ get_mime_index_by_type()
    gmibt_index=-1
 
    local -i index
-   ate seek_key ATE_KEY_MIME_TYPES "$search" -v index
-   ate_exit_on_error
-   if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-       ate get_row ATE_KEY_MIME_TYPES "$index"
+   if ate_get_index_with_key ATE_KEY_MIME_TYPES "$search" -v "$1"; then
+       return 0
+   elif ate_get_index_with_key ATE_KEY_ALIAS_TYPES "$search"; then
+       ate get_row ATE_TABLE_ALIAS_TYPES "$ATE_VALUE"
        gmibt_index="${ATE_ARRAY[1]}"
        return 0
-   else
-       ate seek_key ATE_KEY_ALIAS_TYPES "$search" -v index
-       if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
-           ate get_row ATE_KEY_ALIAS_TYPES "$index"
-           ate get_row ATE_TABLE_ALIAS_TYPES "${ATE_ARRAY[1]}"
-           gmibt_index="${ATE_ARRAY[1]}"
-           return 0
-       fi
    fi
 
    return 1
@@ -153,3 +145,98 @@ get_app_by_mime_index()
 
     return 1
 }
+
+declare PACK_ARRAY_DELIMS="|^*,"
+
+# Called by set_mime_app() to pack an array with an eligible
+# delimiter that is also saved as the first character of the
+# string.  Access the packed array string by using the first
+# character as a delimiter to break up the remainder of the
+# string.
+pack_array()
+{
+    local -n pa_result="$1"
+    local -n pa_source="$2"
+    local delim
+
+    local OIFS="$IFS"
+    local IFS=''
+    local rawpacked="${pa_source[*]}"
+
+    for (( ndx=0; ndx<${#PACK_ARRAY_DELIMS}; ++ndx )); do
+        delim="${PACK_ARRAY_DELIMS[@]:$ndx:1}"
+        if ! [[ "$rawpacked" =~ $delim ]]; then
+            IFS="$delim"
+            pa_result="${delim}${pa_source[*]}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+set_mime_app()
+{
+    local mime_name="$1"
+    local app_args_name="$2"
+
+    local -i mindex
+    if ! get_mime_index_by_type mindex "$mime_name"; then
+        printf -v tline "Mime type %s not recognized.  Aborting.\n" "$mime_name"
+        read -n1 -p "$tline"
+        exit 1
+    fi
+
+    declare -i app_index
+    declare app_string
+    pack_array app_string "$app_args_name"
+
+    local -a cmd_args
+
+    # Find existing application or create a new one
+    cmd_args=(
+        ATE_KEY_APPS
+        "$app_string"
+        -v app_index
+    )
+
+    if ! ate_get_index_with_key "${cmd_args[@]}"; then
+        # didn't find it, add the app_string to the apps table,
+        # saving the new index value for linking.
+        ate get_row_count ATE_TABLE_APPS -v app_index
+        ate_exit_on_error
+        ate append_data ATE_TABLE_APPS $(( ++app_index )) "$app_string"
+        ate_exit_on_error
+        ate index_rows ATE_TABLE_APPS
+        ate_exit_on_error
+
+        ate make_key ATE_TABLE_APPS ATE_KEY_APPS -c 0
+        ate_exit_on_error
+    fi
+
+    # Seek existing MIME-APP link, reuse with new app index if found
+    cmd_args=(
+        ATE_KEY_MIME_APP_LOOKUP
+        ATE_TABLE_MIME_APP_LOOKUP
+        "$mindex"
+    )
+
+    if ate_get_row_with_key "${cmd_args[@]}"; then
+        # It exists, change the app index of the lookup record
+        ATE_ARRAY[1]="$app_index"
+        ate put_row ATE_TABLE_APP_TYPE_LOOKUP "$mindex" ATE_ARRAY
+    else
+        # Mime-App link not found, create a new one (then index).
+        ate append_data ATE_TABLE_MIME_APP_LOOKUP "$mindex" "$app_index"
+        ate_exit_on_error
+        ate index_rows ATE_TABLE_MIME_APP_LOOKUP
+        ate_exit_on_error
+
+        # Regenerate the key for the new entry
+        ate make_key ATE_TABLE_MIME_APP_LOOKUP ATE_KEY_MIME_APP_LOOKUP -i -c 0
+        ate_exit_on_error
+    fi
+
+    return 0
+}
+
