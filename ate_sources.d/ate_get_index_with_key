@@ -2,22 +2,46 @@
 # shellcheck shell=bash
 # shellcheck disable=2034  # unused variables
 
-#> ate_get_index_with_key return_var_name key_table_name search_string
+#> ate_get_index_with_key key_table_name search_string [-v var_name]
 
 ate_get_index_with_key()
 {
-   local -n return_value="$1"
-   local key_table="$2"
-   local search="$3"
+    ## START FUNCTION CONFIRM SECTION
+    set -e
+    ate_confirm_functions \
+        ate_exit_on_error
+    set +e
+    ## END FUNCTION CONFIRM SECTION
 
-   local -i output key_index
-   ate seek_key "$key_table" "$search" -o output -v key_index
-   if [ "$output" -eq 1 ]; then
-       if ate get_row "$key_table" "$key_index"; then
-           return_value="${ATE_ARRAY[1]}"
-           return 0
-       fi
-   fi
+    # parse arguments
+    local key_table search
+    local var_name="ATE_VALUE"
+    local aval op_intro
+    for aval in "$@"; do
+        if [[ "$aval" == "-v" ]]; then
+            op_intro="$aval"
+            continue
+        fi
+        if [ -n "$op_intro" ]; then
+            var_name="$aval"
+            op_intro=
+        elif [ -z "$key_table" ]; then
+            key_table="$aval"
+        elif [ -z "$search" ]; then
+            search="$aval"
+        fi
+    done
 
-   return 1
+    local -n agiwk_value="$var_name"
+
+    ate seek_key "$key_table" "$search"
+    ate_exit_on_error 1
+    if [ "$ATE_SEEK_OUTCOME" -eq 1 ]; then
+        if ate get_row "$key_table" "$ATE_VALUE"; then
+            agiwk_value="${ATE_ARRAY[1]}"
+            return 0
+        fi
+    fi
+
+    return 1
 }
