@@ -95,9 +95,11 @@ bool ate_create_head_from_list(AHEAD **head,
                                AEL *list,
                                const AHEAD *source_head);
 
-bool ate_install_head_in_handle(SHELL_VAR **handle,
-                               const char *name,
-                               AHEAD *head);
+void ate_install_head_in_handle(SHELL_VAR *handle, AHEAD *head);
+
+bool ate_create_handle_with_head(SHELL_VAR **handle,
+                                 const char *name,
+                                 AHEAD *head);
 
 bool ate_create_handle(SHELL_VAR **retval,
                        const char *name,

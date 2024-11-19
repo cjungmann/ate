@@ -93,12 +93,12 @@ int pwla_sort(ARG_LIST *alist)
                                               "sort")))
       goto early_exit;
 
-   if (new_handle_name == NULL)
-   {
-      ate_register_error("no handle name provided for sort result in 'sort'");
-      retval = EX_USAGE;
-      goto early_exit;
-   }
+   // if (new_handle_name == NULL)
+   // {
+   //    ate_register_error("no handle name provided for sort result in 'sort'");
+   //    retval = EX_USAGE;
+   //    goto early_exit;
+   // }
 
    const char *stem = "QSORT_ROW_STEM_";
    if ((retval = create_var_by_stem(&return_var, stem, "sort")))
@@ -108,7 +108,7 @@ int pwla_sort(ARG_LIST *alist)
    if ((retval = create_array_var_by_stem(&right_var, stem, "sort")))
       goto early_exit;
 
-   // Prepare a WORD_LIST for the qsort callback to use
+   // Prepare a copy of the function arguments for the qsort callback to use
    WORD_LIST *cb_args = NULL, *args_tail = NULL;
    WL_APPEND(args_tail, return_var->name);
    cb_args = args_tail;
@@ -116,7 +116,7 @@ int pwla_sort(ARG_LIST *alist)
    WL_APPEND(args_tail, right_var->name);
    ARG_LIST *ptr = alist->next;
    while (ptr)
-   {
+    {
       WL_APPEND(args_tail, ptr->value);
       ptr = ptr->next;
    }
@@ -141,20 +141,20 @@ int pwla_sort(ARG_LIST *alist)
               pwla_sort_qsort_callback,
               (void*)&pkg);
 
-      SHELL_VAR *new_handle_var = NULL;
-      if (ate_install_head_in_handle(&new_handle_var, new_handle_name, newhead))
-         retval = EXECUTION_SUCCESS;
-      else
+      if (new_handle_name)
       {
-         xfree(newhead);
-         ate_register_error("failed to initialize sorted handle, %s.", new_handle_name);
-         retval = EXECUTION_FAILURE;
+         SHELL_VAR *new_handle_var = NULL;
+         if (ate_create_handle_with_head(&new_handle_var, new_handle_name, newhead))
+            retval = EXECUTION_SUCCESS;
+         else
+         {
+            xfree(newhead);
+            ate_register_error("failed to initialize sorted handle, %s.", new_handle_name);
+            retval = EXECUTION_FAILURE;
+         }
       }
-      // if ((retval = create_handle_by_name_or_fail(&new_handle_var,
-      //                                              new_handle_name,
-      //                                              newhead,
-      //                                              "sort")))
-      //    xfree(newhead);
+      else
+         ate_install_head_in_handle(handle_var, newhead);
    }
    else
    {

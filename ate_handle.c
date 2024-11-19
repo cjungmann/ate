@@ -263,6 +263,20 @@ bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head
 }
 
 /**
+ * @brief Install a (pointer to a) AHEAD variable into a handle
+ * @param "handle" [in]  handle in which the head is to be referred
+ * @param "head"   [in]  pointer to an initialized AHEAD structure
+ */
+void ate_install_head_in_handle(SHELL_VAR *handle, AHEAD *head)
+{
+   ate_dispose_variable_value(handle);
+   handle->value = (char*)head;
+   VSETATTR(handle, att_special);
+   if (invisible_p(handle))
+      VUNSETATTR(handle, att_invisible);
+}
+
+/**
  * @brief Manage reuse or creation of new SHELL_VAR for a handle
  *
  * Create or reuse a SHELL_VAR as a handle containing a AHEAD
@@ -276,9 +290,9 @@ bool ate_create_head_from_list(AHEAD **head, AEL *list, const AHEAD *source_head
  * @param "head"    [in]   an initialized AHEAD memory block
  * @return False if failed to secure an appropriate SHELL_VAR
  */
-bool ate_install_head_in_handle(SHELL_VAR **handle,
-                               const char *name,
-                               AHEAD *head)
+bool ate_create_handle_with_head(SHELL_VAR **handle,
+                                 const char *name,
+                                 AHEAD *head)
 {
    int exit_code = False;
    SHELL_VAR *tsv = NULL;
@@ -289,11 +303,7 @@ bool ate_install_head_in_handle(SHELL_VAR **handle,
 
    if (tsv)
    {
-      ate_dispose_variable_value(tsv);
-      tsv->value = (char*)head;
-      VSETATTR(tsv, att_special);
-      if (invisible_p(tsv))
-         VUNSETATTR(tsv, att_invisible);
+      ate_install_head_in_handle(tsv, head);
 
       // Use is allowed to ignore the instance of a new shell_var
       // (success or failure indicated by exit code).
@@ -324,7 +334,7 @@ bool ate_create_handle(SHELL_VAR **retval,
    AHEAD *head = NULL;
    if (ate_create_indexed_head(&head, array, row_size))
    {
-      if (ate_install_head_in_handle(retval, name, head))
+      if (ate_create_handle_with_head(retval, name, head))
          return True;
 
       xfree(head);

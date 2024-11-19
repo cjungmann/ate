@@ -113,9 +113,9 @@ int pwla_filter(ARG_LIST *alist)
                                 ael_list))
    {
       SHELL_VAR *var = NULL;
-      if (ate_install_head_in_handle(&var,
-                                     new_handle_name,
-                                     new_head))
+      if (ate_create_handle_with_head(&var,
+                                      new_handle_name,
+                                      new_head))
          retval = EXECUTION_SUCCESS;
       else
          xfree(new_head);
