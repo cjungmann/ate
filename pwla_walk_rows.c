@@ -188,7 +188,7 @@ int pwla_walk_rows(ARG_LIST *alist)
          goto early_exit;
 
       // Prepare and call the callback
-      if ((retval = invoke_shell_function_word_list(function_var, cb_args)))
+      if ((0 != invoke_shell_function_word_list(function_var, cb_args)))
          goto early_exit;
 
       ++ae_ptr;
