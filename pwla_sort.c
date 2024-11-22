@@ -84,7 +84,7 @@ int pwla_sort(ARG_LIST *alist)
    // Ignore a new handle name of --, which holds the argument
    // place to permit subsequent arguments to be passed to the
    // sorting callback function:
-   if (0==strcmp(new_handle_name,"--"))
+   if (new_handle_name && 0==strcmp(new_handle_name,"--"))
       new_handle_name=NULL;
 
    SHELL_VAR *handle_var = NULL;
