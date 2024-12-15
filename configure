@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+declare GITHUB_BASE="https://github.com/cjungmann/lib"
+declare -a LIBS_NEEDED=( argeater )
+declare -a DEVS_REQUIRED=(
+    bash/builtins.h  bash-builtins
+)
+
+declare -a LIB_DIRS_ARRAY=()
+declare -a LIB_FLAGS_ARRAY=()
+declare -a LIB_MODULES_ARRAY=()
+declare -a INCFLAGS_ARRAY=()
+
+confirm_devs()
+{
+    local -i missing_count=0
+    local header package
+    for el in "${DEVS_REQUIRED[@]}"; do
+        if [ -z "$header" ]; then
+            header="$el"
+        else
+            package="$el"
+            if ! [ -f "/usr/include/$header" ]; then
+                printf $'Cannot find header \e[31;1m%s\e[m.  Please install \e[31;1m%s\e[m.\n' \
+                       "$header" "$package"
+                (( ++missing_count ))
+            fi
+            header=
+            package=
+        fi
+    done
+
+    [ "$missing_count" -eq 0 ]
+}
+
+install_and_build_library()
+{
+    local libname="$1"
+    if ! [ -d "libs" ]; then
+        mkdir libs
+    fi
+
+    cd libs
+    git clone "${GITHUB_BASE}${libname}.git"
+    cd "lib$libname"
+    declare dir="libs/lib$libname"
+    make
+    if [ "$?" -eq 0 ]; then
+        LIB_MODULES_ARRAY+=( "$dir/lib$libname.a" )
+        INCFLAGS_ARRAY+=( "-I$dir" )
+    fi
+
+    LIB_DIRS_ARRAY+=( $( pwd ) )
+    cd ../..
+}
+
+shared_library_installed()
+{
+    local libname="lib${1}.so"
+    /usr/sbin/ldconfig -p | grep [[:space:]]"$libname"[[:space:]]
+}
+
+add_if_static_library_available()
+{
+    local libname="$1"
+    local libdir="libs/lib${libname}"
+    local libfile="$libdir/lib${libname}.a"
+    echo "Checking for lib path '$libdir'"
+    if [ -d "$libdir" ]; then
+        if [ -f "$libfile" ]; then
+            echo "Found the $libname static library!, Adding."
+            LIB_MODULES_ARRAY+=( "$libfile" )
+            INCFLAGS_ARRAY+=( "-I${libdir}" )
+            return 0
+        fi
+    fi
+
+    echo "Failed to find $libname"
+    return 1
+}
+
+confirm_library()
+{
+    local libname="$1"
+    if shared_library_installed "$libname"; then
+        echo "Found shared library '$1'"
+        LIB_FLAGS_ARRAY+=( "-l$libname" )
+    elif ! add_if_static_library_available "$libname"; then
+        echo "failed to find static library, so we're gonna add it"
+        install_and_build_library "$libname"
+    fi
+}
+
+
+setup_libraries()
+{
+    for lib in "${LIBS_NEEDED[@]}"; do
+        confirm_library "$lib"
+    done
+}
+
+if ! confirm_devs; then
+    exit
+fi
+
+setup_libraries
+
+declare flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
+declare mods_str="s|LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
+declare incflags_str="s|INCFLAGS =.*|INCFLAGS = ${INCFLAGS_ARRAY[*]}|"
+flags_str="${flags_str// /\\ }"
+mods_str="${mods_str// /\\ }"
+incflags_str="${incflags_str// /\\ }"
+
+printf $'flags_str with be \e[32;1m%s\e[m\n' "$flags_str"
+printf $'mods_str with be \e[32;1m%s\e[m\n' "$mods_str"
+printf $'incflags_str with be \e[32;1m%s\e[m\n' "$incflags_str"
+read -n1 -p "Press any key to update the Makefile"
+
+declare -a SED_LIB_ARGS=(
+    -e "${flags_str}"
+    -e "${mods_str}"
+    -e "${incflags_str}"
+    )
+
+sed -i "${SED_LIB_ARGS[@]}" Makefile
