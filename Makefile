@@ -9,9 +9,13 @@ PREFIX ?= /usr/local
 # Change if source files not in base directory:
 SRC = .
 
+# These will be set by ./configure
+LIB_FLAGS =
+LIB_MODULES =
+
 CFLAGS = -Wall -Werror -std=c99 -pedantic -ggdb
 LFLAGS =
-LDFLAGS =
+LDFLAGS = -lm $(LIB_FLAGS)
 INCFLAGS =
 
 # Uncomment the following if target is a Shared library
@@ -31,7 +35,12 @@ HEADERS = $(wildcard $(SRC)/*.h)
 all: $(TARGET) ate_sources.d/ate_mimes
 
 $(TARGET) : $(MODULES)
-	$(CC) $(LFLAGS) -o $@ $(MODULES) $(LDFLAGS)
+ifndef LIB_FLAGS
+ifndef LIB_MODULES
+	$(error "Run 'configure' to setup libraries")
+endif
+endif
+	$(CC) $(LFLAGS) -o $@ $(MODULES) $(LIB_MODULES) $(LDFLAGS)
 
 ate_sources.d/ate_mimes: ate_sources.d/def.ate_mimes ate_sources.d/d.ate_mimes/*
 	./desource $< > $@
