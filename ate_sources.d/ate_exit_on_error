@@ -1,7 +1,11 @@
 # -*- mode:shell-script; sh-shell:bash -*-
 # shellcheck shell=bash
 
-#> ate_exit_on_error [level]
+## BEGIN_DOC
+## Put this command after any invocation of 'ate' to respond
+## to errors with helpful line number of explanation of the
+## error.
+## END_DOC
 
 ate_exit_on_error()
 {
