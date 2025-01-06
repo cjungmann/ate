@@ -1,5 +1,5 @@
 TARGET_ROOT = ate
-TARGET = $(TARGET_ROOT).so
+TARGET = $(TARGET_ROOT)
 BUILTIN = $(TARGET_ROOT)
 ENABLER = $(addprefix enable_,$(TARGET_ROOT))
 SOURCER = $(addprefix $(TARGET_ROOT),_sources)
@@ -47,7 +47,9 @@ ate_sources.d/ate_mimes: ate_sources.d/def.ate_mimes ate_sources.d/d.ate_mimes/*
 
 $(ENABLER):
 	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
-	@echo "echo -f $(PREFIX)/lib/$(TARGET) $(BUILTIN)" >> $(ENABLER)
+	@echo "read -n1 -p\"Using enable $$\\\\( ate_enable \\\\) is deprecated. Please just enable 'ate'\"" >> $(ENABLER)
+	@echo "echo -f $(PREFIX)/lib/bash/$(TARGET) $(BUILTIN)" >> $(ENABLER)
+	chmod a+x $(ENABLER)
 
 *.c: *.h
 	@echo "Forcing full recompile after any header file change"
@@ -58,7 +60,7 @@ $(ENABLER):
 
 install: $(ENABLER)
 	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
-	install -D --mode=775 $(TARGET) $(PREFIX)/lib
+	install -D --mode=775 $(TARGET) -t $(PREFIX)/lib/bash
 	mkdir --mode=755 -p $(PREFIX)/share/man/man1
 	mkdir --mode=755 -p $(PREFIX)/share/man/man7
 	soelim ate.1 | gzip -c - > $(PREFIX)/share/man/man1/ate.1.gz
