@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+enable -f ../ate ate
+source ../ate_sources.d/ate_exit_on_error
+
+declare TNAME="Demo_ATE"
+
+make_table()
+{
+   local table_name="$1"
+   local -a flist=( $( ls -1 ) )
+   echo "flist has ${#flist[*]} elements"
+
+   ate declare "$table_name" 1 flist
+   ate_exit_on_error
+   ate get_array_name "$table_name" -v array_name
+   ate_exit_on_error
+}
+
+
+make_table "$TNAME"
+echo "Returned from 'make_table', let's see about the table"
+
+ate get_row_count "$TNAME" -v row_count
+ate_exit_on_error
+echo "row count is $row_count"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if ! enable -f ../ate.so ate; then
+if ! enable -f ../ate ate; then
     echo "Failed to enable ate module."
     exit 1
 fi
