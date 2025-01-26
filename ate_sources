@@ -78,7 +78,7 @@ elif [[ "$1" == "help" ]]; then
     if [ -f "$path" ]; then
         enable "$prefix"
         source "$path"
-        declare PWB_READ_ARGS_SHOW_USAGE=1
+        declare READ_ARGS_SHOW_USAGE=1
         "$func"
         show_func_doc "$path"
     else
