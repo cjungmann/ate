@@ -12,7 +12,8 @@ declare -a HEADERS_REQUIRED=(
 )
 
 declare -a APPS_REQUIRED=(
-    )
+    soelim   man-db
+)
 
 declare -a LIB_DIRS_ARRAY=()
 declare -a LIB_FLAGS_ARRAY=()
