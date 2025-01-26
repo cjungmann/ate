@@ -2,19 +2,31 @@
 
 declare GITHUB_BASE="https://github.com/cjungmann/lib"
 
-declare -a LIBS_NEEDED=( argeater )
+#############################
+### CUSTOMIZED TO PROJECT ###
+#############################
 
-declare -a LIBS_REQUIRED=(
-)
+# My libraries, cloned and built below if not installed
+declare -a LIBS_NEEDED=( argeater pager contools )
 
+# System resource prerequisites:
+declare -a LIBS_REQUIRED=()
 declare -a HEADERS_REQUIRED=(
-    bash/builtins.h  bash-builtins
+    builtins.h  bash-builtins
 )
-
 declare -a APPS_REQUIRED=(
+    gcc      build-essential
     soelim   man-db
 )
 
+#############################
+### END OF PROJECT CUSTOM ###
+#############################
+
+# Array to track missing prerequisites for final message
+declare -a PACKAGES_REQUIRED=()
+
+# Arrays to track Makefile updates:
 declare -a LIB_DIRS_ARRAY=()
 declare -a LIB_FLAGS_ARRAY=()
 declare -a LIB_MODULES_ARRAY=()
@@ -36,8 +48,12 @@ lib_test()
 header_test()
 {
     printf $'#include <%s>\nint main(void)\n{ return 0; }\n' "$1" > bogus.c
-    gcc -x c -fsyntax-only bogus.c >/dev/null 2>&1
+
+    local bi_pre=/usr/include/bash
+    local -a incs=( -I"$bi_pre" -I"$bi_pre"/include )
+    gcc -x c -fsyntax-only "${incs[@]}"  bogus.c >/dev/null 2>&1
     local -i ecode="$?"
+
     rm bogus.c
 
     [ "$ecode" -eq 0 ]
@@ -49,6 +65,9 @@ confirm_prereq()
     local cp_test_function="$2"
     local cp_prereq_type="$3"
 
+    # Nameref to update global variable
+    local -n cp_all=PACKAGES_REQUIRED
+
     local fmt=$'Missing %s \e[31;1m%s\e[39;22m. Please install \e[31;1m%s\e[39;22m.\n'
 
     local -i missing_count=0
@@ -59,8 +78,12 @@ confirm_prereq()
         else
             package="$el"
             if ! "$cp_test_function" "$prereq"; then
+                # Give warning
                 printf "$fmt" "$cp_prereq_type" "$prereq" "$package"
+                # track missing count for function exit code
                 (( ++missing_count ))
+                # Accumulate missing packages for final message
+                cp_all+=( $prereq )
             fi
             prereq=""
             package=""
@@ -79,10 +102,8 @@ confirm_prerequisites()
     (( error_count += $? ))
     confirm_prereq "HEADERS_REQUIRED" "header_test" "header"
     (( error_count += $? ))
-
     (( error_count == 0 ))
 }
-
 
 ########################################################
 ### Checking for and installing my missing libraries ###
@@ -159,10 +180,12 @@ if ! confirm_prerequisites; then
     exit
 fi
 
+
 # This checks only for my libraries, cloning and installing as
 # as static library under this project if the library is not
 # installed globally:
 setup_libraries
+
 
 declare flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
 declare mods_str="s|LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
