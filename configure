@@ -1,37 +1,91 @@
 #!/usr/bin/env bash
 
 declare GITHUB_BASE="https://github.com/cjungmann/lib"
+
 declare -a LIBS_NEEDED=( argeater )
-declare -a DEVS_REQUIRED=(
+
+declare -a LIBS_REQUIRED=(
+)
+
+declare -a HEADERS_REQUIRED=(
     bash/builtins.h  bash-builtins
 )
+
+declare -a APPS_REQUIRED=(
+    )
 
 declare -a LIB_DIRS_ARRAY=()
 declare -a LIB_FLAGS_ARRAY=()
 declare -a LIB_MODULES_ARRAY=()
 declare -a INCFLAGS_ARRAY=()
 
-confirm_devs()
+app_test()
 {
+    type "$1" >/dev/null 2>&1
+    local -i ecode="$?"
+    return "$ecode"
+}
+
+lib_test()
+{
+    local -i count=$( /sbin/ldconfig -p | grep -c "$1" )
+    (( count == 1 ))
+}
+
+header_test()
+{
+    printf $'#include <%s>\nint main(void)\n{ return 0; }\n' "$1" > bogus.c
+    gcc -x c -fsyntax-only bogus.c >/dev/null 2>&1
+    local -i ecode="$?"
+    rm bogus.c
+
+    [ "$ecode" -eq 0 ]
+}
+
+confirm_prereq()
+{
+    local -n cp_list="$1"
+    local cp_test_function="$2"
+    local cp_prereq_type="$3"
+
+    local fmt=$'Missing %s \e[31;1m%s\e[39;22m. Please install \e[31;1m%s\e[39;22m.\n'
+
     local -i missing_count=0
-    local header package
-    for el in "${DEVS_REQUIRED[@]}"; do
-        if [ -z "$header" ]; then
-            header="$el"
+    local prereq package el
+    for el in "${cp_list[@]}"; do
+        if [ -z "$prereq" ]; then
+            prereq="$el"
         else
             package="$el"
-            if ! [ -f "/usr/include/$header" ]; then
-                printf $'Cannot find header \e[31;1m%s\e[m.  Please install \e[31;1m%s\e[m.\n' \
-                       "$header" "$package"
+            if ! "$cp_test_function" "$prereq"; then
+                printf "$fmt" "$cp_prereq_type" "$prereq" "$package"
                 (( ++missing_count ))
             fi
-            header=
-            package=
+            prereq=""
+            package=""
         fi
     done
 
     [ "$missing_count" -eq 0 ]
 }
+
+confirm_prerequisites()
+{
+    local -i error_count=0
+    confirm_prereq "LIBS_REQUIRED" "lib_test" "library"
+    (( error_count += $? ))
+    confirm_prereq "APPS_REQUIRED" "app_test" "app"
+    (( error_count += $? ))
+    confirm_prereq "HEADERS_REQUIRED" "header_test" "header"
+    (( error_count += $? ))
+
+    (( error_count == 0 ))
+}
+
+
+########################################################
+### Checking for and installing my missing libraries ###
+########################################################
 
 install_and_build_library()
 {
@@ -91,7 +145,6 @@ confirm_library()
     fi
 }
 
-
 setup_libraries()
 {
     for lib in "${LIBS_NEEDED[@]}"; do
@@ -99,10 +152,15 @@ setup_libraries()
     done
 }
 
-if ! confirm_devs; then
+# This will identify/warn about missing libraries, with advice
+# on which package will remedy the omission:
+if ! confirm_prerequisites; then
     exit
 fi
 
+# This checks only for my libraries, cloning and installing as
+# as static library under this project if the library is not
+# installed globally:
 setup_libraries
 
 declare flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
@@ -115,12 +173,11 @@ incflags_str="${incflags_str// /\\ }"
 printf $'flags_str with be \e[32;1m%s\e[m\n' "$flags_str"
 printf $'mods_str with be \e[32;1m%s\e[m\n' "$mods_str"
 printf $'incflags_str with be \e[32;1m%s\e[m\n' "$incflags_str"
-read -n1 -p "Press any key to update the Makefile"
 
 declare -a SED_LIB_ARGS=(
     -e "${flags_str}"
     -e "${mods_str}"
     -e "${incflags_str}"
-    )
+)
 
 sed -i "${SED_LIB_ARGS[@]}" Makefile
