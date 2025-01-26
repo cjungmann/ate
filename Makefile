@@ -1,7 +1,6 @@
 TARGET_ROOT = ate
 TARGET = $(TARGET_ROOT)
 BUILTIN = $(TARGET_ROOT)
-ENABLER = $(addprefix enable_,$(TARGET_ROOT))
 SOURCER = $(addprefix $(TARGET_ROOT),_sources)
 
 PREFIX ?= /usr/local
@@ -45,12 +44,6 @@ endif
 ate_sources.d/ate_mimes: ate_sources.d/def.ate_mimes ate_sources.d/d.ate_mimes/*
 	./desource $< > $@
 
-$(ENABLER):
-	@echo "#!/usr/bin/env bash"                         > $(ENABLER)
-	@echo "read -n1 -p\"Using enable $$\\\\( ate_enable \\\\) is deprecated. Please just enable 'ate'\"" >> $(ENABLER)
-	@echo "echo -f $(PREFIX)/lib/bash/$(TARGET) $(BUILTIN)" >> $(ENABLER)
-	chmod a+x $(ENABLER)
-
 *.c: *.h
 	@echo "Forcing full recompile after any header file change"
 	touch *.c
@@ -58,25 +51,23 @@ $(ENABLER):
 %o: %c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-install: $(ENABLER)
-	install -D --mode=775 $(ENABLER) $(PREFIX)/bin
+install:
 	install -D --mode=775 $(TARGET) -t $(PREFIX)/lib/bash
 	mkdir --mode=755 -p $(PREFIX)/share/man/man1
 	mkdir --mode=755 -p $(PREFIX)/share/man/man7
-	soelim ate.1 | gzip -c - > $(PREFIX)/share/man/man1/ate.1.gz
-	soelim ate.7 | gzip -c - > $(PREFIX)/share/man/man7/ate.7.gz
+	soelim $(TARGET_ROOT).1 | gzip -c - > $(PREFIX)/share/man/man1/$(TARGET_ROOT).1.gz
+	soelim $(TARGET_ROOT).7 | gzip -c - > $(PREFIX)/share/man/man7/$(TARGET_ROOT).7.gz
 	soelim ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
 	# install SOURCER and sources
 	rm -f $(PREFIX)/bin/$(SOURCER)
 	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)
 	chmod a+x $(PREFIX)/bin/$(SOURCER)
-	install -D $(BUILTIN)_sources.d/ate_* -t$(PREFIX)/lib/$(BUILTIN)_sources
+	install -D $(BUILTIN)_sources.d/$(BUILTIN)_* -t$(PREFIX)/lib/$(BUILTIN)_sources
 
 uninstall:
-	rm -f $(PREFIX)/bin/$(ENABLER)
 	rm -f $(PREFIX)/lib/$(TARGET)
-	rm -f $(PREFIX)/share/man/man1/ate.1.gz
-	rm -f $(PREFIX)/share/man/man7/ate.7.gz
+	rm -f $(PREFIX)/share/man/man1/$(TARGET_ROOT).1.gz
+	rm -f $(PREFIX)/share/man/man7/$(TARGET_ROOT).7.gz
 	rm -f $(PREFIX)/share/man/man7/ate-examples.7.gz
 # uninstall SOURCER stuff:
 	rm -rf $(PREFIX)/lib/$(BUILTIN)_sources
@@ -84,7 +75,6 @@ uninstall:
 
 clean:
 	rm -f $(TARGET)
-	rm -f $(ENABLER)
 	rm -f $(MODULES)
 
 help:
