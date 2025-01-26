@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-
-# #PREFIX# and #BUILTIN# values replaced with real values when installed:
 declare PREFIX=#PREFIX#
-declare BUILTIN=#BUILTIN#
-declare SOURCE_PATH="${PREFIX}/lib/${BUILTIN}_sources"
+
+declare ATE_PATH="${PREFIX}/lib/ate_sources"
+declare PWB_PATH="${PREFIX}/lib/pwb_sources"
 
 script_exists()   { [ -f "${SOURCE_PATH}/$1" ]; }
 function_loaded() { [[ $( type -f "$1" 2>/dev/null ) == "function" ]]; }
 
 list_sources()
 {
-    local -a sources=( "${SOURCE_PATH}/"* )
+    local -a sources=( "${PWB_PATH}/"* )
     local OIFS="$IFS"
     local IFS='/'
     for func in "${sources[@]}"; do
@@ -22,17 +21,71 @@ list_sources()
 
 return_source_name()
 {
+    if ! function_loaded "$1"; then
+        local prefix="${1%%_*}"
+        local path="${PREFIX}/lib/${prefix}_sources/$1"
+        if [ -f "$path" ]; then
+            echo -n "$path"
+        fi
+    fi
+}
+
+return_sources_script()
+{
     for func in "$@"; do
         if ! function_loaded "$func"; then
-            if script_exists "$func"; then
-                echo -n "${SOURCE_PATH}/$func "
+            local prefix="${func%%_*}"
+            local path="${PREFIX}/lib/${prefix}_sources/$func"
+            if [ -f "$path" ]; then
+                echo "if ! declare -f $func >/dev/null; then source $path; fi"
             fi
         fi
     done
 }
 
+show_func_doc()
+{
+    local path="$1"
+    local IFS=$'\n'
+    local -a lines=( $( grep ^##[[:space:]].*$ "$path" ) )
+
+    local -i progress=0
+    local line cline
+    for line in "${lines[@]}"; do
+        [[ "$line" =~ ^##[[:space:]](.*)$ ]]
+        cline="${BASH_REMATCH[1]}"
+        if [ "$progress" -eq 0 ] && [[ "$cline" == "BEGIN_DOC" ]]; then
+            echo
+            (( ++progress ))
+        elif [ "$progress" -eq 1 ]; then
+            if [[ "$cline" != "END_DOC" ]]; then
+                printf "%s\n" "$cline"
+            else
+                (( ++progress ))
+                break
+            fi
+        fi
+    done
+}
+
+
 if [ "$#" -eq 0 ]; then
     list_sources
+elif [[ "$1" == "help" ]]; then
+    declare func="$2"
+    declare prefix="${func%%_*}"
+    declare path="${PREFIX}/lib/${prefix}_sources/$func"
+    if [ -f "$path" ]; then
+        enable "$prefix"
+        source "$path"
+        declare PWB_READ_ARGS_SHOW_USAGE=1
+        "$func"
+        show_func_doc "$path"
+    else
+        printf $'Unrecognized scriptlet "\e[32;1m%s\e[m"\n' "$func"
+    fi
+elif [ "$#" -eq 1 ]; then
+     return_source_name "$1"
 else
-    return_source_name "$@"
+    return_sources_script "$@"
 fi
