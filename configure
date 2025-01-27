@@ -6,8 +6,8 @@ declare GITHUB_BASE="https://github.com/cjungmann/lib"
 ### CUSTOMIZED TO PROJECT ###
 #############################
 
-# My libraries, cloned and built below if not installed
-declare -a LIBS_NEEDED=( argeater pager contools )
+# github.com/cjungmann libraries, cloned and built below if not installed
+declare -a CJUNGMANN_LIBS_NEEDED=( argeater )
 
 # System resource prerequisites:
 declare -a LIBS_REQUIRED=()
@@ -22,15 +22,6 @@ declare -a APPS_REQUIRED=(
 #############################
 ### END OF PROJECT CUSTOM ###
 #############################
-
-# Array to track missing prerequisites for final message
-declare -a PACKAGES_REQUIRED=()
-
-# Arrays to track Makefile updates:
-declare -a LIB_DIRS_ARRAY=()
-declare -a LIB_FLAGS_ARRAY=()
-declare -a LIB_MODULES_ARRAY=()
-declare -a INCFLAGS_ARRAY=()
 
 app_test()
 {
@@ -83,7 +74,7 @@ confirm_prereq()
                 # track missing count for function exit code
                 (( ++missing_count ))
                 # Accumulate missing packages for final message
-                cp_all+=( $prereq )
+                cp_all+=( $package )
             fi
             prereq=""
             package=""
@@ -95,14 +86,24 @@ confirm_prereq()
 
 confirm_prerequisites()
 {
+    local -a PACKAGES_REQUIRED=()
+
     local -i error_count=0
     confirm_prereq "LIBS_REQUIRED" "lib_test" "library"
-    (( error_count += $? ))
+    (( TOTAL_ERRORS += $? ))
     confirm_prereq "APPS_REQUIRED" "app_test" "app"
-    (( error_count += $? ))
+    (( TOTAL_ERRORS += $? ))
     confirm_prereq "HEADERS_REQUIRED" "header_test" "header"
-    (( error_count += $? ))
-    (( error_count == 0 ))
+    (( TOTAL_ERRORS += $? ))
+
+    if [ "$TOTAL_ERRORS" -gt 0 ]; then
+        echo
+        echo "Use your package manager to install the following packages:"
+        echo "   ${PACKAGES_REQUIRED[*]}"
+        echo ""
+        echo "Hint: copy the list to paste into your install command."
+        echo
+    fi
 }
 
 ########################################################
@@ -133,7 +134,7 @@ install_and_build_library()
 shared_library_installed()
 {
     local libname="lib${1}.so"
-    /usr/sbin/ldconfig -p | grep [[:space:]]"$libname"[[:space:]]
+    /usr/sbin/ldconfig -p | grep [[:space:]]"$libname"[[:space:]] 2>&1 >/dev/null
 }
 
 add_if_static_library_available()
@@ -159,49 +160,102 @@ confirm_library()
 {
     local libname="$1"
     if shared_library_installed "$libname"; then
-        echo "Found shared library '$1'"
         LIB_FLAGS_ARRAY+=( "-l$libname" )
     elif ! add_if_static_library_available "$libname"; then
-        echo "failed to find static library, so we're gonna add it"
         install_and_build_library "$libname"
     fi
 }
 
-setup_libraries()
+setup_cjungmann_libs()
 {
-    for lib in "${LIBS_NEEDED[@]}"; do
+    local -n scl_SED_ARGS="$1"
+
+    # Arrays to track Makefile updates:
+    local -a LIB_DIRS_ARRAY=()
+    local -a LIB_FLAGS_ARRAY=()
+    local -a LIB_MODULES_ARRAY=()
+    local -a INCFLAGS_ARRAY=()
+
+    for lib in "${CJUNGMANN_LIBS_NEEDED[@]}"; do
         confirm_library "$lib"
     done
+
+    local flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
+    local mods_str="s|LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
+    local incflags_str="s|INCFLAGS =.*|INCFLAGS = ${INCFLAGS_ARRAY[*]}|"
+
+    flags_str="${flags_str// /\\ }"
+    mods_str="${mods_str// /\\ }"
+    incflags_str="${incflags_str// /\\ }"
+
+    scl_SED_ARGS+=( -e "$flags_str" )
+    scl_SED_ARGS+=( -e "$mods_str" )
+    scl_SED_ARGS+=( -e "$incflags_str" )
 }
+
+update_makefile_prefix()
+{
+    local -n ump_SED_ARGS="$1"
+    shift
+    local option value prefix="/usr/local"
+    for arg in "$@"; do
+        if [ -z "$option" ] && [[ "${arg:0:2}" == "--" ]]; then
+            option="${arg:2}"
+        else
+            value="$arg"
+            if [[ "$option" == "prefix" ]]; then
+                if [ -d "$value" ]; then
+                    prefix="$value"
+                else
+                    (( ++TOTAL_ERRORS ))
+                    printf $'Prefix directory \e[31;1m%s\e[39;22m does not exist.\n' "$value"
+                    return 1
+                fi
+            fi
+
+            # Ignoring, for now, additional arguments or unrecognized options
+
+            option=
+            value=
+        fi
+    done
+
+    local sedscr="s|PREFIX +\\?= +.*|PREFIX ?= $prefix|g"
+    sedscr="s|^PREFIX\ ?= .*$|PREFIX ?= $prefix|g"
+    ump_SED_ARGS+=( -e "$sedscr" )
+}
+
+############################
+###   EXECUTION BEGINS   ###
+############################
+
+# Global variable for tracking total errors during calls to
+# 'confirm_prerequisites' and 'update_makefile_prefix'.
+# Makefile updates will not be performed unless TOTAL_ERRORS == 0"
+declare -i TOTAL_ERRORS=0
+
+# Global array variable that will be used as arguments to a
+# 'sed' call for updating the Makefile with appropriate values.
+# It will be set by 'setup_cjungmann_libs' for Makefile updates
+# dictated by the global array CJUNGMANN_LIBS_NEEDED
+declare -a MAKEFILE_SED_ARGS=()
 
 # This will identify/warn about missing libraries, with advice
 # on which package will remedy the omission:
-if ! confirm_prerequisites; then
-    exit
+confirm_prerequisites
+
+
+# Check for --prefix option, adding a sed script to update the
+# Makefile PREFIX variable if specified
+update_makefile_prefix MAKEFILE_SED_ARGS "$@"
+
+# This checks only for github.com/cjungmann libraries, cloning and
+# installing as static libraries under this project if the library
+# is not installed globally:
+setup_cjungmann_libs MAKEFILE_SED_ARGS
+
+if [ "$TOTAL_ERRORS" -eq 0 ]; then
+    sed -i "${MAKEFILE_SED_ARGS[@]}" Makefile
+else
+    echo "Please correct the errors and rerun ./configure."
 fi
-
-
-# This checks only for my libraries, cloning and installing as
-# as static library under this project if the library is not
-# installed globally:
-setup_libraries
-
-
-declare flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
-declare mods_str="s|LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
-declare incflags_str="s|INCFLAGS =.*|INCFLAGS = ${INCFLAGS_ARRAY[*]}|"
-flags_str="${flags_str// /\\ }"
-mods_str="${mods_str// /\\ }"
-incflags_str="${incflags_str// /\\ }"
-
-printf $'flags_str with be \e[32;1m%s\e[m\n' "$flags_str"
-printf $'mods_str with be \e[32;1m%s\e[m\n' "$mods_str"
-printf $'incflags_str with be \e[32;1m%s\e[m\n' "$incflags_str"
-
-declare -a SED_LIB_ARGS=(
-    -e "${flags_str}"
-    -e "${mods_str}"
-    -e "${incflags_str}"
-)
-
-sed -i "${SED_LIB_ARGS[@]}" Makefile
