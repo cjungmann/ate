@@ -63,7 +63,12 @@ install:
 	rm -f $(PREFIX)/bin/$(SOURCER)
 	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)_impl
 	chmod a+x $(PREFIX)/bin/$(SOURCER)_impl
-	cp -s $(PREFIX)/bin/$(SOURCER)_impl $(PREFIX)/bin/$(SOURCER)
+	@if [ -f $(PREFIX)/bin/pwb_sources ]; then \
+		echo "Using pwb_sources as link source for ate_sources.";  \
+		cp -fs $(PREFIX)/bin/pwb_sources $(PREFIX)/bin/ate_sources; \
+	else \
+		cp -fs $(PREFIX)/bin/$(SOURCER)_impl $(PREFIX)/bin/$(SOURCER); \
+	fi
 	install -D $(BUILTIN)_sources.d/$(BUILTIN)_* -t$(PREFIX)/lib/$(BUILTIN)_sources
 
 uninstall:
