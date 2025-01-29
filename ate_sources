@@ -9,7 +9,7 @@ function_loaded() { [[ $( type -f "$1" 2>/dev/null ) == "function" ]]; }
 
 list_sources()
 {
-    local -a sources=( "${PWB_PATH}/"* )
+    local -a sources=( "${ATE_PATH}/"* )
     local OIFS="$IFS"
     local IFS='/'
     for func in "${sources[@]}"; do
