@@ -59,9 +59,11 @@ install:
 	soelim $(TARGET_ROOT).7 | gzip -c - > $(PREFIX)/share/man/man7/$(TARGET_ROOT).7.gz
 	soelim ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
 	# install SOURCER and sources
+	rm -f $(PREFIX)/bin/$(SOURCER)_impl
 	rm -f $(PREFIX)/bin/$(SOURCER)
-	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)
-	chmod a+x $(PREFIX)/bin/$(SOURCER)
+	sed -e s^#PREFIX#^$(PREFIX)^ -e s^#BUILTIN#^$(BUILTIN)^ $(SOURCER) > $(PREFIX)/bin/$(SOURCER)_impl
+	chmod a+x $(PREFIX)/bin/$(SOURCER)_impl
+	cp -s $(PREFIX)/bin/$(SOURCER)_impl $(PREFIX)/bin/$(SOURCER)
 	install -D $(BUILTIN)_sources.d/$(BUILTIN)_* -t$(PREFIX)/lib/$(BUILTIN)_sources
 
 uninstall:
@@ -72,6 +74,7 @@ uninstall:
 # uninstall SOURCER stuff:
 	rm -rf $(PREFIX)/lib/$(BUILTIN)_sources
 	rm -f $(PREFIX)/bin/$(SOURCER)
+	rm -f $(PREFIX)/bin/$(SOURCER)_impl
 
 clean:
 	rm -f $(TARGET)
