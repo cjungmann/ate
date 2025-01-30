@@ -1,244 +1,120 @@
-# ARRAY TABLE EXTENSION
+# Custom Bash Builtin - `ate`xs
 
-**ate** is an acronym for (Bash) Array Table Extension
+## OVERVIEW
 
-## DESCRIPTION
-
-Bash arrays can use some help.
-
-Bash arrays are double-linked lists of string values.  Unintuitively,
-rather than directly accessing an element by an index, a Bash array
-finds an array element by stepping through the list to find the
-element with a matching index.  Bash arrays are optimized for
-efficient appending and sequential reads (ie **for** loops), but are
-quite slow for changes, insertions, and indexed access, especially
-for large arrays.
-
-**ate** is a loadable builtin command for Bash that enhances Bash
-arrays with a table view, fast indexed access to virtual rows, and
-some database features through a simple API.
-
-**ate** works with a custom Bash shell variable that catalogs the
-first array element of each virtual row in a C-langauge array that
-enables nearly instant indexed access to the virtual rows for
-reading and writing.
+`ate` is Array Table Extension, which creates and uses
+high-performance vector indexes to elements of Bash arrays,
+permitting instant access to elements for reading and writing,
+fast sorting and searching using binary-searches for sorted
+tables.
 
 ## FEATURES
 
-- **Much faster than stanard Bash array**  
-  **ate** creates an index with a C-language array of pointers to the
-  first array element of each virtual row.  The index enables direct
-  access to a virtual row for both reading and writing.
+- **Bash Builtin**
+  Bash builtins can avoid the performance penalty of starting child
+  processes, and can initiate script responses through callbacks to
+  script functions.
 
-- **The table state persists between calls to the `ate` command**  
-  **ate** uses a custom Bash SHELL_VAR, accessed through the handle
-  name, to keep track of the table dimensions and row indexes.  This
-  permits Bash garbage collection to manage the memory.
+- **C-language Vector of Pointers**
+  Using fixed-length memory C structs containing pointers to the Bash
+  array elements permits access to the Bash array elements by index
+  through simple  multiplication.
 
-- **Can create alternate views to a table**  
-  Secondary handles can contain sorted or filtered views of a table
+- **Establishes a Virtual Table**
+  The pointers of the vector can simulate a table by pointing to
+  Bash array elements at fixed increments.  For example, a table
+  whose rows contain three fields will have pointers to every
+  third Bash array element.
 
-- **Binary search action `seek_key` for ISAM access**  
-  Fast seek action enables efficient lookup tables for some
-  data processing tasks
+- **Use Bash Memory Management**
+  This is a mixed blessing.  Using Bash variables and Bash arrays
+  for the data permits Bash garbage collection to manage their
+  lifetimes.  The downside is that, without destructors, it is
+  difficult or impossible to guarantee an orderly release of
+  no-longer needed memory.  Thus the indexes are not dynamic.
+  That is, a table length is fixed until it is explicitely reindexed.
 
-- **Can call Bash script functions to perform per-row actions**  
-  The ability of **ate** to access script functions enables flexible
-  programming techniques that are the reason one chooses a script
-  solution.  For example, **ate** exposes C library function `qsort`
-  to script-based comparison functions.
-
-## PREREQUISITES
-
-Building the project requires packages **build-essential** and
-**bash-builtins**.  Please install them on your system if they are
-not already installed.
+- **Library**
+  I'm experimenting with an interface for including Bash script
+  fragments of `ate` solutions and utilities into new Bash scripts.
+  The library interface provides a list of available scriptlets,
+  basic usage info about each scriptlet, and a system for managing
+  includes without duplicates.
 
 ## INSTALLATION
 
-### Clone project, build and install:
+### Prerequisites
 
-~~~sh
-git clone https://www.github.com/cjungmann/ate.git
-cd ate
-make
-sudo make install
-~~~
+Ensure you have the following:
 
-There is also an _uninstall_ Makefile target to remove all traces of
-the installation.
+- Bash version `4.0.0` or higher
+- A C-compiler (gcc) for compiling the command
+- _bash_builtins_ development package
+- _git_ to clone, build, and statically link a
+  few library dependencies
 
-### Enable ate
+The development environment is Linux.  I should work on any Linux
+distribution, and will probably work on BSD as well (I haven't tested
+it there yet).
 
-**ate** is a Bash builtin, and must be enabled before it can be used.
+### Installation Steps
 
-To simplify the enable step, the project includes a script, `enable_ate`
-that makes it easier to aid enable **ate**.
-
-~~~sh
-enable $( enable_ate )
-~~~
-
-This `enable` command can be used in a script, on the commnd line, or
-in the `.bashrc` file to enable **ate** globally.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/cjungmann/ate.git
+    ```
+2. Navigate to the cloned directory:
+    ```bash
+    cd ate
+    ```
+3. Run the `configure` script to resolve dependencies and prepare the Makefile.
+   ```bash
+   ./configure
+   ```
+3. Build and install the builtin:
+    ```bash
+    make
+    sudo make install
+    ```
+4. Verify the installation by running:
+    ```bash
+    enable ate
+    ate list_actions
+    ```
 
 ## USAGE
 
-**ate** features are accessed through the **ate** command, followed
-by an `action` string and parameters that control the operation of
-the requested action.  Please refer to the project man pages for
-more extensive usage instructions.
+### Syntax
+```bash
+ate [action_name] [handle_name] [options]
+```
 
-### Basic Operation:
+### Example
 
-<pre>
-# Making a 2-field table from an array with paired values:
-declare -a pets=(
-  dog     bark
-  cat     meow
-  chicken cluck
-  fish    splash
-)
+The following example will make and display an `ate` two-column
+table of file names and sizes:
 
-# Initialize the table
-ate <b>declare</b> pets_handle 2 pets
+~~~bash
+enable ate
+source <( ate_sources ate_exit_on_error ate_print_formatted_table )
 
-# Read row #1 (index 0):
-ate <b>get_row</b> pets_handle 0
-echo "index 0 contains ${ATE_ARRAY[*]}"
+# Make a two-field table
+declare AHANDLE
+ate declare AHANDLE 2
+ate_exit_on_error
 
-# Update pet row's sound
-ATE_ARRAY[1]="woof"
-ate <b>put_row</b> pets_handle 0 ATE_ARRAY
-</pre>
+declare name
+while IFS='|' read -r -a row; do
+   ate append_data AHANDLE "${row[@]}"
+done < <( stat -c"%n|%s" * )
 
-### Getting help:
+ate index_rows AHANDLE
+ate_exit_on_error
 
-<pre>
-# Bash builtin help system:
-help ate
-
-# ate Man pages:
-man 1 ate          # complete usage guide
-man 7 ate          # tutorials
-man 7 ate-examples
-
-# ate actions that provide help:
-
-# display available ate actions:
-ate <b>list_actions</b>
-
-# display usage information about one or all ate actions:
-ate <b>show_action</b> declare    # display usage for declare action
-ate <b>show_action</b>            # display usage text for all actions
-</pre>
-
-## Basic Syntax
-
-**ate** *action_name* [*handle_name*] [**-v** *return_value_name*] [**-a** *return_array_name*] [...]
-
-- *action_name*
-  The only required argument.  Tells **ate** command
-  what to do
-
-- *handle_name* is required for table actions, but may be omitted for
-  some informational actions
-
-- **-v** *return_value_name*
-  For actions returning a single value, the value is saved to
-  **ATE_VALUE** unless overridden by the **-v** option.
-
-- **-a** *return_array_name*
-  For actions returning an array value (**get_row**), the array will
-  be named **ATE_VALUE** unless overridden by the **-a** option.
-
-- Extra arguments as needed by specific actions.
-
-
-~~~.sh
-enable -f ./ate.so ate
-
-declare -a travel_list=(
-0 "shirts"
-0 "pants"
-0 "shoes"
-0 "toiletries"
-0 "rain gear"
-0 "book"
-)
-
-if ! ate declare tl_handle travel_list 2; then
-   exit "$?"
-fi
-
-ate get_row_count tl_handle
-echo "$ATE_VALUE"
-
+ate_print_formatted_table AHANDLE
 ~~~
 
-## DOWNLOAD AND BUILD
-
-Download or clone the code, then run `make` and `make install`:
-
-~~~sh
-make
-sudo make install
-~~~
-
-Use the builtin in a script by including the following line:
-
-~~~sh
-#!/usr/bin/env bash
-
-enable $( enable_ate )
-~~~
-
-## DEBUGGING
-
-Besides having the Bash headers available, I have found it very
-useful to also have a debugger-enabled version of Bash handy for
-stepping through the code.
-
-The following instructions should help you to download, build, and
-link a debugger version of Bash into the **ate** development
-directory.
-
-The instruction assume that you have a `~/gits` directory for
-cloning or downloading then building source code, and a
-`~/work` directory for your projects.  Set those variables
-separately, copy the following lines to your copy buffer (omitting
-the directory declares), and paste the copy buffer to a terminal
-command line.
-
-~~~.sh
-declare workdir=~/work
-declare clonedir=~/gits
-
-# Download and build your version of Bash:
-cd "$clonedir"
-[[ $( bash --version ) =~ version\ ([0-9.]+) ]]
-declare BVER="bash-${BASH_REMATCH[1]}"
-# wget https://ftp.gnu.org/gnu/bash/${BVER}.tar.gz
-tar -xzf ${BVER}.tar.gz
-cd "${BVER}"
-./configure --enable-debugger
-make
-
-# Make link to the debugger-enabled Bash executable:
-cd "${workdir}/ate"
-cp -s "${clonedir}/${BVER}/bash" .
-~~~
-
-## ALTERNATE NAMES
-
-I'm not really happy with the name *ate*, but I'm moving on for now.
-I've also considered `bat` for **Bash Array Table**, but decided
-against competing with another possily popular app, [bat][bat].
-
-Other possibilities if I want to change the name might be `bia` for
-**Bash Indexed Array** or `iat` for **Indexed Array Table**.
 
 
 
 
-[bat]:  "https://github.com/sharkdp/bat"
