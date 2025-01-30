@@ -1,0 +1,232 @@
+# -*- mode:shell-script; sh-shell:bash  -*-
+# shellcheck shell=bash
+# shellcheck disable=SC2317
+
+#> pwb_read_args args_array_name [var_names_array_name] [opts_list_name]
+#> see test_read_args script for examples
+
+ate_read_args()
+{
+    show_usage()
+    {
+        fit_the_print()
+        {
+            local tline="$1"
+            pwb measure_string curlen "$tline"
+            if (( curlen + curpos < maxlen )); then
+                printf "%s" "$tline"
+            else
+                printf $'\n\e[%dC%s' "$indent" "$tline"
+            fi
+        }
+
+        local fname="$1"
+        local -n su_arg_names="$2"
+        local -n su_opts_list="$3"
+
+        local -i indent=$(( 2 + "${#fname}" ))
+        local -i maxlen=80
+
+        local col_bold="${LESS_TERMCAP_md}"
+        if [ -z "$col_bold" ]; then col_bold=$'\e[34;1m'; fi
+        local col_ital="${LESS_TERMCAP_us}"
+        if [ -z "$col_ital" ]; then col_ital=$'\e[32;1m'; fi
+        local col_none=$'\e[m'
+
+        printf "\nUSAGE for %s:\n" "$fname"
+        printf "  %s" "$fname"
+
+        local -i count_flags=0
+        local -i curlen curpos="$indent"
+        local tline
+        local trigger name
+        for el in "${su_opts_list[@]}"; do
+            if [ -z "$trigger" ]; then
+                trigger="$el"
+            else
+                if [ "${#trigger}" -gt 1 ]; then
+                    printf -v tline \
+                           " ${col_bold}-%s${col_none} ${col_ital}%s${col_none}" \
+                           "${trigger:0:1}" "$el"
+                else
+                    # Flags need further info, count 'em to show the extra later:
+                    (( ++count_flags ))
+                    printf -v tline " ${col_bold}-%s${col_none}" "${trigger:0:1}"
+                fi
+
+                fit_the_print "$tline"
+                trigger=""
+            fi
+        done
+
+        for arg in "${su_arg_names[@]}"; do
+            printf -v tline " ${col_ital}%s${col_none}" "$arg"
+            fit_the_print "$tline"
+        done
+
+        if (( count_flags > 0 )); then
+            printf "Flag variables:\n"
+            for el in "${su_opts_list[@]}"; do
+                if [ -z "$trigger" ]; then
+                    trigger="$el"
+                else
+                    if [ "${#trigger}" -eq 1 ]; then
+                        printf "  ${col_bold}%-s${col_none} ${col_ital}%s${col_none}\n" \
+                               "$trigger" "$el"
+                    fi
+                    trigger=""
+                fi
+            done
+        fi
+
+        # Set off from following prompt
+        echo
+    }
+
+    # Value returned in variable named in $1 indicates how to continue:
+    # If it's blank, we're done with the argument, if it has a value,
+    # it's the name of the variable to set from the next argument.
+    get_option_entries()
+    {
+        local -n goe_return="$1"
+        goe_return=""
+        # trim '-' prefix
+        local option_progress="${2:1}"
+
+        local opt_el opt_token opt_variable
+        while [ "${#option_progress}" -gt 0 ]; do
+            local progress_letter="${option_progress:0:1}"
+
+            # check rows in options list for match to progress_letter
+            for opt_el in "${pa_opts_list[@]}"; do
+                if [ -z "$opt_token" ]; then
+                    opt_token="$opt_el"
+                    continue
+                else
+                    opt_variable="$opt_el"
+                fi
+
+                # Use the opt_list row if opt_token of opt_list_row matches current arg char:
+                local opt_letter="${opt_token:0:1}"
+                if [[ "$opt_letter" == "$progress_letter" ]]; then
+                    # advance the option_progress as soon as we make a match:
+                    # either we use the value, or continue to process the next
+                    # option_progress letter
+                    option_progress="${option_progress:1}"
+
+                    local -n tvar="$opt_variable"
+                    if [ "${#opt_token}" -gt 1 ]; then
+                        # option takes a value
+                        if [ "${#option_progress}" -gt 0 ]; then
+                            # if letter follow, they are the value
+                            tvar="$option_progress"
+                            return 0
+                        else
+                            # No following letters, return the variable name
+                            # for the calling function to use to set with the
+                            # next argument value:
+                            goe_return="$opt_variable"
+                            return 0
+                        fi
+                    else
+                        # Option is a flag, just set it and return
+                        tvar=1
+                        # Bypass failed with deep continue
+                        continue 2
+                    fi
+                fi
+                # Setup to seek next opt_list pair:
+                opt_token=""
+                opt_variable=""
+            done
+
+            printf $'Unrecognized option \e[31;1m-%c\e[m.  Fix script to avoid this mistake.\n' "$progress_letter"
+            read -n1 -p "Press any key to exit"
+            exit 1
+
+        done
+    }
+
+    parse_args()
+    {
+        local -n pa_command_args="$1"
+        local -n pa_arg_names="$2"
+        local -n pa_opts_list="$3"
+
+        local -i opts_count="${#pa_opts_list[@]}"
+        # Minimally validate opts array contents
+        if (( opts_count % 2 != 0 )); then
+            echo "Invalid array of opt args (must be paired ($opts_count))"
+            read -n1 -p "opts are ${pa_opts_list[*]}"
+            # Do not tolerate arguments mistakes committed by script function caller
+            exit 1
+        fi
+
+        # Flag to clear when encounterin '--', following which arguments
+        # will be treated as values, even if they look like an option.
+        local -i option_parsing=1
+        still_processing_options() { [ "$option_parsing" -eq 1 ]; }
+
+        local -i args_index=0
+        local -i args_count="${#pa_arg_names[@]}"
+        local var_name
+        local -i clas_index=0
+
+        for arg in "${pa_command_args[@]}"; do
+            # If previous pass identified an option that sets a value,
+            # set the value and clear the var_name variable.
+            if [ -n "$var_name" ]; then
+                local -n tvar="$var_name"
+                tvar="$arg"
+                var_name=""
+            else
+                if still_processing_options && [[ "$arg" =~ ^-. ]]; then
+                    if [[ "$arg" == "--" ]]; then
+                        option_parsing=0
+                    else
+                        # if 'var_name' is set on return, var_name is the variable
+                        # to set with the value of the next CL argument
+                        get_option_entries var_name "$arg"
+                    fi
+                    # not an option, set next positional argument
+                elif (( args_index < args_count )); then
+                    var_name="${pa_arg_names[$(( args_index++ ))]}"
+                    local -n tvar="$var_name"
+                    tvar="$arg"
+                    var_name=""
+                fi
+            fi
+        done
+    }
+
+    #################################
+    ###   EXECUTION BEGINS HERE   ###
+    #################################
+
+    local -a empty_array=()
+    local command_args_array="${1:-empty_array}"
+    local arg_names_array="${2:-empty_array}"
+    local opts_list_array="${3:-empty_array}"
+
+    # Show usage and return if environment var is set:
+    if [ -n "$PWB_READ_ARGS_SHOW_USAGE" ]; then
+        local funcname="${FUNCNAME[@]: -2:1}"
+
+        # Using FUNCNAME[0]} to protect against renaming this script:
+        if [[ "$funcname" == "${FUNCNAME[0]}" ]]; then
+            local -a arg_names=(
+                command_args_array
+                arg_names_array
+                opts_list_array
+            )
+            show_usage "$funcname" arg_names empty_array
+        else
+            show_usage "$funcname" "$arg_names_array" "$opts_list_array"
+        fi
+        return 1
+    else
+        parse_args "$command_args_array" "$arg_names_array" "$opts_list_array"
+        return "$?"
+    fi
+}
+
