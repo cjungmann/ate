@@ -10,10 +10,10 @@
 .PP
 .B ate
 .print_prototype @action_name @handle_name ?-a:array_name ?-v:value_name "?@extra ..."
+.PP
+.B enable ate
 .br
-.BR enable " \(Do( enable_ate )"
-.br
-.BR "ate_sources " ate_exit_on_error
+.BR source " <( ate_sources ate_exit_on_error ate_noop )"
 .SS Usage help actions
 .proto_list_actions
 .syn_int
