@@ -103,7 +103,10 @@ confirm_prerequisites()
         echo ""
         echo "Hint: copy the list to paste into your install command."
         echo
+        return 1
     fi
+
+    return 0
 }
 
 ########################################################
@@ -242,17 +245,16 @@ declare -a MAKEFILE_SED_ARGS=()
 
 # This will identify/warn about missing libraries, with advice
 # on which package will remedy the omission:
-confirm_prerequisites
+if confirm_prerequisites; then
+    # Check for --prefix option, adding a sed script to update the
+    # Makefile PREFIX variable if specified
+    update_makefile_prefix MAKEFILE_SED_ARGS "$@"
 
-
-# Check for --prefix option, adding a sed script to update the
-# Makefile PREFIX variable if specified
-update_makefile_prefix MAKEFILE_SED_ARGS "$@"
-
-# This checks only for github.com/cjungmann libraries, cloning and
-# installing as static libraries under this project if the library
-# is not installed globally:
-setup_cjungmann_libs MAKEFILE_SED_ARGS
+    # This checks only for github.com/cjungmann libraries, cloning and
+    # installing as static libraries under this project if the library
+    # is not installed globally:
+    setup_cjungmann_libs MAKEFILE_SED_ARGS
+fi
 
 if [ "$TOTAL_ERRORS" -eq 0 ]; then
     sed -i "${MAKEFILE_SED_ARGS[@]}" Makefile
