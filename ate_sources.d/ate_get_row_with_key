@@ -3,6 +3,8 @@
 
 #> ate_get_row_with_key key_table_name data_table_name search_string [-a array_name]
 
+source <( ate_sources ate_exit_on_error ate_noop )
+
 ate_get_row_with_key()
 {
     ## START FUNCTION CONFIRM SECTION

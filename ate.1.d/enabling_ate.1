@@ -1,7 +1,5 @@
-.if \n[include_flag]==0 \{\
-.  TH debug 1
-.  so macros.1
-.\}
+.\" -*- mode: nroff -*-
+.so fork.tmac
 .SH ENABLING ATE
 .EE
 The
@@ -22,7 +20,7 @@ command to prepare
 for use:
 .IP
 .EX
-enable -f /path/to/ate.so ate
+enable -f /path/to/ate ate
 .EE
 .PP
 .PP
@@ -38,7 +36,7 @@ Put the following statement in your script or your
 file.
 .IP
 .EX
-enable $( enable_ate )
+enable ate
 .EE
 .SS ate_sources
 .PP

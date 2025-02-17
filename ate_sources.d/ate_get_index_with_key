@@ -2,17 +2,15 @@
 # shellcheck shell=bash
 # shellcheck disable=2034  # unused variables
 
+## BEGIN_DOC
+## 
+## END_DOC
 #> ate_get_index_with_key key_table_name search_string [-v var_name]
+
+source <( ate_sources ate_exit_on_error ate_noop )
 
 ate_get_index_with_key()
 {
-    ## START FUNCTION CONFIRM SECTION
-    set -e
-    ate_confirm_functions \
-        ate_exit_on_error
-    set +e
-    ## END FUNCTION CONFIRM SECTION
-
     # parse arguments
     local key_table search
     local var_name="ATE_VALUE"

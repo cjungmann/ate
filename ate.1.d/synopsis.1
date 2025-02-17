@@ -1,19 +1,19 @@
-.if \n[include_flag]==0 \{\
-.  TH debug 1
-.  so macros.1
-.\}
+.\" -*- mode: nroff -*-
+.so fork.tmac
 .\" chanageable intra-prototype spacing:
 .de  syn_int
 .  br
 ..
 .SH SYNOPSIS
 .PP
+.proto_basic_ate
+.PP
 .B ate
 .print_prototype @action_name @handle_name ?-a:array_name ?-v:value_name "?@extra ..."
 .PP
 .B enable ate
 .br
-.BR source " <( ate_sources ate_exit_on_error ate_noop )"
+.BR source " <( ate_sources ate_exit_on_error )"
 .SS Usage help actions
 .proto_list_actions
 .syn_int

@@ -1,11 +1,9 @@
-.if \n[include_flag]==0 \{\
-.  TH debug 1
-.  so macros.1
-.\}
+.\" -*- mode: nroff -*-
+.so fork.tmac
 .SH SYNTAX
 .PP
 General command syntax follows Unix Utility conventions.
-Action-specific syntax is show as command prototypes in the
+Action-specific syntax is shown as command prototypes in the
 .B SYNOPSIS
 section above and in each action description below.
 .TP
@@ -17,7 +15,7 @@ command and consist of
 .TP
 .B Operands
 are undecorated strings that are read in order, the first
-of which must be the.
+of which must be the
 .IR action_name .
 .TP
 .BR Options " and " "option arguments"
