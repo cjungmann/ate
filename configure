@@ -52,7 +52,7 @@ header_test()
 
 man_test()
 {
-    local errmsg=$( groff pwb.1 2>&1 1>/dev/null )
+    local errmsg=$( groff ate.1 2>&1 1>/dev/null )
     if [ -n "$errmsg" ]; then
         echo $'You must install \e[31;1mgrofflib\e[39;22m to access the man pages.'
 	     echo "Copy and paste the following lines to install grofflib:"
