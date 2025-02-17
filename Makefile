@@ -12,6 +12,12 @@ SRC = .
 LIB_FLAGS =
 LIB_MODULES =
 
+ifndef LIB_FLAGS
+ifndef LIB_MODULES
+$(error "Run 'configure' to setup libraries")
+endif
+endif
+
 CFLAGS = -Wall -Werror -std=c99 -pedantic -ggdb
 LFLAGS =
 LDFLAGS = -lm $(LIB_FLAGS)
