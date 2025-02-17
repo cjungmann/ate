@@ -52,15 +52,17 @@ header_test()
 
 man_test()
 {
-    local errmsg=$( groff ate.1 2>&1 1>/dev/null )
+    local errmsg=$( groff -z <( echo ".mso gproto.tmac" ) 2>&1 )
     if [ -n "$errmsg" ]; then
         echo $'You must install \e[31;1mgrofflib\e[39;22m to access the man pages.'
-	     echo "Copy and paste the following lines to install grofflib:"
+	     echo "Copy and paste the following green lines to install grofflib:"
         echo ""
+        printf $'\e[32;1m'
         echo "git clone https://www.github.com/cjungmann/grofflib.git"
         echo "cd grofflib"
         echo "sudo make install"
 	     echo "cd .."
+        printf $'\e[39;22m'
 	     echo ""
         return 1
     fi
@@ -117,9 +119,9 @@ confirm_prerequisites()
     if [ "$TOTAL_ERRORS" -gt 0 ]; then
         echo
         echo "Use your package manager to install the following packages:"
-        echo "   ${PACKAGES_REQUIRED[*]}"
+        printf $'   \e[32;1m%s\e[39;22m\n'"${PACKAGES_REQUIRED[*]}"
         echo ""
-        echo "Hint: copy the list to paste into your install command."
+        echo "Hint: copy the green list to paste into your install command."
         echo
         return 1
     fi
