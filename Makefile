@@ -55,9 +55,9 @@ install:
 	install -D --mode=775 $(TARGET) -t $(PREFIX)/lib/bash
 	mkdir --mode=755 -p $(PREFIX)/share/man/man1
 	mkdir --mode=755 -p $(PREFIX)/share/man/man7
-	soelim $(TARGET_ROOT).1 | gzip -c - > $(PREFIX)/share/man/man1/$(TARGET_ROOT).1.gz
-	soelim $(TARGET_ROOT).7 | gzip -c - > $(PREFIX)/share/man/man7/$(TARGET_ROOT).7.gz
-	soelim ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
+	soelim -r $(TARGET_ROOT).1 | gzip -c - > $(PREFIX)/share/man/man1/$(TARGET_ROOT).1.gz
+	soelim -r $(TARGET_ROOT).7 | gzip -c - > $(PREFIX)/share/man/man7/$(TARGET_ROOT).7.gz
+	soelim -r ate-examples.7 | gzip -c - > $(PREFIX)/share/man/man7/ate-examples.7.gz
 	# install SOURCER and sources
 	rm -f $(PREFIX)/bin/$(SOURCER)_impl
 	rm -f $(PREFIX)/bin/$(SOURCER)
