@@ -50,6 +50,24 @@ header_test()
     [ "$ecode" -eq 0 ]
 }
 
+man_test()
+{
+    local errmsg=$( groff pwb.1 2>&1 1>/dev/null )
+    if [ -n "$errmsg" ]; then
+        echo $'You must install \e[31;1mgrofflib\e[39;22m to access the man pages.'
+	     echo "Copy and paste the following lines to install grofflib:"
+        echo ""
+        echo "git clone https://www.github.com/cjungmann/grofflib.git"
+        echo "cd grofflib"
+        echo "sudo make install"
+	     echo "cd .."
+	     echo ""
+        return 1
+    fi
+
+    return 0
+}
+
 confirm_prereq()
 {
     local -n cp_list="$1"
@@ -245,7 +263,7 @@ declare -a MAKEFILE_SED_ARGS=()
 
 # This will identify/warn about missing libraries, with advice
 # on which package will remedy the omission:
-if confirm_prerequisites; then
+if confirm_prerequisites && man_test; then
     # Check for --prefix option, adding a sed script to update the
     # Makefile PREFIX variable if specified
     update_makefile_prefix MAKEFILE_SED_ARGS "$@"
@@ -254,10 +272,6 @@ if confirm_prerequisites; then
     # installing as static libraries under this project if the library
     # is not installed globally:
     setup_cjungmann_libs MAKEFILE_SED_ARGS
-fi
-
-if [ "$TOTAL_ERRORS" -eq 0 ]; then
-    sed -i "${MAKEFILE_SED_ARGS[@]}" Makefile
 else
     echo "Please correct the errors and rerun ./configure."
 fi
