@@ -17,6 +17,7 @@ declare -a HEADERS_REQUIRED=(
 declare -a APPS_REQUIRED=(
     gcc      build-essential
     soelim   man-db
+    less     coreutils
 )
 
 #############################
@@ -133,6 +134,19 @@ confirm_prerequisites()
 ### Checking for and installing my missing libraries ###
 ########################################################
 
+update_arrays_for_static_library()
+{
+    local ua_libname="$1"
+    local ua_dir="libs/lib${libname}"
+    local ua_libfile="${ua_dir}/lib${libname}.a"
+    if [ -d "$ua_dir" ]; then
+        if [ -f "$ua_libfile" ]; then
+            LIB_MODULES_ARRAY+=( "$ua_libfile" )
+            INCFLAGS_ARRAY+=( "-I$ua_dir" )
+        fi
+    fi
+}
+
 install_and_build_library()
 {
     local libname="$1"
@@ -143,15 +157,13 @@ install_and_build_library()
     cd libs
     git clone "${GITHUB_BASE}${libname}.git"
     cd "lib$libname"
-    declare dir="libs/lib$libname"
+    local dir="libs/lib$libname"
     make
-    if [ "$?" -eq 0 ]; then
-        LIB_MODULES_ARRAY+=( "$dir/lib$libname.a" )
-        INCFLAGS_ARRAY+=( "-I$dir" )
-    fi
-
-    LIB_DIRS_ARRAY+=( $( pwd ) )
+    local -i ecode="$?"
     cd ../..
+    if [ "$ecode" -eq 0 ]; then
+        update_arrays_for_static_library "$libname"
+    fi
 }
 
 shared_library_installed()
@@ -160,20 +172,16 @@ shared_library_installed()
     /usr/sbin/ldconfig -p | grep [[:space:]]"$libname"[[:space:]] 2>&1 >/dev/null
 }
 
-add_if_static_library_available()
+static_library_installed()
 {
     local libname="$1"
     local libdir="libs/lib${libname}"
     local libfile="$libdir/lib${libname}.a"
     if [ -d "$libdir" ]; then
         if [ -f "$libfile" ]; then
-            LIB_MODULES_ARRAY+=( "$libfile" )
-            INCFLAGS_ARRAY+=( "-I${libdir}" )
             return 0
         fi
     fi
-
-    echo "Failed to find $libname"
     return 1
 }
 
@@ -182,7 +190,9 @@ confirm_library()
     local libname="$1"
     if shared_library_installed "$libname"; then
         LIB_FLAGS_ARRAY+=( "-l$libname" )
-    elif ! add_if_static_library_available "$libname"; then
+    elif static_library_installed "$libname"; then
+        update_arrays_for_static_library "$libname"
+    else
         install_and_build_library "$libname"
     fi
 }
@@ -192,7 +202,6 @@ setup_cjungmann_libs()
     local -n scl_SED_ARGS="$1"
 
     # Arrays to track Makefile updates:
-    local -a LIB_DIRS_ARRAY=()
     local -a LIB_FLAGS_ARRAY=()
     local -a LIB_MODULES_ARRAY=()
     local -a INCFLAGS_ARRAY=()
@@ -201,17 +210,23 @@ setup_cjungmann_libs()
         confirm_library "$lib"
     done
 
-    local flags_str="s|LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
-    local mods_str="s|LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
-    local incflags_str="s|INCFLAGS =.*|INCFLAGS = ${INCFLAGS_ARRAY[*]}|"
+    if [ "${#LIB_FLAGS_ARRAY[*]}" -gt 0 ]; then
+        local flags_str="s|^LIB_FLAGS =.*|LIB_FLAGS = ${LIB_FLAGS_ARRAY[*]}|"
+        flags_str="${flags_str// /\\ }"
+        scl_SED_ARGS+=( -e "$flags_str" )
+    fi
 
-    flags_str="${flags_str// /\\ }"
-    mods_str="${mods_str// /\\ }"
-    incflags_str="${incflags_str// /\\ }"
+    if [ "${#LIB_MODULES_ARRAY[*]}" -gt 0 ]; then
+        local mods_str="s|^LIB_MODULES =.*|LIB_MODULES = ${LIB_MODULES_ARRAY[*]}|"
+        mods_str="${mods_str// /\\ }"
+        scl_SED_ARGS+=( -e "$mods_str" )
+    fi
 
-    scl_SED_ARGS+=( -e "$flags_str" )
-    scl_SED_ARGS+=( -e "$mods_str" )
-    scl_SED_ARGS+=( -e "$incflags_str" )
+    if [ "${#INCFLAGS_ARRAY[*]}" -gt 0 ]; then
+        local incflags_str="s|^INCFLAGS =.*|INCFLAGS = ${INCFLAGS_ARRAY[*]}|"
+        incflags_str="${incflags_str// /\\ }"
+        scl_SED_ARGS+=( -e "$incflags_str" )
+    fi
 }
 
 update_makefile_prefix()
@@ -273,9 +288,10 @@ if confirm_prerequisites && man_test; then
     # is not installed globally:
     setup_cjungmann_libs MAKEFILE_SED_ARGS
 
-    if [ "${#MAKEFILE_SET_ARGS[*]}" -gt 0 ]; then
-        echo "Updating Makefile with library includes."
+    if [ "${#MAKEFILE_SED_ARGS[*]}" -gt 0 ]; then
         sed -i "${MAKEFILE_SED_ARGS[@]}" Makefile
+    else
+        echo "Nothing to do for Makefile."
     fi
 else
     echo "Please correct the errors and rerun ./configure."
