@@ -17,7 +17,7 @@ declare -a HEADERS_REQUIRED=(
 declare -a APPS_REQUIRED=(
     gcc      build-essential
     soelim   man-db
-    less     coreutils
+    less     less
 )
 
 #############################
