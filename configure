@@ -165,10 +165,8 @@ add_if_static_library_available()
     local libname="$1"
     local libdir="libs/lib${libname}"
     local libfile="$libdir/lib${libname}.a"
-    echo "Checking for lib path '$libdir'"
     if [ -d "$libdir" ]; then
         if [ -f "$libfile" ]; then
-            echo "Found the $libname static library!, Adding."
             LIB_MODULES_ARRAY+=( "$libfile" )
             INCFLAGS_ARRAY+=( "-I${libdir}" )
             return 0
@@ -274,6 +272,11 @@ if confirm_prerequisites && man_test; then
     # installing as static libraries under this project if the library
     # is not installed globally:
     setup_cjungmann_libs MAKEFILE_SED_ARGS
+
+    if [ "${#MAKEFILE_SET_ARGS[*]}" -gt 0 ]; then
+        echo "Updating Makefile with library includes."
+        sed -i "${MAKEFILE_SED_ARGS[@]}" Makefile
+    fi
 else
     echo "Please correct the errors and rerun ./configure."
 fi
