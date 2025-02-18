@@ -119,7 +119,7 @@ confirm_prerequisites()
     if [ "$TOTAL_ERRORS" -gt 0 ]; then
         echo
         echo "Use your package manager to install the following packages:"
-        printf $'   \e[32;1m%s\e[39;22m\n'"${PACKAGES_REQUIRED[*]}"
+        printf $'   \e[32;1m%s\e[39;22m\n' "${PACKAGES_REQUIRED[*]}"
         echo ""
         echo "Hint: copy the green list to paste into your install command."
         echo
